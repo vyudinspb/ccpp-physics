@@ -304,6 +304,10 @@ subroutine fv_sat_adj_run(mdt, zvir, is, ie, isd, ied, kmp, km, kmdelz, js, je, 
     integer :: kdelz
     integer :: k, j, i
 
+#ifdef MULTI_GASES
+    real(kind=kind_dyn) :: qvip(isd_ied, jsd:jed, 1:ngas)
+#endif
+
     ! Initialize the CCPP error handling variables
     errmsg = ''
     errflg = 0
@@ -317,7 +321,7 @@ subroutine fv_sat_adj_run(mdt, zvir, is, ie, isd, ied, kmp, km, kmdelz, js, je, 
 !$OMP                 area,delp,pt,hs,qg,qs,qr,qi, &
 !$OMP                 ql,qv,te0,fast_mp_consv,     &
 !$OMP                 hydrostatic,ng,zvir,pkz,     &
-!$OMP                 akap,te0_2d,ngas,qvi)        &
+!$OMP                 akap,te0_2d,ngas,qvi,qvip)   &
 !$OMP          private(k,j,i,kdelz,dpln)
 #endif
 
@@ -333,10 +337,15 @@ subroutine fv_sat_adj_run(mdt, zvir, is, ie, isd, ied, kmp, km, kmdelz, js, je, 
        else
           kdelz = k
        end if
+
+#ifdef MULTI_GASES
+       qvip = qvi(:,:,k,:)
+#endif
+
        call fv_sat_adj_work(abs(mdt), zvir, is, ie, js, je, ng, hydrostatic, fast_mp_consv, &
                             te0(isd,jsd,k),                                                 &
 #ifdef MULTI_GASES
-                            qvi(isd,jsd,k,1:ngas),                                          &
+                            qvip(:,:,:),                                                    &
 #else
                             qv(isd,jsd,k),                                                  &
 #endif
@@ -345,6 +354,11 @@ subroutine fv_sat_adj_run(mdt, zvir, is, ie, isd, ied, kmp, km, kmdelz, js, je, 
                             hs, dpln, delz(is:,js:,kdelz), pt(isd,jsd,k), delp(isd,jsd,k),&
                             q_con(isd:,jsd:,k), cappa(isd:,jsd:,k), area, dtdt(is,js,k),    &
                             out_dt, last_step, do_qa, qa(isd,jsd,k))
+
+#ifdef MULTI_GASES
+       qvi(:,:,k,:) = qvip(:,:,:)
+#endif
+
        if ( .not. hydrostatic  ) then
           do j=js,je
              do i=is,ie
@@ -406,7 +420,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
     real(kind=kind_dyn), intent (in), dimension (is:ie, js:je) :: dpln, delz
     real(kind=kind_dyn), intent (inout), dimension (is - ng:ie + ng, js - ng:je + ng) :: pt
 #ifdef MULTI_GASES
-    real(kind=kind_dyn), intent (inout), dimension (is - ng:ie + ng, js - ng:je + ng, 1:1, 1:num_gas) :: qvi
+    real(kind=kind_dyn), intent (inout), dimension (is - ng:ie + ng, js - ng:je + ng, 1:num_gas) :: qvi
 #else
     real(kind=kind_dyn), intent (inout), dimension (is - ng:ie + ng, js - ng:je + ng) :: qv
 #endif
@@ -433,7 +447,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
     integer :: i, j
 
 #ifdef MULTI_GASES
-    qv(:,:) = qvi(:,:,1,1)
+    qv(:,:) = qvi(:,:,1)
 #endif
     sdt = 0.5 * mdt                   ! half remapping time step
     dt_bigg = mdt                     ! bigg mechinism time step
@@ -478,7 +492,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
             q_sol (i) = qi (i, j) + qs (i, j) + qg (i, j)
             qpz (i) = q_liq (i) + q_sol (i)
 #ifdef MULTI_GASES
-            pt1 (i) = pt (i, j) / virq_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+            pt1 (i) = pt (i, j) / virq_qpz(qvi(i,j,1:num_gas),qpz(i))
 #else
 #ifdef USE_COND
             pt1 (i) = pt (i, j) / ((1 + zvir * qv (i, j)) * (1 - qpz (i)))
@@ -511,9 +525,9 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
         do i = is, ie
 #ifdef MULTI_GASES
             if (hydrostatic) then
-                c_air = cp_air * vicpqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                c_air = cp_air * vicpqd_qpz(qvi(i,j,1:num_gas),qpz(i))
             else
-                c_air = cv_air * vicvqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                c_air = cv_air * vicvqd_qpz(qvi(i,j,1:num_gas),qpz(i))
             endif
 #endif
             mc_air (i) = (1. - qpz (i)) * c_air ! constant
@@ -530,7 +544,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
             if (hydrostatic) then
                 do i = is, ie
 #ifdef MULTI_GASES
-                    c_air = cp_air * vicpqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                    c_air = cp_air * vicpqd_qpz(qvi(i,j,1:num_gas),qpz(i))
 #endif
                     te0 (i, j) = - c_air * t0 (i)
                 enddo
@@ -540,7 +554,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
                     te0 (i, j) = - cvm (i) * t0 (i)
 #else
 #ifdef MULTI_GASES
-                    c_air = cv_air * vicvqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                    c_air = cv_air * vicvqd_qpz(qvi(i,j,1:num_gas),qpz(i))
 #endif
                     te0 (i, j) = - c_air * t0 (i)
 #endif
@@ -672,7 +686,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
             endif
             qv (i, j) = qv (i, j) - src (i)
 #ifdef MULTI_GASES
-            qvi(i,j,1,1) = qv (i, j)
+            qvi(i,j,1) = qv (i, j)
 #endif
             ql (i, j) = ql (i, j) + src (i)
             q_liq (i) = q_liq (i) + src (i)
@@ -716,7 +730,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
                 adj_fac = 1.
                 qv (i, j) = qv (i, j) - src (i)
 #ifdef MULTI_GASES
-                qvi(i,j,1,1) = qv(i,j)
+                qvi(i,j,1) = qv(i,j)
 #endif
                 ql (i, j) = ql (i, j) + src (i)
                 q_liq (i) = q_liq (i) + src (i)
@@ -891,7 +905,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
             endif
             qv (i, j) = qv (i, j) - src (i)
 #ifdef MULTI_GASES
-            qvi(i,j,1,1) = qv(i,j)
+            qvi(i,j,1) = qv(i,j)
 #endif
             qi (i, j) = qi (i, j) + src (i)
             q_sol (i) = q_sol (i) + src (i)
@@ -907,7 +921,8 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
 #ifdef USE_COND
             q_con (i, j) = q_liq (i) + q_sol (i)
 #ifdef MULTI_GASES
-            pt (i, j) = pt1 (i) * virq_qpz(qvi(i,j,1,1:num_gas),q_con(i,j))
+            tmp = virq_qpz(qvi(i,j,1:num_gas),q_con(i,j))
+            pt (i, j) = pt1 (i) * tmp
 #else
             tmp = 1. + zvir * qv (i, j)
             pt (i, j) = pt1 (i) * tmp * (1. - q_con (i, j))
@@ -917,7 +932,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
 #else
 #ifdef MULTI_GASES
             q_con (i, j) = q_liq (i) + q_sol (i)
-            pt (i, j) = pt1 (i) * virq_qpz(qvi(i,j,1,1:num_gas),q_con(i,j)) * (1. - q_con(i,j))
+            pt (i, j) = pt1 (i) * virq_qpz(qvi(i,j,1:num_gas),q_con(i,j)) * (1. - q_con(i,j))
 #else
             pt (i, j) = pt1 (i) * (1. + zvir * qv (i, j))
 #endif
@@ -963,7 +978,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
             do i = is, ie
                 if (hydrostatic) then
 #ifdef MULTI_GASES
-                    c_air = cp_air * vicpqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                    c_air = cp_air * vicpqd_qpz(qvi(i,j,1:num_gas),qpz(i))
 #endif
                     te0 (i, j) = dp (i, j) * (te0 (i, j) + c_air * pt1 (i))
                 else
@@ -971,7 +986,7 @@ subroutine fv_sat_adj_work(mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te,
                     te0 (i, j) = dp (i, j) * (te0 (i, j) + cvm (i) * pt1 (i))
 #else
 #ifdef MULTI_GASES
-                    c_air = cv_air * vicvqd_qpz(qvi(i,j,1,1:num_gas),qpz(i))
+                    c_air = cv_air * vicvqd_qpz(qvi(i,j,1:num_gas),qpz(i))
 #endif
                     te0 (i, j) = dp (i, j) * (te0 (i, j) + c_air * pt1 (i))
 #endif

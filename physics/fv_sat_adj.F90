@@ -305,7 +305,7 @@ subroutine fv_sat_adj_run(mdt, zvir, is, ie, isd, ied, kmp, km, kmdelz, js, je, 
     integer :: k, j, i
 
 #ifdef MULTI_GASES
-    real(kind=kind_dyn) :: qvip(isd_ied, jsd:jed, 1:ngas)
+    real(kind=kind_dyn) :: qvip(isd:ied, jsd:jed, 1:ngas)
 #endif
 
     ! Initialize the CCPP error handling variables

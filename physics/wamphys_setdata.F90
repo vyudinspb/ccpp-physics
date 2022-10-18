@@ -38,7 +38,7 @@
       real(kind=kind_phys), parameter     :: xbl= 0.99*xb        ! xbl < xb
       real(kind=kind_phys), parameter     :: rdx=1./(xt-xb)
       real(kind=kind_phys), parameter     :: xlogps = 11.5129          ! alog(1.e5=Ps_in_Pa)
-      real(kind=kind_phys), parameter     :: prdot02 = 1.e5*exp(-xbl)  ! mb because pr = pr_idea in (mb)
+      real(kind=kind_phys), parameter     :: prdot02 = 2.00  ! mb because pr = pr_idea in (mb)
       integer                             :: npsrad                    ! layer where Pressure < 0.02   (2Pa)
       
                                                        ! nps-pressure index to start WAM-solar/phot <= 52.5 km 

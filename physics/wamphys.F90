@@ -234,10 +234,10 @@ contains
 	  dx, xlon, xlat, xlon_d,xlat_d, sinlat, coslat, area,                 & 
 	  oro, solhr,slag,sdec,cdec, coszen, htrsw, htrlw,                     &
 	  f107, f107d, kp, kpa,                                                &
-	  nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden,               &	  
+	  nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden,               &	 
           ugrs, vgrs, tgrs, qgrs, prsi, prsl, prslk, phii, phil,               &
           dudt, dvdt, dtdt, dudt_iwamph, dvdt_iwamph, dtdt_iwamph,             &
-	  do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	  
+	  do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	 
           gzmt, gmmt, gjhr, gshr, go2dr, errmsg, errflg)
 	  
 !
@@ -377,7 +377,13 @@ contains
     heatmax = 0.002          !  100 K/day	  
 !=========================================================================	  
 ! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
-!=========================================================================	
+!=========================================================================
+   if (.not.do_wamphys_diag) return 
+	dudt = 0.
+	dvdt = 0.
+        dtdt = 0.
+
+
     if (do_wamphys_diag) then
 !
        do1dt_iwamph(:,:) =qgrs(:,:, nto1)
@@ -387,23 +393,14 @@ contains
        dvdt_iwamph(:,:) = vgrs
        dtdt_iwamph(:,:) = tgrs   
     endif   
-
-
+             
+        if ( me == master ) then
+	    print *, ' tgrs-W1: ', maxval(tgrs), minval(tgrs) 
+        endif
 
       
-
-
-
-! take from jdat: solhr, ddd_year
-           
-!      solhr = mod(float(jdat(5)),24.0) 
+      call wamphys_day_of_year(jdat(1), jdat(2), jdat(3), ddd_year) 
       
-      call wamphys_day_of_year(jdat(1), jdat(2), jdat(3), ddd_year)
-!      
-!         wamphys_day_of_year(yr, mm, dd, ddd)
-!
-!         passing info to efield
-!      
 !      iday = ddd_year
 !      iyear = jdat(1)
 !      iday_m = jdat(3)
@@ -412,28 +409,28 @@ contains
       do k=1, levs 
          del(:,k) = prsi(:,k) - prsi(:, k+1)
       enddo 
-         
+!      
+! wamphys_get_pzgeo.F90: wam_get_rdmulti(im, levs,ntrac,q,xr)     
+!   call wam_get_cpr(im,levs,ntrac,qhrs, cp, rdmulti)   >>cv = cp -rdmulti <<
+!      
       call wamphys_zgrav(im, levs, ntrac, tgrs, qgrs,          &
                 prsl,  prsi, phii, phil, del, oro,             & 
                 zgeo, grav, exner, exner_i, kappa, cp, rdelp)   
 		
       call wamphys_presolar(im,solhr,slag,sdec,cdec,ddd_year, xlon,xlat,      &                  
            sinlat, coslat, cospass, utsec, sda, maglat,maglon,btot,dipang,essa)
-		    	  
+
+         if ( me == master ) then 
+!	   print *, ' bf wamphys_tracer_run ind-ces ', ntrac,ntrac_i,nto1, nto2, nto3
+!	   print *,  ' nto1 ', nto1, maxval(qgrs(:,:, nto1)), minval(qgrs(:,:, nto1))
+!	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
+!	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
+         endif   
+
 !       IF(do_wamipe) call get_vertical_parameters_for_merge      &
 !           gzmt, prsl, im, lowst_ipe_level, levs, plow, phigh, xpk_low, xpk_high)
 	
-
-         if ( me == master ) then 
-	   print *, ' bf wamphys_tracer_run ind-ces ', ntrac,ntrac_i,nto1, nto2, nto3
-	   print *,  ' nto1 ', nto1, maxval(qgrs(:,:, nto1)), minval(qgrs(:,:, nto1))
-	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
-	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
-         endif   
-!!!!!!!!!!!!!!!!!!!!!	   
-!         return   !  second return   
 	 
-!	 
 ! define arrays	 
 !  go2dr, plow, phigh, xpk_low, xpk_high	
 !    
@@ -449,62 +446,50 @@ contains
 	 xpk_low(i)  =    prsl(i,plow(i))
 	 xpk_high(i) =    prsl(i,phigh(i))
        enddo
+      	 
+       
       call wamphys_tracer_run(me, master,im, levs,ntrac,ntrac_i,nto1, nto2, nto3,   &
                    ntqv, ddd_year, dtp, grav,prsi,prsl, tgrs, qgrs,                 &
                    o_n,o2_n, o3_n, n2_n,nair,rho,am, amu2d, cospass, zgeo, jo2_out, &
 		   f107,f107d, go2dr, plow, phigh, xpk_low, xpk_high)
 		   
          if ( me == master ) then 
-	   print *, ' Af wamphys_tracer_run ind-ces ', ntrac,ntrac_i,nto1, nto2, nto3
-	   print *,  ' nto1 ', nto1, maxval(qgrs(:,:, nto1)), minval(qgrs(:,:, nto1))
-	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
-	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
+!	   print *, ' Af wamphys_tracer_run ind-ces ', ntrac,ntrac_i,nto1, nto2, nto3
+!	   print *,  ' nto1 ', nto1, maxval(qgrs(:,:, nto1)), minval(qgrs(:,:, nto1))
+!	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
+!	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
          endif 		   
 !      
 !      call wamphys_getcp (im, levs, ntrac, qgrs, cp, nto1, nto2, nto3, ntqv)  
 !		   	  
-      
+       call wam_get_cp(im, levs,  ntrac, qgrs,  cp)     
 !=========================
-
-!!!!!!!!!!!!!!!!!!!
-!      return     !third   return
-!!!!!!!!!!!!!!!!!!!
 
       call wamphys_molec_dissipation(im, levs,grav,prsi,prsl,  &
                    ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho)	
-		   
-!      return     !4-th   return	
-      
-      	   
+     	   
        call wamrad_o3prof(im, levs,ntrac, nto3,  qgrs ,am, nair, o3_ng)
        
 !   
-       call wamphys_heat_uveuv(im, levs, tgrs, cospass,o_n,o2_n,o3_ng,n2_n, rho, cp, &
+       call wamphys_heat_uveuv(im, levs, tgrs, cospass,o_n,o2_n,o3_n,n2_n, rho, cp, &
             ddd_year, prsl, zgeo, grav,am, maglat, f107, f107d, kpa, dtrad)
-	    
-!!!	tgrs = tgrs + dtrad * dtp 
-			      
+
+
 !diag-standalone  dteuv, dt_qsrc, dt_qsrb, dt_qlya, dtno, no_snoe2d) 
-            
-      if ( me == master .and. kdt == 1) print *,  ' after wamphys_heat_uveuv '     
 
 	    
        call wamrad_co2(im,  levs,nlev_co2,ntrac,nto1, nto2, nto3, ntqv, &
                        co2my, grav,cp, qgrs,tgrs, dtco2c,cospass,dtco2h)
 		       
-      if ( me == master .and. kdt == 1) print *,  ' after wamrad_co2 '  		       
        	
        call wamrad_h2o(im,  levs,nlev_h2o,nlevc_h2o,ntrac,nto1, nto2, nto3, ntqv, &
                        grav,cp, qgrs, tgrs, dth2oh, cospass, dth2oc,              & 
 		gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
-		        
-!           wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
-!                       grav,cp,adr, adt,dth,cosz,dtc)	
-	       
-      if ( me == master .and. kdt == 1) print *,  ' after wamrad_h2o '		       
+
        
        call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
-       
+
+            
       if ( me == master .and. kdt == 1) print *,  ' after wamrad_o2_o3 '
     
  
@@ -535,113 +520,17 @@ contains
           xmu(i) = 0.
         endif
       enddo
-	
+
 	 call wamphys_rad_merge(me, master, im ,levs, xmu, prsl, htrlw, htrsw, wtot, &
-                             dtco2c,dtco2h,dth2oh,dth2oc,dto3) 
+                             dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3) 
+			     		
+         tgrs = tgrs + wtot * dtp  
 
-	       
-	 do k=1, levs
-          do i= 1, im
-	    wsum = 0.
-            wamNAN = ISNAN(tgrs(i,k))
-	    
-           if (wamNAN) then 
-	        print *, '++++vay-wamNAN_Tgrs ', i, k  
-		stop 
-           else
-               wamNAN = ISNAN(dtrad(i,k))      
-               if (wamNAN) then
-	         print *, 'vay-wamNAN_dtrad ', i, k
-		 else 
-		 wsum = wsum + dtrad(i,k)
-		endif 
-               wn1 = dth2oc(i,k)
-               wamNAN = ISNAN(wn1)  
-              if (wamNAN) then 
-	        print *, 'vay-wamNAN_H2oC ', i, k
-              else
-	        wsum = wsum + wn1
-	      endif
-              wn1 = dth2oh(i,k)
-              wamNAN = ISNAN(wn1)  
-              if (wamNAN) then
-	       print *, 'vay-wamNAN_h2oH ', i, k
-	      else
-	        wsum = wsum + wn1
-	      endif 
-              wn1 = dto3(i,k)
-              wamNAN = ISNAN(wn1)  
-              if (wamNAN) then
-	        print *, 'vay-wamNAN_o2o3 ', i, k 
-	      else
-	        wsum = wsum + wn1	      
-	      endif
-	      
-              wn1 = dtco2c(i,k)
-              wamNAN = ISNAN(wn1)  
-              if (wamNAN) then
-	        print *, 'vay-wamNAN_co2c ', i, k 
-	      else
-	        wsum = wsum + wn1	      
-	      endif	
-	          	      
-              wn1 = dtco2h(i,k)
-              wamNAN = ISNAN(wn1)  
-              if (wamNAN) then
-	        print *, 'vay-wamNAN_co2h ', i, k 
-	      else
-	        wsum = wsum + wn1	      
-	      endif	
-	         	      
-               wamNAN = ISNAN(wtot(i,k))
-               if (wamNAN) print *, 'vay-wamNAN_wtot ', i, k	
-	       
-	       
-	        tgrs(i,k) = tgrs(i,k) + wsum * dtp     	    
-	    endif		             
-          enddo
-         enddo 
-		
-           tgrs = tgrs + (wtot+dtrad) * dtp  
-!	          
-!			dtincr =  dtp*dtrad
-!	 do i = 1, im	
-!	      dtincw(i,:) =htrlw(i,:)+ htrsw(i,:)*xmu(i)
-!	   do k=1, levs
-!	     if (abs(dtincw(i,k)) > heatmax .or. abs(dtincr(i,k)) > heatmax) then
-!	        print *, ' Strong radaition at level-lat ', k, xlat_d(i) 
-		
-!	        dtincw(i,k) = sign(heatmax, dtincw(i,k))
-!		dtincr(i,k) = sign(heatmax, dtincr(i,k))
-!	     endif	
-!	   enddo
-!	 enddo 	   
-	 
-!	 tgrs     = tgrs + dtincw + dtincr
-	 		      
-!         if ( me == master .and. kdt == 1) print *, ' after wamphys_rad_merge '
-!	   if (me == master ) then
-!	   print *, ' radiation upper layer '
-!345       format(I4, 3(2x, F12.5), 4(2x,F12.5),2x, F9.3)	   
-!	    do k=1, levs, 2			
-!	    sdtincw =  dtp*wtot(ipr,k) 
-!	    sdtincr =  dtp*dtrad(ipr,k) 
-!	      write(6,345) k, (dtco2c(ipr,k)+dtco2h(ipr,k))*dtp, (dth2oh(ipr,k)+dth2oc(ipr,k))*dtp, &  
-!	                    dto3(ipr,k)*dtp, sdtincw, sdtincr, tgrs(ipr, k), wtot(ipr,k)*86400., xmu(ipr) 
-! kco2 = k43
-! kh2o =k41,k110 &k71:levs	
-! ko2o3	do k=1,levs
-! keuv 	npsrad,levs  npsrad,  prdot02       != 1.e5*exp(-xbl=0.99*xb)   xb=7.5, xt=8.5 "+1"-up
-!	    enddo
-!	    print *
-!	    print *,  ' xlat_d ' , xlat_d
-!	    print *,  ' xlon_d ' , xlon_d
-!	   endif
+
        endif
-       
-2397 continue
-
-       
+!
+! fixed solar/geo parameters
+!      
     bnhp=27.42402
     bnhpi= 7   
     bshp =33.016
@@ -651,8 +540,7 @@ contains
     bswvel =450.7061
     bswbz =-3.442665
     bswden =6.949437      
-!
-     if (me == master .and. kdt == 1) print *,  ' bf wam_ion_run ' 
+! 
    
 	    
       call wam_ion_run(im, levs, jdat, prsl, solhr,cospass,zgeo, grav, o_n,o2_n,n2_n, &
@@ -660,9 +548,7 @@ contains
             ddd_year,utsec,sda,maglon,maglat,btot,dipang,essa, f107, f107d, kp,       &
             bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden) 
 !	    swin_drivers, spw_drivers)
-	   
-    if (me == master .and. kdt == 1)   print *,  ' after wam_ion_run '	    
-	   
+
   
 !       IF(do_wamipe) then 
 !          call idea_merge_ipe_to_wam(GZMT, dudt_ion,&
@@ -676,9 +562,16 @@ contains
         ugrs = ugrs +dtp*dudt_ion
 	vgrs = vgrs +dtp*dvdt_ion
 	tgrs = tgrs +dtp*dtdt_ion
-			      
+	
+!	call wamphys_dadj(prsi, tgrs, im, levs, me, master)
+!	call wamphys_dadj_or(prsi, tgrs, im, levs+1, me, master)	
+ 345    continue 
+ 
+ 			      
         if ( me == master ) then
-	    print *, ' tgrs: ', maxval(tgrs), minval(tgrs) 
+	    print *, ' tgrs-W2: ', maxval(tgrs), minval(tgrs) 
+!	    print *, ' ugrs: ', maxval(ugrs), minval(ugrs) 
+!	    print *, ' vgrs: ', maxval(vgrs), minval(vgrs) 	    	    
 	endif	
 	
 	if (do_wamphys_diag) then

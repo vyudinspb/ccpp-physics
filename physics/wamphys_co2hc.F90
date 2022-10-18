@@ -984,7 +984,7 @@
 !
       integer,intent(in)::lmod
       real(kind=kind_phys),intent(in),dimension(lmod)::xmod,pmod,mu,gr
-      real(kind=kind_phys),intent(in),dimension(lmod):: co2my
+      real(kind=kind_phys),intent(inout),dimension(lmod):: co2my
       integer, intent(in) :: me          ! my pe
       integer, intent(in) :: master      ! mpi real for io
       
@@ -1440,7 +1440,7 @@
          enddo
 !
 ! Now calculate heating on specified model grid.
-! Do wam_wam_wam_spline interpolation (replaced by linear interpolation June 18,
+! Do wam_wam_spline interpolation (replaced by linear interpolation June 18,
 ! 2004) below up to x=xnir(imnir), model grid index lmnir
 !
          do l=1,lmnir
@@ -1466,5 +1466,38 @@
       endif
 
       end subroutine wam_qnirc
+      
+      subroutine wam_lint1_x(x1,y1,n1,yleft,yright,x,y)
+!      
+! A very simple linear interpolation of y1(x1) into y(x)
+! ***x1 is assumed in ascending order***
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Apr 16, 2003: Rashid Akmaev
+!       Made from lint for a scalar argument
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      use machine,                only: kind_phys
+      implicit none
+! Array dimension
+      integer,intent(in):: n1
+      real(kind=kind_phys),intent(in):: x1(n1),y1(n1),yleft,yright,x
+      real(kind=kind_phys),intent(out):: y
+! Work memory
+      integer:: i
+      real(kind=kind_phys):: dx
 
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      if(x.lt.x1(1)) then
+         y=yleft
+      elseif(x.gt.x1(n1)) then
+         y=yright
+      else
+         do i=2,n1
+            dx=x-x1(i)
+            if(dx.le.0.) then
+               y=y1(i)+(y1(i)-y1(i-1))*dx/(x1(i)-x1(i-1))
+               return
+            endif
+         enddo
+      endif
+      end subroutine wam_lint1_x
 

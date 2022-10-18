@@ -361,8 +361,13 @@ module  wamphys_init_module
  
    allocate(co2my(levs))    
    call wam_co2cin(prlog(k43),pmb(k43), muglob(k43),gglob(k43),co2my(k43), &
-                    nlev_co2,me,master)   
-
+                    nlev_co2,me,master) 
+   co2my(1:k43-1) = co2my(k43)		      
+   if(me == master) then
+      do k=k43-1, levs
+        print *, 'co2my ', k, co2my(k)*1.e6
+      enddo
+   endif
    if (.not.allocated(prpa)) allocate(prpa(nlevc_h2o))  
    prpa(1:nlevc_h2o) = pmb(k71:levs)
    
@@ -691,8 +696,8 @@ module  wamphys_init_module
 !
 ! initialize wam_oh(levs) & wam_ho2(levs) from some-global profiles (z65)
 !      
-      call z65toz(np, levs,ohi, prlog, wam_oh, 0.)
-      call z65toz(np, levs,ho2i,prlog, wam_ho2,0.)
+      call z65toz(np, levs,ohi, zlog, wam_oh, 0.)
+      call z65toz(np, levs,ho2i,zlog, wam_ho2,0.)
 !
 ! assign set of costants employed in idea_tracer
 !     use idea_composition, only   : bz,  amo,amn2,  amo2, amo3, amh2o
@@ -1025,8 +1030,14 @@ module  wamphys_init_module
       CALL  interpol_wamz_down(nz_Jo2sf, z15,JJ_scale_factor , levs, zlog, &
                      o2_scale_factor , 1.0) 
       if ( me == master ) then
-         print *, ' get_eff_zlog - performed '
-        endif 	     
+         print *, ' get_eff_zlog - performed ', kup, kdw
+	 do k=74, 90
+	   print *, 'effuv ', k, effuv(k), effuv17(k-73)
+	 enddo 
+	 do k=74, 90
+	   print *, 'effuv-z ', k, zlog(k), z17(k-73)
+	 enddo 	 
+      endif 	     
       end  subroutine  get_eff_zlog
              
       subroutine wam_readno_snoewx(file, me, master)

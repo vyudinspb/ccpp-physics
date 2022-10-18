@@ -397,20 +397,7 @@
 !	   print*,'xmu-feps',i,xmu(i), xcosz(i), coszen(i),f_eps, kdt
 !	endif	  
 	enddo  
-	
-           do k = 1, levrwam
-            do i = 1, im
-!               dtdt(i,k)  = dtdt(i,k)*1.  !!!! + swh(i,k)*xmu(i)  + hlw(i,k)
-               dtdt(i,k)  = dtdt(i,k)*1.   !+ swh(i,k)*xmu(i)  + hlw(i,k)
-            enddo
-         enddo
-           do k = levrwam+1, levs
-            do i = 1, im
-	        dtdt(i,k) = 0.
-		swh(i,k)= 0.
-		hlw(i,k)= 0.
-            enddo
-         enddo	    	 
+
 !         if (me == master) then 
 !	   print*, 'dcyc2_dtdt ', maxval(dtdt)*86400,  minval(dtdt)*86400
 !	   print*, 'dcyc2_swh  ', maxval(swh)*86400,  minval(swh)*86400

@@ -563,7 +563,7 @@
 !
 ! full-night
 !       
-       if(seco < 0 .or. chid >105.) then
+       if(seco < 0.) then
        
           rnight=nfac        ! nightfac=1.e-9
           seco=1./0.07       ! should be big-number but in tw-code =1. deviated
@@ -916,10 +916,10 @@
 ! merge solar radiation of WAM and GFS-lower atmosphere
 !      
    subroutine wamphys_rad_merge(me, master, im,levs,xmu, prsl, hlw, swh, wtot,    & 
-              dtco2c,dtco2h,dth2oh,dth2oc,dto3)
+              dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3)
 	      
 ! 	 call wamphys_rad_merge(me, master, im ,levs, xmu, prsl, htrlw, htrsw, wtot, &
-!                             dtco2c,dtco2h,dth2oh,dth2oc,dto3)  
+!                          dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3)  
   
      use machine ,              only : kind_phys
      use wamphys_init_module,   only : rpref
@@ -938,12 +938,13 @@
       real(kind=kind_phys), intent(in)    :: prsl(im,levs)    ! pressure
       real(kind=kind_phys), intent(in)    :: xmu(im)          ! mormalized cos zenith angle
       
-      real(kind=kind_phys), intent(in)    :: dtco2c(im,levs)  ! idea co2 cooling(K/s)
-      real(kind=kind_phys), intent(in)    :: dtco2h(im,levs)  ! idea co2 heating(K/s)
-      real(kind=kind_phys), intent(in)    :: dth2oc(im,levs)  ! idea h2o cooling(K/s)
-      real(kind=kind_phys), intent(in)    :: dth2oh(im,levs)  ! idea h2o heating(K/s)
-      real(kind=kind_phys), intent(in)    :: dto3(im,levs)    ! idea o3 heating(K/s)
-      real(kind=kind_phys), intent(out)   :: wtot(im,levs)    ! GFS idea combined  rad
+      real(kind=kind_phys), intent(in)    :: dtco2c(im,levs)  ! wam co2 cooling(K/s)
+      real(kind=kind_phys), intent(in)    :: dtco2h(im,levs)  ! wam co2 heating(K/s)
+      real(kind=kind_phys), intent(in)    :: dth2oc(im,levs)  ! wam h2o cooling(K/s)
+      real(kind=kind_phys), intent(in)    :: dth2oh(im,levs)  ! wam h2o heating(K/s)
+      real(kind=kind_phys), intent(in)    :: dto3(im,levs)    ! wam o3 heating(K/s)
+      real(kind=kind_phys), intent(in)    :: dtrad(im,levs)   ! wam euv/srb heating(K/s) heating(K/s)
+      real(kind=kind_phys), intent(out)   :: wtot(im,levs)    ! merged total radiation
       
 !     local
       real(kind=kind_phys) :: rad_low(im, levs), rad_wam(im, levs)
@@ -953,12 +954,12 @@
       do k=1,levs
         do i=1,im
 	
-          xk = -log(prsl(i,k) * rpref)
+          xk =-log(prsl(i,k) * rpref)
 	  
-          wh = dtco2c(i,k)+dth2oc(i,k)+dtco2h(i,k)+dth2oh(i,k)+dto3(i,k)
+          wh = dtco2c(i,k)+dth2oc(i,k)+dtco2h(i,k)+dth2oh(i,k)+dto3(i,k)+dtrad(i,k)
           wl = hlw(i,k) + swh(i,k)*xmu(i)
-	  rad_low(i,k) = wl
-	  rad_wam(i,k) = wh
+!	  rad_low(i,k) = wl
+!	  rad_wam(i,k) = wh
           if(xk < xb) then
              wtot(i,k) = wl
           elseif(xk >= xb .and. xk <= xt) then

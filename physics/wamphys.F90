@@ -7,16 +7,34 @@ module wamphys
 !!!   wamphys_init.F90 inside of  wamphys.F90
 !
 !Model%do_wamphys_diag, Model%do_wamphys  Model%do_wamgfs_rad Model%do_wamipe
+!wamphys_init_module.F90
+!wamphys_co2.F90
+!wamphys_co2hc.F90
+!wamphys_diag2d.F90
+!wamphys_efield.F90
+!wamphys_extra_constants.F90
+!wamphys_get_pzgeo.F90
+!wamphys_h2o.F90
+!wamphys_h2oc.F90
+!wamphys_ion.F90
+!wamphys_ion_empirmodels.F90
+!wamphys_math_interp.F90
+!wamphys_merge_ipe2wam.F90
+!wamphys_molec_dissipation.F90
+!wamphys_multigases.F90
+!wamphys_rad_o2_o3.F90
+!wamphys_setdata.F90
+!wamphys_sheat_jrates.F90
+!wamphys_tracer_run.F90
+!wamphys_weimer2005.F90
+! ccpp cannot handle global-scalar time-dep input
+!!!wamphys_swdef.F90
+!!!wamphys_swio_data.F90
 !
-! wamphys_inputread.F90
+! wamphys_tides.F90: online diagnostics for daily-mean state and diurnal/subdiurnal modes
 !
-! wamphys_ion.F90
-! wamphys_tracer.F90
-! wamphys_radiation.F90 
-! wamphys_cpzgeo.F90
-! wamphys_math.F90
-! wamphys_tides.F90
 !==========================
+
     use machine,                 only: kind_phys
 
    
@@ -80,7 +98,7 @@ contains
     logical :: exists
 
     integer :: k
-
+    character(len=64) :: fn_nml23 
     ! Initialize CCPP error handling variables
     errmsg = ''
     errflg = 0
@@ -156,8 +174,8 @@ contains
         
 
  
-		
-    call wamphys_init_all(me, master, nlunit, logunit, jdat,input_nml_file, fn_nml2,   &
+    fn_nml23 = fn_nml2
+    call wamphys_init_all(me, master, nlunit, logunit, jdat, fn_nml23, fn_nml2,   &
               lonr, latr, levs, ak, bk, dtp, errmsg, errflg) 
 
 			       			       
@@ -210,17 +228,16 @@ contains
     is_initialized = .false.
 
     end subroutine wamphys_finalize
-
-! !
-! -----------------------------------------------------------------------
-!   driver is called before pbl & before chem-parameterizations
-!     and likely before the surface physics
-!     Updates of Temperature-Winds-Tracers are performed inside
-!               
-! -----------------------------------------------------------------------------------------
-!  order = 
-!   "dry-adj=>conv=mp-aero=>"radiation"-WAMPHYS-sfc/land-chem ->vertdiff->[rf-gws]=>
+!
 ! 
+! -----------------------------------------------------------------------
+!   driver is called before the lower atmosphere physics
+!     Updates of Temperature-Winds-Tracers are performed inside
+!     tendency are only for diagnostics          
+! -----------------------------------------------------------------------------------------
+!<group name="physics"   <subcycle loop="1">
+!  order = >get_prs_fv3 >>GFS_suite_interstitial_1 >> wamphys-wamphys_post .....>dcyc2t3
+!   
 ! -----------------------------------------------------------------------------------------
 !>@brief These subroutines and modules execute the CUA-CIRES WAM physics
 !> \section arg_table_wamphys_run Argument Table
@@ -256,8 +273,11 @@ contains
     use wamphys_init_module, only : co2my
     use wamphys_init_module, only : gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb
     use wamphys_init_module, only : gdp,  xx, wvmmrc, coeff   
-         
-    use wamphys_init_module, only : spw_drivers, swin_drivers 
+    use wamphys_init_module, only :         
+    use wamphys_init_module, only : spw_drivers, swin_drivers
+    
+    use wamphys_init_module, only : f107_fix, f107a_fix, kp_fix, kpa_fix
+
     use wamphys_ion,         only : wam_ion_run
 !    use efield_wam, only          :  iday,iyear,iday_m,imo    
     implicit none
@@ -279,7 +299,7 @@ contains
     real(kind=kind_phys), intent(in)  :: solhr, slag, sdec, cdec
   
     real(kind=kind_phys) , intent(in) :: nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden 	 
-    real(kind=kind_phys),  intent(in)  ::  f107, f107d, kp, kpa 
+    real(kind=kind_phys),  intent(inout)  ::  f107, f107d, kp, kpa 
     
     real(kind=kind_phys),  intent(in), dimension(im, levs) ::	htrsw, htrlw  
      
@@ -374,7 +394,15 @@ contains
     errmsg = ''
     errflg = 0
     nth2o  = ntqv          ! standard first index for H2O, ntqv - number of water-based species
-    heatmax = 0.002          !  100 K/day	  
+    
+    heatmax = 0.002          !  100 K/day
+!---------------------------------------------
+! two ways to setup from namelist/SW-arrays
+! ---------------------------------------------   
+    f107  = f107_fix
+    f107d = f107a_fix
+    kp    = kp_fix
+    kpa   = kpa_fix	  
 !=========================================================================	  
 ! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
 !=========================================================================
@@ -393,7 +421,7 @@ contains
        dvdt_iwamph(:,:) = vgrs
        dtdt_iwamph(:,:) = tgrs   
     endif   
-             
+  
         if ( me == master ) then
 	    print *, ' tgrs-W1: ', maxval(tgrs), minval(tgrs) 
         endif

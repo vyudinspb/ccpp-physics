@@ -251,11 +251,12 @@ contains
       call w3doxdat(jdat,jdow, ddd, jday)
 !      fddd = float(ddd) + jdat(5) / 24. 
        fmin = fhour*60.      
-    end  subroutine swio_idate_calendar    
-!JDAT       INTEGER (8) NCEP ABSOLUTE DATE AND TIME
-!   (YEAR, MONTH, DAY, TIME ZONE,HOUR, MINUTE, SECOND, MILLISECOND)
-!Output:
-!      JDOW       INTEGER DAY OF WEEK (1-7, WHERE 1 IS SUNDAY)
-!      JDOY       INTEGER DAY OF YEAR (1-366, WHERE 1 IS JANUARY 1)
-!      JDAY       INTEGER JULIAN DAY (DAY NUMBER FROM JAN. 1,4713 B.C.)   
+    end  subroutine swio_idate_calendar   
+! w3doxdat(jdat,jdow, ddd, jday)    
+!input:jdat       integer (8) ncep absolute date and time
+!   (year, month, day, time zone,hour, minute, second, millisecond)
+!output:
+!      jdow       integer day of week (1-7, where 1 is sunday)
+!      jdoy       integer day of year (1-366, where 1 is january 1)
+!      jday       integer julian day (day number from jan. 1,4713 b.c.)   
 end  module wamphys_swio_data

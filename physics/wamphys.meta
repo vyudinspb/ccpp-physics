@@ -532,28 +532,28 @@
   type = real 
   kind = kind_phys
   dimensions = ()
-  intent = in
+  intent = inout
 [f107d]
   standard_name = current_timestep_value_of_41_day_averaged_10_7cm_solar_flux
   units = W m-2
   type = real
   kind = kind_phys
   dimensions = ()
-  intent = in
+  intent = inout
 [kp]
   standard_name = current_timestep_value_of_planetary_3_hour_geomagnetic_activity
   units = count
   type = real 
   kind = kind_phys
   dimensions = ()
-  intent = in
+  intent = inout
 [kpa]
   standard_name = current_timestep_value_of_average_of_the_previous_8_planetary_3_hour_geomagnetic_activity
   units = count 
   type = real 
   kind = kind_phys
   dimensions = () 
-  intent = in                                               
+  intent = inout                                               
 [nhp]
   standard_name = current_timestep_value_of_northern_hemispheric_auroral_power
   units = GW

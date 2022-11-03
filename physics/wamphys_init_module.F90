@@ -70,13 +70,7 @@ module  wamphys_init_module
     character(len=255)     :: file_no_snoe = 'snoe_eof.nc'  
 ! solar-annual
 !   wam_nems_imf_2012.nc   wasolar_dan_20161019.nc
-!      
-      
-!    real(kind=kind_phys)   ::  JH0, JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1
-!    real(kind=kind_phys)   ::  skeddy0, skeddy_semiann, skeddy_ann  
-!    real(kind=kind_phys)   ::  tkeddy0, tkeddy_semiann, tkeddy_ann  
-!    real(kind=kind_phys)   ::  f107_fix, f107a_fix, kp_fix, kpa_fix       
-!    real(kind=kind_phys)   ::  gw_fix, tiros_activity_fix                
+!             
 
     real(kind=kind_phys) :: soro_gg = 0.      ! sea level for gravity in upper layers    
     real(kind=kind_phys) :: wam_JH0 =  1.75
@@ -98,7 +92,7 @@ module  wamphys_init_module
     real(kind=kind_phys) :: wam_tiros_activity_fix =7. 
     
     
-    real(kind=kind_phys) :: JH0 =  1.75
+     real(kind=kind_phys) :: JH0 =  1.75
      real(kind=kind_phys) :: JH_tanh = 0.5 
      real(kind=kind_phys) :: JH_semiann = 0.5 
      real(kind=kind_phys) :: JH_ann =  0.0
@@ -212,7 +206,7 @@ module  wamphys_init_module
 !-----------------------------------------------------------------------------------
 
   subroutine  wamphys_init_all(me, master, nlunit, logunit, jdat_gfs, &
-       input_nml_file, fn_nml2, lonr, latr, levs, ak, bk, dtp, errmsg, errflg)
+       fn_nml23, fn_nml2, lonr, latr, levs, ak, bk, dtp, errmsg, errflg)
 !
 !
     use  netcdf   
@@ -230,7 +224,8 @@ module  wamphys_init_module
     integer, intent (in) :: jdat_gfs(8)
     real(kind=kind_phys),    intent (in) :: ak(levs+1), bk(levs+1)
     real(kind=kind_phys),    intent (in) :: dtp   
-    character(len=256),intent (in) :: input_nml_file(:)   
+    
+    character(len=64), intent  (in) :: fn_nml23   
     character(len=64), intent (in) :: fn_nml2
     character(len=*),  intent(out) :: errmsg
     integer,           intent(out) :: errflg  
@@ -250,24 +245,17 @@ module  wamphys_init_module
     errflg = 0
 !    pref = 1.e5
     
-#ifdef INTERNAL_FILE_NML
 
-     read (input_nml_file, nml = wamphys_nml)
-     if (me == master ) then
-        print *, ' READ input.nml internal '     
-        write (6, *) "CCPP wamphys_namelist"
-        write (6, nml = wamphys_nml)		
-     endif  
-#else
+
     if (me == master) print *, ' READ input.nml fnml2 '
-    if (me == master) print *, trim (fn_nml2), ' namelist file in wamphys_init'
+    if (me == master) print *, trim (fn_nml2), ' namelist in wamphys_init'
     inquire (file =trim (fn_nml2) , exist = exists)
 !
     if (.not. exists) then
        if (me == master) write(6,'(3a)') 'wamphys_init: namelist file: ', trim (fn_nml2), ' does not exist'
         errflg = 1
        if (me == master) print *, ' wamphys_nml errflg=', errflg, trim (fn_nml2)
-       stop ' not. exists nml '
+       stop ' not. exists fn_nml2 for wamphys_nml '
     else
         open (unit = nlunit, file = trim(fn_nml2), action = 'read', status = 'old', iostat = ios)
     endif
@@ -275,7 +263,7 @@ module  wamphys_init_module
     rewind (nlunit)
     read   (nlunit, nml = wamphys_nml)
     close  (nlunit)
-#endif
+
      
     curday_wam = jdat_gfs(1)*10000 + jdat_gfs(2)*100 +jdat_gfs(3)    
     call wamphys_day_of_year(jdat_gfs(1), jdat_gfs(2), jdat_gfs(3), ddd_wam)
@@ -285,7 +273,7 @@ module  wamphys_init_module
 
 	
         write (6, *) " ================================================================== "
-        write (6, *) "CCPP wamphys_namelist"
+        write (6, *) "CCPP wamphys_namelist from ", trim (fn_nml2)
         write (6, nml = wamphys_nml)		
         write (6, *) " ================================================================== "	
         write (6, *) "calendar_ugwp ddd_ugwp=", ddd_wam

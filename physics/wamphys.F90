@@ -431,13 +431,7 @@ contains
        dvdt_iwamph(:,:) = vgrs
        dtdt_iwamph(:,:) = tgrs   
     endif   
-  
-        if ( me == master ) then
-	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
-	    print *, ' tgrs-W1: ', maxval(tgrs), minval(tgrs), kdt 
-	    print *, ' ekin-W1: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)), kdt 	    
-        endif
-
+ 
       
       call wamphys_day_of_year(jdat(1), jdat(2), jdat(3), ddd_year) 
       
@@ -607,14 +601,7 @@ contains
 !	call wamphys_dadj_or(prsi, tgrs, im, levs+1, me, master)	
  345    continue 
  
- 			      
-        if ( me == master ) then
-	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
-	    print *, ' tgrs-W2: ', maxval(tgrs), minval(tgrs), kdt 
-	    print *, ' ekin-W2: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)), kdt 	    
-	    
-!	    print *, ' vgrs: ', maxval(vgrs), minval(vgrs) 	    	    
-	endif	
+
        rdtp = 1./dtp	
        
        dudt = dudt + (ugrs -ugrsin)*rdtp

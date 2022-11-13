@@ -73,14 +73,14 @@
       return
       
   111   format(i4, 5(2x, F12.4), ' merge z-wh-wl-wm')    
-          if ( me == master ) then
-	     print *
-	     print *, ' wamphys_rad_merge wtot ', maxval(wtot)*86400., minval(wtot)*86400.
-	     print *, ' wamphys_rad_merge wlow ', maxval(rad_low)*86400., minval(rad_low)*86400.
-	     print *, ' wamphys_rad_merge wupp ', maxval(rad_wam)*86400., minval(rad_wam)*86400.
-	     print *, ' wamphys_rad_merge xmu ',  maxval(xmu), minval(xmu)
-	     print *	     
-	  endif  
+!          if ( me == master ) then
+!	     print *
+!	     print *, ' wamphys_rad_merge wtot ', maxval(wtot)*86400., minval(wtot)*86400.
+!	     print *, ' wamphys_rad_merge wlow ', maxval(rad_low)*86400., minval(rad_low)*86400.
+!	     print *, ' wamphys_rad_merge wupp ', maxval(rad_wam)*86400., minval(rad_wam)*86400.
+!	     print *, ' wamphys_rad_merge xmu ',  maxval(xmu), minval(xmu)
+!	     print *	     
+!	  endif  
       return
       end subroutine wamphys_rad_merge	
       

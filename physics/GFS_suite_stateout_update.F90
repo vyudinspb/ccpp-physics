@@ -42,11 +42,11 @@
       ! Initialize CCPP error handling variables
       errmsg = ''
       errflg = 0
-        if ( me == master ) then
-	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
-	    print *, ' tgrs-W3: ', maxval(tgrs), minval(tgrs)
-	    print *, ' ekin-W3: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)) 	   	    	    
-	endif
+!        if ( me == master ) then
+!	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
+!	    print *, ' tgrs-W3: ', maxval(tgrs), minval(tgrs)
+!	    print *, ' ekin-W3: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)) 	   	    	    !
+!	endif
       gt0(:,:)   = tgrs(:,:)   + dtdt(:,:)   * dtp
       gu0(:,:)   = ugrs(:,:)   + dudt(:,:)   * dtp
       gv0(:,:)   = vgrs(:,:)   + dvdt(:,:)   * dtp

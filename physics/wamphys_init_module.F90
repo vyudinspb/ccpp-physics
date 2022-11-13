@@ -351,11 +351,7 @@ module  wamphys_init_module
    call wam_co2cin(prlog(k43),pmb(k43), muglob(k43),gglob(k43),co2my(k43), &
                     nlev_co2,me,master) 
    co2my(1:k43-1) = co2my(k43)		      
-   if(me == master) then
-      do k=k43-1, levs
-        print *, 'co2my ', k, co2my(k)*1.e6
-      enddo
-   endif
+
    if (.not.allocated(prpa)) allocate(prpa(nlevc_h2o))  
    prpa(1:nlevc_h2o) = pmb(k71:levs)
    
@@ -1017,18 +1013,8 @@ module  wamphys_init_module
       
       CALL  interpol_wamz_down(nz_Jo2sf, z15,JJ_scale_factor , levs, zlog, &
                      o2_scale_factor , 1.0) 
-      if ( me == master ) then
-         print *, ' get_eff_zlog - performed ', kup, kdw
-	 do k=74, 90
-	   print *, 'effuv ', k, effuv(k), effuv17(k-73)
-	 enddo 
-	 do k=74, 90
-	   print *, 'effuv-z ', k, zlog(k), z17(k-73)
-	 enddo 
-	 do k=85, 149, 5
-	   print *, 'Jo2-z ', k, zlog(k), o2_scale_factor(k), SRBEFF(k)
-	 enddo	 	 
-      endif 	     
+
+     
       end  subroutine  get_eff_zlog
              
       subroutine wam_readno_snoewx(file, me, master)

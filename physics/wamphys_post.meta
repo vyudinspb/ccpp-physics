@@ -139,7 +139,15 @@
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  intent = inout 
+  intent = inout
+[dqdt]
+  standard_name = process_split_cumulative_tendency_of_tracers
+  long_name = updated tendency of the tracers
+  units = kg kg-1 s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_tracers)
+  type = real
+  kind = kind_phys
+  intent = inout     
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP

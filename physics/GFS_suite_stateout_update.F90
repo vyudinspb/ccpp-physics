@@ -9,7 +9,7 @@
 !> \section arg_table_GFS_suite_stateout_update_run Argument Table
 !! \htmlinclude GFS_suite_stateout_update_run.html
 !!
-    subroutine GFS_suite_stateout_update_run (im, levs, ntrac, dtp,  &
+    subroutine GFS_suite_stateout_update_run (me, master, im, levs, ntrac, dtp,  &
                      tgrs, ugrs, vgrs, qgrs, dudt, dvdt, dtdt, dqdt, &
                      gt0, gu0, gv0, gq0, ntiw, nqrimef, imp_physics, &
                      imp_physics_fer_hires, epsq, errmsg, errflg)
@@ -19,6 +19,8 @@
       implicit none
 
       ! Interface variables
+      integer,              intent(in )                   :: me
+      integer,              intent(in )                   :: master      
       integer,              intent(in )                   :: im
       integer,              intent(in )                   :: levs
       integer,              intent(in )                   :: ntrac
@@ -35,16 +37,26 @@
 
       character(len=*),     intent(out)                   :: errmsg
       integer,              intent(out)                   :: errflg
-
+      real(kind=kind_phys)                                :: ekin(im, levs) 
       integer                       :: i, k
       ! Initialize CCPP error handling variables
       errmsg = ''
       errflg = 0
-
+        if ( me == master ) then
+	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
+	    print *, ' tgrs-W3: ', maxval(tgrs), minval(tgrs)
+	    print *, ' ekin-W3: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)) 	   	    	    
+	endif
       gt0(:,:)   = tgrs(:,:)   + dtdt(:,:)   * dtp
       gu0(:,:)   = ugrs(:,:)   + dudt(:,:)   * dtp
       gv0(:,:)   = vgrs(:,:)   + dvdt(:,:)   * dtp
       gq0(:,:,:) = qgrs(:,:,:) + dqdt(:,:,:) * dtp
+      
+!        if ( me == master ) then
+!	    ekin = sqrt(gu0*gu0+gv0*gv0+ 1.e-5)
+!	    print *, ' tgrs-W4: ', maxval(gt0), minval(gt0)
+!	    print *, ' ekin-W4: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)) 	   	    	    
+!	endif      
       
       if (imp_physics == imp_physics_fer_hires) then
        do k=1,levs

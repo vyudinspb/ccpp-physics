@@ -18,10 +18,10 @@ contains
 !         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,    &	 
 !	 dtdt, dudt, dvdt, errmsg, errflg)
 
-     subroutine wamphys_post_run ( im, levs, do_wamphys_diag, dtf,                &
+     subroutine wamphys_post_run ( im, levs, do_wamphys_diag, dtf,           &
          dudt_wamph,  dvdt_wamph,  dtdt_wamph,  do1dt_wamph,  do2dt_wamph,   &
-         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,    &	 
-	 dtdt, dudt, dvdt,errmsg, errflg)
+         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,  &	 
+	 dtdt, dudt, dvdt,dqdt, errmsg, errflg)
 
 
 
@@ -42,8 +42,8 @@ contains
         real(kind=kind_phys), intent(inout),    dimension(:,:) :: dudt_wamph
         real(kind=kind_phys), intent(inout),    dimension(:,:) :: do1dt_wamph, do2dt_wamph 	
 	
-        real(kind=kind_phys), intent(inout), dimension(:,:) :: dtdt, dudt, dvdt
-
+        real(kind=kind_phys), intent(inout), dimension(:,:)    :: dtdt, dudt, dvdt
+        real(kind=kind_phys), intent(inout), dimension(:,:,:)  :: dqdt
         character(len=*),        intent(out) :: errmsg
         integer,                 intent(out) :: errflg
 

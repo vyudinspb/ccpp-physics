@@ -617,38 +617,38 @@
   kind = kind_phys
   dimensions = ()
   intent = in          
-[ugrs]
+[ugrsin]
   standard_name = x_wind
   long_name = zonal wind
   units = m s-1
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  intent = inout
-[vgrs]
+  intent = in
+[vgrsin]
   standard_name = y_wind
   long_name = meridional wind
   units = m s-1
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  intent = inout
-[tgrs]
+  intent = in
+[tgrsin]
   standard_name = air_temperature
   long_name = model layer mean temperature
   units = K
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  intent = inout
-[qgrs]
+  intent = in
+[qgrsin]
   standard_name = tracer_concentration
   long_name = model layer mean tracer concentration
   units = kg kg-1
   dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_tracers)
   type = real
   kind = kind_phys
-  intent = inout
+  intent = in
 [prsi]
   standard_name = air_pressure_at_interface
   long_name = air pressure at model layer interfaces
@@ -712,7 +712,15 @@
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  intent = inout 
+  intent = inout
+[dqdt]
+  standard_name = process_split_cumulative_tendency_of_tracers
+  long_name = updated tendency of the tracers
+  units = kg kg-1 s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_tracers)
+  type = real
+  kind = kind_phys
+  intent = inout   
 [dudt_iwamph]
   standard_name = instant_momentum_tendency_in_x_wind_due_to_wam_physics
   long_name = instantaneous zonal wind momentum tendency due to wam physics

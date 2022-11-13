@@ -134,21 +134,15 @@
 
 ! Mutual molecular diffusion of major thermospheric species O, O2, N2
 
-      call wam_tracer_m(im,levs,ntrac_i,grav,prsi,prsl,adt,dtp,     &
+      call wam_tracer_m(me, master,im,levs,ntrac_i,grav,prsi,prsl,adt,dtp,     &
           qin,am,dq1)
-       
+ 
 		
 ! O2 dissociation rate
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!no radiation!!!
       call wamphys_dissociation(im, levs, adt, cospass, n1, n2,  ozn,  n3,  &
                dayno, zg, grav,  f107,  f107d, Jrates_O2, Jrates_O3)
-!!           Jrates_O2(:,:) = 1.e-16
-!!	   Jrates_O3(:,:) = 0. 	       
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	   if (me == master .and. debug ) then
-	       print *, 'sik-Jo2 ', maxval(Jrates_O2), minval(Jrates_O2)
-	   endif    
 !
 ! Merge the  IPE back coupling WAM variable arrays into WAM.  ????   GO2DR => jrates_O2
 !
@@ -175,15 +169,18 @@
           enddo
         enddo
       enddo
-
-! Update number densities (mass density is conserved) and mean mass
+!
+! Update number densities and rho (nair= p/(kT) is conserved) and mean mass
+!        
+!
       do i=1,im
          do k=1,levs
             qn2=1.-q(i,k,ntqv)-q(i,k,nto3)-q(i,k,nto)-q(i,k,nto2)
-            am(i,k)=1./(qin(i,k,1)*rmo+qin(i,k,2)*rmo2+q(i,k,ntqv)*rmh2o+      & 
+            am(i,k)=1./(q(i,k,nto)*rmo+q(i,k,nto2)*rmo2+q(i,k,ntqv)*rmh2o+      & 
                 q(i,k,nto3)*rmo3+qn2*rmn2)
-            n1(i,k)=max(qin(i,k,1)*rho(i,k)*rmo,0.)
-            n2(i,k)=max(qin(i,k,2)*rho(i,k)*rmo2,0.)
+	    rho(i,k) =am(i,k)*nair(i,k)
+            n1(i,k)=max(q(i,k,nto)*rho(i,k)*rmo,0.)
+            n2(i,k)=max(q(i,k,nto2)*rho(i,k)*rmo2,0.)
             n3(i,k) =max(qn2*rho(i,k)*rmn2,0.)
             ozn(i,k)= max(q(i,k,nto3)*rho(i,k)*rmo3,0.)
          enddo
@@ -194,7 +191,7 @@
       return
       end subroutine wamphys_tracer_run
 
-      subroutine wam_tracer_m(im,levs,ntrac_i,grav,prsi,prsl,adt,  & 
+      subroutine wam_tracer_m(me, master,im,levs,ntrac_i,grav,prsi,prsl,adt,  & 
       dtp,qin,am,dq)
 
 ! Calculate tracer changes by mutual molecular diffusion of
@@ -209,7 +206,7 @@
       implicit none
 ! Argument
       integer, intent(in) :: im    ! number of long data points in fields
-  
+      integer, intent(in) :: me, master 
       integer, intent(in) :: levs  ! number of pressure levels
       integer, intent(in) :: ntrac_i ! number of tracer add by IDEA
       real(kind=kind_phys),    intent(in) :: dtp   ! time step in second
@@ -221,6 +218,7 @@
       real(kind=kind_phys), intent(in)   :: am(im,levs)   ! avg mass of mix  (kg)
       real(kind=kind_phys), intent(out):: dq(im,levs,ntrac_i) ! output tracer changes
 !local  variables
+
       real(kind=kind_phys) :: n1_i(levs+1),n2_i(levs+1),n3_i(levs+1),n_i(levs+1)
       real(kind=kind_phys) :: t_i(levs+1),am_i(levs+1),qout(im,levs,ntrac_i)
       real(kind=kind_phys) :: beta(2,2,levs+1),a(2,2,levs),b(2,2,levs),c(2,2,levs)
@@ -230,6 +228,11 @@
       real(kind=kind_phys) :: partb_i(levs+1),parta(levs),hold1,dtp1,hold2
       integer k,i,kk,kk1,in
 ! change unit from g/mol to kg
+!    if ( me == master ) then
+!	    print *, ' grav_molec_m ', maxval(grav(:,147)), minval(grav(:,147)) 
+!	    print *, ' am_molec_m ', maxval(am), minval(am) 
+!        endif
+
 
       mo=amo*1.e-3/avgd
       mo2=amo2*1.e-3/avgd
@@ -372,6 +375,10 @@
           enddo
         enddo
       enddo !i
+!      if ( me == master ) then
+!	    print *, ' dq,lev=147 ', maxval(dq(:,147,:)), minval(dq(:,147,:)) 
+
+!        endif
       return
       end subroutine wam_tracer_m
 
@@ -493,14 +500,22 @@
 
       real(kind=kind_phys), parameter:: dkeddy = 0.
       real(kind=kind_phys), parameter:: xmax = 15.
-      real(kind=kind_phys) :: keddy(levs+1),x
-
+      real(kind=kind_phys) :: keddy(levs+1),x, kedmax
+      
+!     skeddy0=140., skeddy_semiann=60., skeddy_ann=0.,
+!     tkeddy0=280., tkeddy_semiann=0., tkeddy_ann=0., 
 
       if(dkeddy <= 1e-10) then
-!         keddy(:) = skeddy0 
+
 ! Add semiannual variation
-          keddy(:) = skeddy0 +    &
-                    skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))
+!          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
+	  
+         do k=1,levs+1
+            x = alog(1e5/prsi(1,k))
+	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
+            keddy(k)= kedmax*exp(-((x-xmax)/dkeddy)**2)
+         enddo                    
+	 		    
       else
          do k=1,levs+1
 ! height in scale heights
@@ -562,8 +577,6 @@
       enddo
       end subroutine wam_tracer_eddy
 !
-!call wam_dissociation_jo2(im,levs,adt,cospass,n1,n2, ozn, n3,  &
-!               dayno,zg,grav, f107, f107d, Jrates_O2)
 !      
       subroutine wamphys_dissociation(im,  levs, te, cospass, o_n, o2_n, o3_n, n2_n, &
                 dayno, zg, grav,  f107, f107d, jo2rad, jo3rad)
@@ -639,14 +652,16 @@
 !          ho(k)=1.e3*rgas*t(k)/(amo*grav(i,k))     !m      
         enddo
 	
-!            jo2rad(i,1:levs) = 1.e-32	
-!	
 ! vay-next
 !
-       call wamphys_sheat_jrates(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
-           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, shsrc, shsrb, shlya,  &
-	   jo2_wrk, jo3_wrk)
+!       call wamphys_sheat_jrates(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
+!           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, shsrc, shsrb, shlya,  &
+!	   jo2_wrk, jo3_wrk)
 
+       call wamphys_jrates_shuveuv(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
+           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, sh2,                  &
+	   jo2_wrk, jo3_wrk)
+	   
 	  jo2rad(i,npsrad:levs) = jo2_wrk(npsrad:levs) 
           jo3rad(i,npsrad:levs) = jo3_wrk(npsrad:levs)
 

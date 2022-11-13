@@ -960,7 +960,7 @@ module  wamphys_init_module
       integer, parameter  ::  nz_63 = 63
       real(kind=kind_phys)                ::  pres63(nz_63), SRBEFF63(nz_63)
       real(kind=kind_phys)                ::  z63(nz_63) 
-        
+    
        DATA EFFEUV17/8*1.0,.75,.6,.62,.54,.49,.41,.33,.30,.30/   
        DATA EFFUV17/0.59, 0.59, 0.58, 0.57, 0.56, 0.52, 0.48, 0.43, &
                    .4,.4,.4,.39,.34,.26,.19,.17,.16/      
@@ -996,7 +996,7 @@ module  wamphys_init_module
 ! local
 !
       integer :: k, kup, kdw
-      				 
+ 			 
       do k=1, nz_euv
         p17(k)=5.2285*exp(1.-k)
         z17(k)=-log(p17(k))
@@ -1024,7 +1024,10 @@ module  wamphys_init_module
 	 enddo 
 	 do k=74, 90
 	   print *, 'effuv-z ', k, zlog(k), z17(k-73)
-	 enddo 	 
+	 enddo 
+	 do k=85, 149, 5
+	   print *, 'Jo2-z ', k, zlog(k), o2_scale_factor(k), SRBEFF(k)
+	 enddo	 	 
       endif 	     
       end  subroutine  get_eff_zlog
              
@@ -1197,11 +1200,11 @@ end  subroutine wamphys_idate_calendar
       real(kind=kind_phys) :: wcormag(im),   wcmorg(im)
    
       real(kind=kind_phys) :: cns, ss, cc,  ch, ty
-      real(kind=kind_phys) ::  pi2, dtr
+      real(kind=kind_phys) ::  pid2, dtr
       integer :: i
 !  compute cosine of solar zenith angle for both hemispheres.
       
-      pi2 = .5*pi
+      pid2 = .5*pi
       dtr=pi/180.
       
       utsec=solhr*3600.
@@ -1211,6 +1214,7 @@ end  subroutine wamphys_idate_calendar
         cc     = coslat(i) * cdec
         ch     = cc * cos(xlon(i)+cns)
         xmu(i) = ch + ss
+
       enddo
 !
 ! get solar declination angle
@@ -1232,7 +1236,7 @@ end  subroutine wamphys_idate_calendar
 ! inside interp_ionfield
 
       do i=1,im
-         maglat(i)= pi2-wcormag(i)*DTR
+         maglat(i)= pid2-wcormag(i)*DTR
       enddo	       
       return
       

@@ -915,7 +915,7 @@ module wamphys_math_interp
     subroutine spole_ion(im, rlat, phir,utsec, sda, phimr, essa, cmorg)
       use machine     , only : kind_phys
       implicit none
-      real(kind=kind_phys), parameter    :: pi=3.141592653,dtr=pi/180., pi2 = .5*pi
+      real(kind=kind_phys), parameter    :: pi=3.141592653,dtr=pi/180., pid2 = .5*pi
       
       integer,intent(in)                 :: im          ! number of longitude 
       real(kind=kind_phys),   intent(in) :: rlat(im)    !geo latitude (rad)
@@ -931,7 +931,7 @@ module wamphys_math_interp
       integer i
 !
       do i=1,im
-      th=pi2-rlat(i)
+      th=pid2-rlat(i)
 !
 ! set pole coord. for each hemis.
 !
@@ -963,7 +963,7 @@ module wamphys_math_interp
 !     ssp=360.-utsec/240.
       ssp=180.-utsec/240.
       sspr=ssp*dtr
-      csda=pi2-sda
+      csda=pid2-sda
       as1=cos(sspr)*sin(csda)
       bs1=sin(sspr)*sin(csda)
       cs1=cos(csda)

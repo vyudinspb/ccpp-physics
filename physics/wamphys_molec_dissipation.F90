@@ -1,4 +1,4 @@
-      subroutine wamphys_molec_dissipation(im, levs, grav, prsi, prsl, &       
+      subroutine wamphys_molec_dissipation(me, master, im, levs, grav, prsi, prsl, &       
                  adu,adv,adt, o_n, o2_n, n2_n, dtp, cp, rho)
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -13,6 +13,7 @@
       use machine ,     only : kind_phys
       implicit none
 ! Argument
+      integer, intent(in) :: me, master                         ! PE's: me & master
       integer, intent(in) :: im                                 ! number of horiz dim
 
       integer, intent(in) :: levs                               ! number of pressure levels
@@ -38,7 +39,7 @@
       real(kind=kind_phys) :: up(im,levs,3),dudt(im,levs,3) 
       real(kind=kind_phys) :: ahs_i(im,levs+1),ma_i(im,levs+1),dudt3(im,levs) 
       
-      integer k, i ,mpi_id
+      integer :: k, i ,mpi_id
 !
       do k=1,levs
         do i=1,im
@@ -58,13 +59,23 @@
       do k=1,levs
 
         do i=1,im
-          dudt(i,k,3)=dudt(i,k,3) + dudt3(i,k)    
+!          dudt(i,k,3)=dudt(i,k,3) + dudt3(i,k)    
     
           adu(i,k)=adu(i,k)+dudt(i,k,1)*dtp
           adv(i,k)=adv(i,k)+dudt(i,k,2)*dtp
-          adt(i,k)=adt(i,k)+dudt(i,k,3)*dtp  
+          adt(i,k)=adt(i,k)+(dudt(i,k,3)+dudt3(i,k))*dtp  
         enddo
       enddo
+      
+      return
+      
+!        if (me == master) then
+!	 do k=100,levs
+!               do i=1,1
+!	         print *, ' DTDt-MC',  k, adt(i,k), dudt(i,k,3)*dtp 
+!	       enddo
+!	 enddo      	
+!	endif
       return
       end subroutine wamphys_molec_dissipation
 !
@@ -90,7 +101,7 @@
       integer, intent(in) :: im    ! number of data points in up,dudt(first dim)
       integer, intent(in) :: levs  ! number of pressure levels
       
-      real(kind=kind_phys),    intent(in) :: dtp   ! time step in second
+      real(kind=kind_phys), intent(in)    :: dtp   ! time step in second
       
       real(kind=kind_phys), intent(in)    :: prsi(im,levs+1) ! interface pressure in KPa
       real(kind=kind_phys), intent(in)    :: prsl(im,levs)   ! layer pressure in KPa
@@ -104,11 +115,10 @@
       real(kind=kind_phys), intent(in)    :: up(im,levs,3)      ! input  u v t at dt=0
       real(kind=kind_phys), intent(out)   :: ahs_i(im,levs+1)   ! inverse of scale height 
       real(kind=kind_phys), intent(out)   :: ma_i(im,levs+1)    ! mean mass 
-      real, intent(out)   :: dudt(im,levs,3)    ! u,v,t tendency
-     
-
-      !  
+      real(kind=kind_phys), intent(out)   :: dudt(im,levs,3)    ! u,v,t tendency
+       
 ! Local variables
+
       real(kind=kind_phys) :: o_ni(levs+1),o2_ni(levs+1),n2_ni(levs+1)
       real(kind=kind_phys) :: mu_i(levs+1),la_i(levs+1),cp1(levs)
       real(kind=kind_phys) :: ac(levs),cc(levs),ec_i(levs+1),dc_i(levs+1)
@@ -130,7 +140,7 @@
       ac(1)=0.
       cc(levs)=0.
       dtp1=1./dtp
- 
+
 !
 ! for each longitude
 !
@@ -211,7 +221,7 @@
             dc_i(k)=(cc(k)*dc_i(k+1)+up(i,k,kk))*hold1 
           enddo
           dudt(i,1,kk)=(dc_i(1)-up(i,1,kk))*dtp1
-	  dudt(i,1,kk)= 0.
+!vay	  dudt(i,1,kk)= 0.
 ! recompute dc_i
           do k=2,levs
             dc_i(k)=dc_i(k)+ec_i(k)*dc_i(k-1)
@@ -275,14 +285,15 @@
       real (kind=kind_phys), parameter:: dkeddy = 2.     !  (100)**(0.5)= 10, 10/8=1.25, 10/6= 1.6  about 2??
       real (kind=kind_phys), parameter:: dkeddy3= 2.3    !  0.07, 14/6 = 2.3 
       real (kind=kind_phys), parameter:: xmax =  17      !  scale height, about 105km
-      real(kind=kind_phys) :: keddy(levs+1), x
+      
+      real (kind=kind_phys) :: keddy(levs+1), x
 ! 
 ! Local variables
 
 ! locals, updated variable of T(kinetic temp-re) and potential temperature.
 
       real(kind=kind_phys) :: adt(levs)        ! kin-c temp-re K, solver for potential temp. 
-      real(kind=kind_phys) :: adtpt(levs)         ! potential temp.
+      real(kind=kind_phys) :: adtpt(levs)      ! potential temp.
 
 !     local variables, same convention with Valery's idea_vert_diff.f
 

@@ -252,8 +252,8 @@ contains
 	  oro, solhr,slag,sdec,cdec, coszen, htrsw, htrlw,                     &
 	  f107, f107d, kp, kpa,                                                &
 	  nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden,               &	 
-          ugrs, vgrs, tgrs, qgrs, prsi, prsl, prslk, phii, phil,               &
-          dudt, dvdt, dtdt, dudt_iwamph, dvdt_iwamph, dtdt_iwamph,             &
+          ugrsin, vgrsin, tgrsin, qgrsin, prsi, prsl, prslk, phii, phil,       &
+          dudt, dvdt, dtdt, dqdt, dudt_iwamph, dvdt_iwamph, dtdt_iwamph,       &
 	  do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	 
           gzmt, gmmt, gjhr, gshr, go2dr, errmsg, errflg)
 	  
@@ -303,8 +303,8 @@ contains
     
     real(kind=kind_phys),  intent(in), dimension(im, levs) ::	htrsw, htrlw  
      
-    real(kind=kind_phys),intent(inout), dimension(im, levs)        ::  ugrs,vgrs, tgrs   	
-    real(kind=kind_phys),intent(inout), dimension(im, levs, ntrac) :: 	 qgrs    
+    real(kind=kind_phys),intent(inout), dimension(im, levs)        ::  ugrsin,vgrsin, tgrsin   	
+    real(kind=kind_phys),intent(inout), dimension(im, levs, ntrac) :: 	 qgrsin    
           
     real(kind=kind_phys) , intent(in)                     ::   prsi(im,levs+1)
     real(kind=kind_phys) , intent(in)                     ::   phii(im, levs+1)        
@@ -317,8 +317,8 @@ contains
 
 !    real, intent(inout), dimension(im,lowst_ipe_level:levs)  ::        gzmt, gmmt, gjhr, gshr, go2dr
     	 
-    real(kind=kind_phys), intent(inout),dimension(im, levs)   ::	dudt, dvdt, dtdt
-    
+    real(kind=kind_phys), intent(inout),dimension(im, levs)         ::	dudt, dvdt, dtdt
+    real(kind=kind_phys), intent(inout),dimension(im, levs,ntrac)   ::	dqdt    
     
     real(kind=kind_phys)                      ::        rdtp
     character(len=*),        intent(out) :: errmsg
@@ -326,7 +326,8 @@ contains
     	
          
 ! WAM-diagnostics (out)
-
+ 
+	    
          real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_iwamph, dvdt_iwamph,   dtdt_iwamph
          real(kind=kind_phys), intent(out), dimension(im, levs) :: do1dt_iwamph, do2dt_iwamph, dqdt_iwamph
 	 
@@ -337,7 +338,9 @@ contains
 !         real(kind=kind_phys), dimension(im, levs) ::	ion_jh, ion_drx, ion_dry
 !         real(kind=kind_phys), dimension(im, levs) ::	no_snoe2d,el2d, sped2d, shal2d  
 !         real(kind=kind_phys), dimension(im, levs) ::  dt_qsrc, dt_qsrb, dt_qlya,amu2d, jo2_out
-	 
+
+    real(kind=kind_phys), dimension(im, levs)        ::  ugrs,vgrs, tgrs   	
+    real(kind=kind_phys), dimension(im, levs, ntrac) ::  qgrs  	 
 !==========================================================
 ! local variables
 !==========================================================
@@ -378,6 +381,7 @@ contains
        real(kind=kind_phys)  ::  kappa(im, levs)                 ! mid-lev values k=R/cp for eddy heat cond
        real(kind=kind_phys)  ::  exner_i(im, levs+1), exner(im,levs) !   (1.e5/P)^(R/Cp)
        real(kind=kind_phys)  ::   amu2d(im, levs),   jo2_out(im,levs)
+       real(kind=kind_phys)  ::   ekin(im, levs)      
 !        
 ! geo-solar-related vars
        real(kind=kind_phys)  :: utsec,   sda
@@ -407,11 +411,17 @@ contains
 ! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
 !=========================================================================
    if (.not.do_wamphys_diag) return 
+   
 	dudt = 0.
 	dvdt = 0.
         dtdt = 0.
-
-
+        dqdt(:,:,:) =0.
+	
+        tgrs = tgrsin
+	ugrs = ugrsin
+	vgrs = vgrsin
+	qgrs = qgrsin
+	
     if (do_wamphys_diag) then
 !
        do1dt_iwamph(:,:) =qgrs(:,:, nto1)
@@ -423,7 +433,9 @@ contains
     endif   
   
         if ( me == master ) then
-	    print *, ' tgrs-W1: ', maxval(tgrs), minval(tgrs) 
+	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
+	    print *, ' tgrs-W1: ', maxval(tgrs), minval(tgrs), kdt 
+	    print *, ' ekin-W1: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)), kdt 	    
         endif
 
       
@@ -493,7 +505,7 @@ contains
        call wam_get_cp(im, levs,  ntrac, qgrs,  cp)     
 !=========================
 
-      call wamphys_molec_dissipation(im, levs,grav,prsi,prsl,  &
+      call wamphys_molec_dissipation(me, master, im, levs,grav,prsi,prsl,  &
                    ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho)	
      	   
        call wamrad_o3prof(im, levs,ntrac, nto3,  qgrs ,am, nair, o3_ng)
@@ -597,13 +609,21 @@ contains
  
  			      
         if ( me == master ) then
-	    print *, ' tgrs-W2: ', maxval(tgrs), minval(tgrs) 
-!	    print *, ' ugrs: ', maxval(ugrs), minval(ugrs) 
+	    ekin = sqrt(vgrs*vgrs+ugrs*ugrs+ 1.e-5)
+	    print *, ' tgrs-W2: ', maxval(tgrs), minval(tgrs), kdt 
+	    print *, ' ekin-W2: ', maxval(ekin(:,90:148)), minval(ekin(:,90:148)), kdt 	    
+	    
 !	    print *, ' vgrs: ', maxval(vgrs), minval(vgrs) 	    	    
 	endif	
-	
+       rdtp = 1./dtp	
+       
+       dudt = dudt + (ugrs -ugrsin)*rdtp
+       dvdt = dvdt + (vgrs -vgrsin)*rdtp  
+       dtdt = dtdt + (tgrs -tgrsin)*rdtp 
+       dqdt = dqdt + (qgrs -qgrsin)*rdtp 
+                           
 	if (do_wamphys_diag) then
-       rdtp = 1./dtp
+ 
        do1dt_iwamph(:,:) = (qgrs(:,:, nto1)  -do1dt_iwamph(:,:))*rdtp
        do2dt_iwamph(:,:) = (qgrs(:,:, nto2) -do2dt_iwamph(:,:))*rdtp
        dqdt_iwamph (:,:) = (qgrs(:,:, nto3) -dqdt_iwamph(:,:))*rdtp

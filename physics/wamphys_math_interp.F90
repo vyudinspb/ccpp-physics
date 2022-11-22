@@ -472,7 +472,7 @@ module wamphys_math_interp
       real(kind=kind_phys), intent(out)   :: yout(nout)
       integer,intent(out) ::  kup      ! zout(kout) > zin(1) = 150 km. zin(nin)=100.
       integer,intent(out) ::  kdw         
-      integer             :: dxin      ! top => bot dxin < 0; bot => top dxin > 0
+      real(kind=kind_phys):: dxin      ! top => bot dxin < 0; bot => top dxin > 0
 !-----------------------------------------------------------------------
 !       ... local variables 
 !-----------------------------------------------------------------------
@@ -517,8 +517,8 @@ module wamphys_math_interp
 !
       ENDIF
       end subroutine interpol_wamz
-      
-      subroutine interpol_wamz_down( nin, xin, yin, nout, xout, yout, down )
+!                 interpol_wamz_down(nz_63, z63, SRBEFF63, levs, zlog, SRBEFF, 1.0)      
+      subroutine interpol_wamz_down( nin,  xin, yin,      nout, xout, yout,  down )
 !-----------------------------------------------------------------------
 !       ... linear interpolation in vertical
 !           does not extrapolate, but repeats edge values
@@ -533,7 +533,7 @@ module wamphys_math_interp
       real(kind=kind_phys), intent(in)    :: down      ! zeroes below
       real(kind=kind_phys), intent(out)   :: yout(nout)
       integer             ::  kup      ! zout(kout) > zin(1) = 150 km. zin(nin)=100.
-      integer             :: dxin      ! top => bot dxin < 0; bot => top dxin > 0
+      real(kind=kind_phys):: dxin      ! top => bot dxin < 0; bot => top dxin > 0
 !-----------------------------------------------------------------------
 !       ... local variables 
 !-----------------------------------------------------------------------

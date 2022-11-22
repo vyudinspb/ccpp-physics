@@ -293,7 +293,7 @@
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: grav
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: xcp     
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: exner  
-     real(kind=kind_phys), dimension(im,levs),     intent(out)   :: exner_i  
+     real(kind=kind_phys), dimension(im,levs+1),   intent(out)   :: exner_i  
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: rdel  
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: kappa   
 !

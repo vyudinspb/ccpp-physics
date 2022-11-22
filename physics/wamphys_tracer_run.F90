@@ -499,6 +499,7 @@
 
 
       real(kind=kind_phys), parameter:: dkeddy = 0.
+      real(kind=kind_phys), parameter:: dx = 2.    
       real(kind=kind_phys), parameter:: xmax = 15.
       real(kind=kind_phys) :: keddy(levs+1),x, kedmax
       
@@ -508,19 +509,20 @@
       if(dkeddy <= 1e-10) then
 
 ! Add semiannual variation
-!          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
-	  
-         do k=1,levs+1
+!          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))   ! WAM-GSM
+
+              do k=1,levs+1
             x = alog(1e5/prsi(1,k))
 	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
-            keddy(k)= kedmax*exp(-((x-xmax)/dkeddy)**2)
+            keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5 
+           
          enddo                    
 	 		    
       else
          do k=1,levs+1
 ! height in scale heights
             x = alog(1e5/prsi(1,k))
-            keddy(k)= skeddy0*exp(-((x-xmax)/dkeddy)**2)
+            keddy(k)= skeddy0*exp(-((x-xmax)/dx)**2) +.5 
          enddo
       endif
 !-----------------------------------------------------------------------

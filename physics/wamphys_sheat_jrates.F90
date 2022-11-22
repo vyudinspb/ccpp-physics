@@ -837,7 +837,7 @@
      
       chi  = acos(coschi)
       schi = sin(chi)
-
+      chid = chi*r_2_d
       if(chid.gt.75. .and. chid .lt. 105.) then
 
           rad_to_z = ht/scale_ht
@@ -899,10 +899,10 @@
 ! daytime
 !
       rnight=1.0 
-      if(chid.le.75.) then 
-          seco = 1./coschi
-          return
-       endif   
+!      if(chid.le.75.) then 
+!          seco = 1./coschi
+!          return
+!       endif   
         
 ! calculate chapman for angles over 75-105 degrees  
 ! spherical lighting
@@ -927,13 +927,18 @@
         seco = sqrt(pid2 * rad_to_z)*    &                  
              ( sqrt(schi)*exp(rad_to_z*(1-schi)) -0.5*erfcL)
 !         write(6,*)'chapman over 90', chid,chapmann
-         endif
+        endif
+
+       else        ! out [75-105 degrees]range
+!                    CHAPMANN-SECO ~  sec(zenith angle)
+         seco = 1./coschi
+      
 
       endif
 !
 ! full-night
 !       
-       if(seco < 0.) then
+       if(seco.lt.0.) then
        
           rnight=nfac        ! nightfac=1.e-9
           seco=1.            ! seco = should be "nightfac" seco_night =1*nightfac

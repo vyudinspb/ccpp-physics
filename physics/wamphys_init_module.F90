@@ -601,7 +601,7 @@ module  wamphys_init_module
 	  k41=levs
 	  k64 = levs
 	  k43 =levs
-          do k=1,levs-10
+          do k=2,levs-10
           if(prlog(k).ge.prlog150(41).and.prlog(k-1).lt.prlog150(41))   k41=k
           if(prlog(k).ge.prlog150(71).and.prlog(k-1).lt.prlog150(71))   k71=k
           if(prlog(k).le.prlog150(110).and.prlog(k+1).gt.prlog150(110)) k110=k
@@ -988,6 +988,17 @@ module  wamphys_init_module
         -11.7589119, -12.0922453,  -12.4255786, &
         -12.758912,  -13.0922453,  -13.4255787, &
         -13.758912/
+	
+        data srbeff63/1.000,1.000,1.000,1.000,1.000,  &                  
+        1.000,1.000,1.000,1.000,1.000,1.000,  &                             
+        1.000,1.000,1.000,.980,.983,.982,     &                               
+        .970,.945,.913,.880,.852,.832,.820,   &                              
+        .817,.816,.810,.795,.777,.765,.764,   &  
+        .759,.730,.664,.579,.500,.446,.416,   &  
+        .400,.393,.390,.390,.391,.391,.390,   &  
+        .388,.384,.380,.375,.366,.350,.324,   &  
+        .291,.260,.234,.214,.200,.190,.184,   &  
+        .180,.176,.173,.170/	
 !
 ! local
 !
@@ -1008,7 +1019,7 @@ module  wamphys_init_module
       		       
       CALL  interpol_wamz( nz_euv, z17, effuv17,  levs, zlog, effuv,  kup,kdw)
       CALL  interpol_wamz( nz_euv, z17, effeuv17, levs, zlog, effeuv, kup,kdw) 
-      
+    
       CALL  interpol_wamz_down(nz_63, z63, SRBEFF63, levs, zlog, SRBEFF, 1.0) 
       
       CALL  interpol_wamz_down(nz_Jo2sf, z15,JJ_scale_factor , levs, zlog, &

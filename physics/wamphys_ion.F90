@@ -127,9 +127,7 @@
         btot,dipang,maglon,maglat,essa,swbt,swang,swvel,swbz,swden,     &
         dudt,dvdt,jh) 
 
-        
-!       print *, 'f107=  ', f107, 'f107d=  ', f107d
-!       print *, 'nhp=  ', nhp, 'nhpi=  ', nhpi
+
 
 
 ! update to ........ k/sec
@@ -153,7 +151,7 @@
              st_fac = (jh_st0+jh_st1)/(jh_st0+ abs(vbz))
           endif
 	  
-           st_fac = 1.
+!!           st_fac = 1.
 	   jh_fac=jh_fac*st_fac
         do k=1,levs
 	   rrho = 1./rho(i,k)

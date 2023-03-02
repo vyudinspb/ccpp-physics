@@ -6,7 +6,7 @@
   use physcons, only: con_pi 
   use wam_efieldw05_read_data
   use wam_efield_setdef_data
-  use wamphys_common, only : rad2deg=>rad_to_deg, deg2rad=>deg_to_rad
+  use wamphys_const, only : rad2deg=>rad_to_deg, deg2rad=>deg_to_rad
   use wamphys_math_interp, only :interpol_quad
       implicit none
       
@@ -75,10 +75,10 @@
       real(kind_phys)              :: glat, glatu, glatd, delx
       real(kind_phys)              :: epotu, epotd, epote, epotw
       real(kind_phys)              :: epx, epy, phir, cphi, sphi
-
+      real(kind_phys)              :: xerz
       
-      delx = radi * 2.0 * dellat * rad2deg 
-
+!      delx = radi * 2.0 * dellat * rad2deg 
+      xerz=radi*2.0*dellt*15.0*deg2rad
       epot = 0.
 
  mlt_loop: do l = 1, 180 
@@ -91,7 +91,7 @@
           glat  = 90.0 - (m-1.0)*2.0
           glatu = glat + dellat
           glatd = glat - dellat
-          dely  = radi*cos(glat*rad2deg)*2.0*dellt*15.0*rad2deg
+          dely  = xerz*cos(glat*deg2rad)
 
           call EpotVal_new(glat,  gmlt, epot(m,l))
 
@@ -289,7 +289,7 @@ end subroutine get_elec_field
 ! Local:
         integer :: j,m,inside,skip
         real(kind_phys) :: phim(2),cospm(2),sinpm(2),cfactor
-        real(kind_phys) :: re,z,phir,plm,colat,nlm
+        real(kind_phys) :: re,z,phir,plm,colat,nlm, ppi
 !
         re = 6371.2 + 110. ! km radius (allow default ht=110)
 !
@@ -329,8 +329,9 @@ end subroutine get_elec_field
             endif
           endif
         enddo jloop ! j=1,csize
-        
-        cfactor = -1.e5/(4.*pi*re**2) ! convert to uA/m2
+!        ppi = 4.*atan(1.)
+        cfactor = -1.e5/(4.*con_pi*re**2) ! convert to uA/m2
+!        cfactor = -1.e5/(4.*ppi*re**2) 
         z = z*cfactor
         mpmpfac = z
 !   write(iulog,"('mpfac: lat=',f8.3,' mlt=',f8.3,' mpmpfac=',1pe12.4)") lat,mlt,mpmpfac

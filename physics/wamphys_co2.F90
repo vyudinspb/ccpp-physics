@@ -12,7 +12,7 @@
       
       use physcons, only : amo2=>con_amo2, amo3=>con_amo3, amh2o=>con_amw
       
-      use wamphys_const,       only : amo=>con_amo2, amn2=>con_amn2
+      use wamphys_const, only : amo=>con_amo, amn2=>con_amn2
       use wamphys_init_module, only : prlog, k43
       implicit none
 ! Argument
@@ -29,7 +29,7 @@
       real(kind=kind_phys), intent(in)    :: grav(im,levs)    ! g (m/s2)
       real(kind=kind_phys), intent(in)    :: co2my(levs)     
       real(kind=kind_phys), intent(in)    :: cosz(im)    !cos solar zenith angle 
-!hmhj char(kind=kind_phys)acter*(*), intent(in) ::   dir    ! directory located coef files
+
       real(kind=kind_phys), intent(out)   :: dtdt(im,levs)    ! cooling rate k/s
       real(kind=kind_phys), intent(out)   :: dtdth(im,levs)    ! heating rate k/s
 !
@@ -58,7 +58,7 @@
 !     print*,'www2',im,q_o(1:im1,nlev)
 ! CO2 cooling
       call wam_co2cc(im, prlog,adt,levs,prlog(k43),     &                  
-                dtdt(1,k43),nlev,ma,q_o,q_o2,q_n2, co2my)
+                dtdt(1,k43),nlev,ma,q_o,q_o2,q_n2, co2my(k43))
 ! J/kg/s to k/s
       do i=1,im
         do k=k43,levs

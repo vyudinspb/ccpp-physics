@@ -277,7 +277,7 @@ contains
     use wamphys_init_module, only : spw_drivers, swin_drivers
     
     use wamphys_init_module, only : f107_fix, f107a_fix, kp_fix, kpa_fix
-
+    use wamphys_init_module, only : bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden
     use wamphys_ion,         only : wam_ion_run
 !    use efield_wam, only          :  iday,iyear,iday_m,imo    
     implicit none
@@ -297,8 +297,8 @@ contains
     real(kind=kind_phys),intent(in), dimension(im) :: area, oro, coszen  
 	  
     real(kind=kind_phys), intent(in)  :: solhr, slag, sdec, cdec
-  
-    real(kind=kind_phys) , intent(in) :: nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden 	 
+    real(kind=kind_phys) , intent(in) :: nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden   
+ 
     real(kind=kind_phys),  intent(inout)  ::  f107, f107d, kp, kpa 
     
     real(kind=kind_phys),  intent(in), dimension(im, levs) ::	htrsw, htrlw  
@@ -344,7 +344,6 @@ contains
 !==========================================================
 ! local variables
 !==========================================================
-    real(kind=kind_phys)  :: bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden
      	   
     real(kind=kind_phys), dimension(im, levs) ::	wtot
       
@@ -562,20 +561,7 @@ contains
 
 
        endif
-!
-! fixed solar/geo parameters
-!      
-    bnhp=27.42402
-    bnhpi= 7   
-    bshp =33.016
-    bshpi =7
-    bswbt =6.670438
-    bswang =213.0435
-    bswvel =450.7061
-    bswbz =-3.442665
-    bswden =6.949437      
-! 
-   
+
 	    
       call wam_ion_run(im, levs, jdat, prsl, solhr,cospass,zgeo, grav, o_n,o2_n,n2_n, &
             cp, ugrs, vgrs, tgrs,dudt_ion,dvdt_ion,dtdt_ion,rho,xlat,xlon,            &

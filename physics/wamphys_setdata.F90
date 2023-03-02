@@ -789,7 +789,7 @@ end module wamphys_set_data_vg150
  subroutine set_readcoef
       implicit none
       real(kind=kind_phys) :: step, stpr, r2d
-      r2d = con_pi/180.
+      r2d = 180./con_pi
       STEP = 10.
       STPR = STEP/6671.
       STPD = STPR * R2D
@@ -798,7 +798,7 @@ end module wamphys_set_data_vg150
       SSTP = SQRT (1. - CSTP*CSTP)
       ALAMN = 45.
       ALAMX = 90. - STPD
-      ALAMR = ALAMN * r2d
+      ALAMR = ALAMN / r2d
       
     end subroutine set_readcoef
     
@@ -1155,9 +1155,19 @@ end module wam_efield_setdef_data
 ! h2oc.f  
 ! h2ohdc.f
 ! co2hc.f
-!w05sc_efield_merge.f
-!efield.f
+!
 ! wamphys_init_module.F90
-! wamphys_setdata.F90
+! wamphys_setdata.F90  !efield.f w05sc_efield_merge.f
+!                      module wam_efieldw05_read_data
+!                      module wam_efield_setdef_data
+!                      sub read_acoef_efield sub efread_acoef
+!
+!wamphys_weimer2005.F90
+!       w05sc_efield_merge.f
+!       wamphys_weimer2005.F90:  use wam_efieldw05_read_data
+!      wamphys_weimer2005.F90:  use wam_efield_setdef_data
+
 ! wamphys_math_interp.F90
 ! efield.f
+!
+!wamphys.F90:!    use efield_wam, only          :  iday,iyear,iday_m,imo 

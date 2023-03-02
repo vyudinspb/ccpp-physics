@@ -50,6 +50,7 @@
 !
       dtc(:,:)=0.
       dth(:,:)=0.
+      
 !
 ! VAY-2016: don't need to zero "dtc" and "dth" by "special" loops below
 !
@@ -61,7 +62,7 @@
 ! VAY-2016 with NRL H2O_phys no needs to scale H2O > k71  check it later
 !
       do i=1,im
-        rate=adr(i,k71,nth2o)/h2ora(k71)
+           rate=adr(i,k71,nth2o)/h2ora(k71)
           do k=1,nlev
             k1=k41-1+k
               if(k1.le.k71-1) then
@@ -69,11 +70,11 @@
               else
                 h2ommr(k)=rate*h2ora(k1)     ! h2ora .... global Profile of H2O ???
               endif
-            adrn2=1.-adr(i,k1,nto)-adr(i,k1,nto2)-adr(i,k1,nto3)-adr(i,k1,nth2o)
+	     h2ommr(k)=max(h2ommr(k), mmr_min)  
+            adrn2=1.-adr(i,k1,nto)-adr(i,k1,nto2)-adr(i,k1,nto3)-h2ommr(k)
             ggg(k)=grav(i,k1)
             mu(k)=1./(adr(i,k1,nto)/amo+adr(i,k1,nto2)/amo2+    &             
-                   adr(i,k1,nth2o)/amh2o+adr(i,k1,nto3)/amo3+adrn2/amn2)
-            h2ommr(k)=max(h2ommr(k), mmr_min)
+                   h2ommr(k)/amh2o+adr(i,k1,nto3)/amo3+adrn2/amn2)	    
           enddo
          dthi(1:nlev)=0.
 ! get heating
@@ -92,9 +93,9 @@
         do k=k100+1,k105-1
            dth(i,k)=dth(i,k)*(prlog(k105)-prlog(k))/dx
         enddo
-!  vay      do k=k105,levs
-!           dth(i,k)=0.
-!           enddo
+       do k=k105, levs
+           dth(i,k)=0.
+       enddo
       enddo
       
 ! cooling
@@ -102,6 +103,7 @@
 !
 
       prpa(1:nlevc)=pmb(k71:levs)
+      
       do i=1,im
         rate=adr(i,k71,nth2o)/h2ora(k71)
           do k=1,nlevc
@@ -109,12 +111,13 @@
              h2ommrc(k)=max(h2ommrc(k),mmr_min)
              temp(k)=adt(i,k+k71-1)
           enddo
-	  
+	  qr(1:nlevc) = 0.
+	  qv(1:nlevc) = 0.
         call wam_h2occ(temp,pmb(k71:levs),h2ommrc,qr,qv,nlevc,     &
 	 gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71), dg1vb(k71),&
 	 dg2vb(k71), gdp(k71),xx(k71),wvmmrc(k71),coeff(k71)  )	
 	 
-	do k=k71, levs	 
+	do k=k71, k105	 
 	  dtc(i,k)= qr(k+1-k71)+qv(k+1-k71) 
 	enddo	
 

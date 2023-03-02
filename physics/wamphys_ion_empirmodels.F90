@@ -506,7 +506,7 @@
       q=qiont(i)/(0.92*n2n(i)+1.5*o2n(i)+0.56*on(i))
       qiont_o(i)=(0.5*o2n(i)+0.56*on(i))*q
       qiont_o2(i)=o2n(i)*q
-
+      qiont_N2(i)=0.92*n2n(i)*q
       endif
  2000 continue
 

@@ -164,7 +164,7 @@
 !           q(i,k,nto) = q(i,k,nto)+dq1(i,k,1)+dq2(i,k,1)+dq3(i,k,1)
 !	   q(i,k,nto2)= q(i,k,nto2)+dq1(i,k,2)+dq2(i,k,2)+dq3(i,k,2)
 
-            q(i,k, i2)= q(i,k,i2)+dq1(i,k,in)+dq2(i,k,in)+dq3(i,k,in)
+            q(i,k, i2)= q(i,k,i2) +dq1(i,k,in)+dq2(i,k,in)+dq3(i,k,in)
 
           enddo
         enddo

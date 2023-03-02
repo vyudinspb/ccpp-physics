@@ -33,12 +33,10 @@
       real(kind=kind_phys), intent(inout) :: adu(im,levs)       ! u
       real(kind=kind_phys), intent(inout) :: adv(im,levs)       ! v
 
-      
-       
 ! Local variables
       real(kind=kind_phys) :: up(im,levs,3),dudt(im,levs,3) 
       real(kind=kind_phys) :: ahs_i(im,levs+1),ma_i(im,levs+1),dudt3(im,levs) 
-      
+      real(kind=kind_phys) :: dtdt_emcond     
       integer :: k, i ,mpi_id
 !
       do k=1,levs
@@ -59,11 +57,12 @@
       do k=1,levs
 
         do i=1,im
-!          dudt(i,k,3)=dudt(i,k,3) + dudt3(i,k)    
+          dtdt_emcond=dudt(i,k,3) + dudt3(i,k)    
     
           adu(i,k)=adu(i,k)+dudt(i,k,1)*dtp
           adv(i,k)=adv(i,k)+dudt(i,k,2)*dtp
-          adt(i,k)=adt(i,k)+(dudt(i,k,3)+dudt3(i,k))*dtp  
+          adt(i,k)=adt(i,k)+ dtdt_emcond*dtp  
+
         enddo
       enddo
       

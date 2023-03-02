@@ -54,7 +54,8 @@
 	  
           wh = dtco2c(i,k)+dth2oc(i,k)+dtco2h(i,k)+dth2oh(i,k)+dto3(i,k)+dtrad(i,k)
           wl = hlw(i,k) + swh(i,k)*xmu(i)
-!	                                        rad_low(i,k) = wl
+!!!!!!!!!
+!11111	                                        rad_low(i,k) = wl
 !	                                        rad_wam(i,k) = wh
           if(xk < xb) then
              wtot(i,k) = wl
@@ -205,13 +206,11 @@
 ! new diag-arrays	  
 !
           dtdt_euv(i,k)=sh1(k)*rcpro
-	  
-!          dtdt_uvr(i,k)=(shsrc(k)+shsrb(k)+shlya(k))*rcpro
-
           dtdt_uvr(i,k)=sh2(k)*rcpro
 	  dtdt_qno(i,k) =qno(k)*rcpro
 !net q
-          dtrad(i,k)=(sheat(k)-qno(k))*rcpro
+!         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
+          dtrad(i,k)=(sh1(k)+sh2(k)-qno(k))*rcpro
 ! 
         enddo ! k
 	        
@@ -219,278 +218,13 @@
 	   dtdt_euv(i,k)= 0.
 	   dtdt_uvr(i,k)= 0.
 	   dtdt_qno(i,k) =0.
-	   dtrad(i,k)=0.
+	   dtrad(i,k)    =0.
 	  enddo
         enddo                 !i 	  
 	return
 	      
       end  subroutine wamphys_heat_uveuv
-!=======================      
-! NO-coooling related: wam_getno1d & wamphys_coolno1d
-!=======================      	   
-      subroutine wam_getno1d(levs,f107in,kpain,mlatrad,doy,alt,pr, nair, am, no)
-!      
-! S. I. Karol May 2022 ccpp-version of idea_getno_snoe.f
-!
-! Oct 2016 VAY: new interface  getno1d ... mozaic of bugs in 2012-14 versions of WAM
-!               (a) rad/deg (b) pr(cb) but expected in Pa (c) no-NO for lat > 80deg
-!               (d) dangerous interp-n and DATA for eofs etc...tropical NO ????
-!
-! Mar 2018 Zhuxiao Li and Tzu-Wei Fang,read in the 24hr ave kp (kpa)
-!       from driving parameters file instead of reading kp.  ??? REASONS
-!
-       use wamphys_math_interp, only : interpol_wamz
-       use wamphys_init_module, only : eof => no_eof, nom => no_m, z16 => no_zkm, lat33 => no_mlat
-       use wamphys_init_module, only : no_ny33, no_nz16, amno       
-       use  wamphys_const,      only : pi, pi2, con_nzero, d2r => dtr, r2d => r_2_d
-       use machine,           only : kind_phys         
-!
-      implicit none
-! input
-      integer, intent(in)  :: levs         !number of pressure level
-      integer, intent(in)  :: doy          ! day of year from 1 to 365   
-
-      real(kind_phys),    intent(in)  :: f107in       !f10.7 index instant 
-      real(kind_phys),    intent(in)  :: kpain        ! 24hr average kp index
-      real(kind_phys),    intent(in)  :: mlatrad      ! magnetic latitude in radians
-
-      real(kind_phys),    intent(in)  :: alt(levs)    ! in km wam
-      real(kind_phys),    intent(in)  :: pr(levs)     ! in pa
-      real(kind_phys),    intent(in)  :: am(levs)     ! avg mass g/mol
-      real(kind_phys),    intent(in)  :: nair(levs)      !/m3 number density
-! out
-      real(kind_phys),    intent(out) :: no(levs)     ! number density of no (/m3) 
-!
-! locals
-!  we have         33, 16,7 now...
-!      real(kind_phys) :: eof(33,16,3),nom(33,16),z16(16), lat33(33)
-
-      real(kind_phys) ::  mlat          ! degrees  in snoe data
-      real(kind_phys) ::  zm(no_nz16)
-      real(kind_phys) ::  dz(levs)
-      real(kind_phys) ::  f107, kpa
-      real(kind_phys) ::  dx, dl,m1,m2,m3,theta0,dec
-!
-
-      integer :: iref,kref(levs)
-      integer :: i,k,il,k1,k2
-      integer :: kup, kdw      ! [NO]-domain in WAM-layers
-!
-       kpa  = kpain
-       f107 = f107in
-
-       mlat = mlatrad *r2d
-
-!       print *, kpa, f107, ' getno1d-vay-mlat-deg ', mlat
-
-       if(kpa .lt. 0.7)   kpa=0.7
-       if(f107.lt.70.0)   f107 = 70.0
-!
-! find interp latitude lat33 in degrees...
-!     
-! vay-2016: mlat-bug
-        do i=1,no_ny33-1
-          if(mlat.gt.lat33(i).and.mlat.lt.lat33(i+1)) then
-            iref=i
-            dl=(mlat-lat33(i))/(lat33(i+1)-lat33(i))
-            exit
-          endif
-        enddo
-!vay oct-2016 add abs(mlat) > 80.
-         if (mlat.le.lat33(1)) then 
-            dl = 0.
-            iref =1
-         endif
-         if (mlat.ge.lat33(no_ny33)) then 
-            dl = 1.
-            iref =no_ny33-1
-         endif
-!
-!  snoe no interpolated to model grid (molecules/cm^3)
-!... eof1 - kpa
-!     m1 =  kpa * 0.689254 - 1.53366
-      m1 =  kpa * 0.785760 - 1.94262           !waccmx-2015 eof1
       
-!... eof2 - declination
-      theta0 = pi2/365.*float(doy - 1)
-      dec = 0.006918 - 0.399912 * cos(theta0)   + 0.070257 * sin(theta0)   &      
-          - 0.006758 * cos(2.*theta0) + 0.000907 * sin(2.*theta0)          &
-          - 0.002697 * cos(3.*theta0) + 0.001480 * sin(3.*theta0)
-      dec = dec * r2d  
-      
-      m2 = -.319782 + dec*(.0973109 + dec*(.00048981 - dec*.000103608))
-      m3 =  alog10(f107) * 6.44069 - 13.9832                 !waccmx-2015 eof3  
-!   
-!
-!... zonal mean distrib. is sum of mean and eofs
-! (dl)*no(i+1) + (1-dl)*no(i) interpolation to wam "mlat"
-!  wx-code     do k = 1,nlev
-!  zm(:,k) = no_mean(:,k) - m1 * eofs(:,k,1) + m2 * eofs(:,k,2) - m3 * eofs(:,k,3) 
-!              end do
-    
-   do k=1,no_nz16
-     zm(k) =  &
-       dl*(nom(iref+1,k)- m1*eof(iref+1,k,1)+ m2*eof(iref+1,k,2)- m3*eof(iref+1,k,3))+ &                              (1.-dl)*(nom(iref,k)- m1*eof(iref,k,1)+ m2*eof(iref,k,2)- m3*eof(iref,k,3))
-       
-     if (zm(k).le. 0.0) zm(k)=con_nzero
-    enddo
-    zm = zm*1.e6          ! zm transform fom cm-3 to m-3  ok... due to data units
-!
-! vertical interp, from k1 to k2-1, extend k2 to levs, keep 
-! cons 1 to k1-1
-!
-
-!interpolate
- 
-!        print *, ' getno-zmno ', maxval(zm), minval(zm)
- 
-        no(1:levs)=con_nzero
-        call  interpol_wamz( no_nz16, z16, zm, levs, alt, no, kup, kdw ) 
-
-!        print *, ' getno-zmnoi ', maxval(no), minval(no)
-       
-!
-!extrapolate  above kup
-!
-        do k=kup+1,levs
-           dx =log(pr(k-1))-log(pr(k))
-           no(k)=no(k-1)*nair(k)/nair(k-1)*               &                    
-              exp(dx*(1.-.5*amno*(1./am(k-1)+1./am(k))))
-        enddo
-	
-!	
-!attenuation below kdw
-!	
-        do k=kdw-1,1,-1
-!          
-           no(k)=no(kdw)*exp(-(kdw-k)*(kdw-k)*.1)
-        enddo	
-!
-! extra-check for positive no
-!
-        do k=1,levs
-          no(k)=max(no(k), con_nzero)
-        enddo
-!
-! incease [no] by a factor when kpa gt 5.0, same with ctipe, based on champ
-! neutral density obervations ????? WAM-empirical tuning of NO-profiles kpa ????
-!                                   inconsistent with SNOE-model
-!  
-        do k=1,levs
-          if (kpa.gt.5.0.and.kpa.le.6.0) then
-            no(k) = no(k)*1.5
-          elseif (kpa.gt.6.0.and.kpa.le.7.0) then
-            no(k) = no(k)*2.5
-          elseif (kpa.gt.7.0.and.kpa.le.8.0) then
-            no(k) = no(k)*3.5
-          elseif (kpa.gt.8.0.and.kpa.le.9.0) then
-            no(k) = no(k)*4.5
-          endif
-        enddo
-!
-!
-! check no
-!       print *, ' getno-zmnoi2 ', maxval(no), minval(no)
-!        print *, 'kup getno, iref', kup, iref, con_nzero
-      return
-      end subroutine wam_getno1d    
-!           
-     subroutine wamphys_coolno1d(np,nps,t,o_n, o2_n, no_n, qno)   
-!     
-! sik may   2022 ccpp-version 
-!vay oct 1  2015 clean-up
-!    oct 28 2016 for new trunk
-!      use   physcons, only : bz =>  con_boltz             
-!-------------------------------------------------------------------------
-! calculate no cooling   Kockarts, G. (1980). Nitric oxide cooling
-!-------------------------------------------------------------------------
-!  **
-!  input:
-!  t temperature profile k
-!  o atomic oxygen number density profile m-3
-!  no nitric oxide number density profile m-3
-!  output:
-!  qno: no cooling rate j/m3
-!  ** 
-      use machine,           only : kind_phys 
-      implicit none
-      integer, intent(in):: np                          ! numer of pressure levels
-      integer, intent(in):: nps                         ! pressure index to start
-      real(kind_phys), intent(in)   :: o_n(np),no_n(np) ! number density/m3   
-      real(kind_phys), intent(in)   :: o2_n(np)           
-      real(kind_phys), intent(in)   :: t(np)        ! temp (k)   
-!out  
-      real(kind_phys), intent(out)  :: qno(np)
-      real(kind_phys) :: qnox(np)        
-!locals     
-      real(kind_phys) :: k10,hv, a10, g
-      real(kind_phys) :: a1,a2,a3,om1,om     
-      real(kind_phys) :: a10ghv, hvbz, a23   
-      real(kind_phys) :: bz
-      real(kind_phys) ::  no_deact, o1_rate, o2_rate,phot_e    
-      integer i, k
-!
-!vay-2015/16
-!                           ! hv=phot_e  = 3.726e-13_r8   at 5.3 mkm (erg)
-!
-       o1_rate = 2.7e-11*1.e-6      !3.3-3.6(-12)
-       o2_rate = 2.4e-14*1.e-6
-       phot_e  = 3.726e-13
-       
-       a10=13.3             !  trans_prob = 13.3_r8       
-       bz=1.38e-23          ! boltzman
-       k10=2.7e-17          ! k10*[o3p] vs 2.7 in waccm  k10=3.6e-17 
-                            ! decreased because cm3/s = 10(-11)
-                            !                   m3/s    10(-17)                                       
-       hv=3.726e-20         ! in joules   1 erg is equal to 1.0e-7 joule.
-       hvbz = hv/bz                                                                                                    
-       g=1.0                                                             
-!                                                     
-       a2=5.4e-6*(1./(exp(hvbz/5800.)-1.))    
-       a3=0.5*exp(-hvbz/247.5)
-       a23 = a2+a3
-       a10=13.3     
-       a10ghv = a10*g*hv
-!-------------------------------------------------
-! k10/a10, hbvz, a10ghv, a23 => idear_solar_init
-!=================================================
-      qno(1:nps-1) =0.
-      
-      do i=nps,np                                                   
-        om1=k10*o_n(i)          
-        om=om1/(om1+a10)
-        a1=exp(-hvbz/t(i)) 
-        qno(i)=a10ghv*no_n(i)*om*(a1-a23)      ! should be in "j/kg/s" ~"j/s*[1/m3-no]"
-	if (qno(i) < 0) qno(i) = 0.
-      enddo
-      
-      return
-!
-! Calculate NO cooling (ref: Kockarts, GRL, vol. 7, pp 137-140, 1980)
-! WACCM
-!      qnox(1:nps-1) =0.
-!      do k=nps,np  
-!      
-!       no_deact =  o1_rate * o_n(k) + o2_rate * o2_n(k)      
-!       qnox(k) = 1.e-7 * phot_e * A10 * no_n(k)* exp(-2700./t(k)) &
-!                       * (no_deact / (no_deact + A10)) 
-!      enddo      
-!      qno = qnox
-!====================================
-! deactivation term trans_prob = 13.3_r8  hvbz=2700
-!
-!   nocool(i,k) = -1.e-4 * phot_e * trans_prob* exp(-2700./t(i,k)) &                     
-!                  * no_conc * (no_deact / (no_deact + trans_prob)) 
-! [no] 1/m3
-! [om] dimensionless
-! [a10] -dimensionless
-!      a1*a10*hv*[no]/cp/rho = [K/sec]
-!      a1 -dimens
-! units:     hv*[no]/cp
-!
-      return     
-                                                             
-      end  subroutine wamphys_coolno1d
 !=======================================      
 !
 ! EUV/UV: sheat,sh1, sh2, jo2_rate, jo3_rate
@@ -536,7 +270,7 @@
 ! output
 
       real(kind=kind_phys), intent(out)   :: sheat(np),sh1(np)  ! w/m3 heating rate
-      real(kind=kind_phys), dimension(np) :: sh2      
+      real(kind=kind_phys), intent(out)   :: sh2(np)      
       
       real(kind=kind_phys)   :: shsrc(np), shsrb(np), shlya(np)   
        
@@ -666,7 +400,7 @@
         WO2=O2(i)*HO2(i)*SECO2*1.e-4
         WN2=N2(i)*HN2(i)*SECN2*1.e-4
         WO3 =sco3(i)
-
+!        WO3=O3(i)*HO(i)*.333*SECO3*1.e-4
 !  loop over all 37 bands
        sh1(i)=0.
        sh2(i)=0.
@@ -838,6 +572,7 @@
       chi  = acos(coschi)
       schi = sin(chi)
       chid = chi*r_2_d
+ 
       if(chid.gt.75. .and. chid .lt. 105.) then
 
           rad_to_z = ht/scale_ht
@@ -1026,3 +761,276 @@
       enddo
       end subroutine wam_slantcolumns        
 !
+!=======================      
+! NO-coooling related: wam_getno1d & wamphys_coolno1d
+!=======================      	   
+      subroutine wam_getno1d(levs,f107in,kpain,mlatrad,doy,alt,pr, nair, am, no)
+!      
+! S. I. Karol May 2022 ccpp-version of idea_getno_snoe.f
+!
+! Oct 2016 VAY: new interface  getno1d ... mozaic of bugs in 2012-14 versions of WAM
+!               (a) rad/deg (b) pr(cb) but expected in Pa (c) no-NO for lat > 80deg
+!               (d) dangerous interp-n and DATA for eofs etc...tropical NO ????
+!
+       use wamphys_math_interp, only : interpol_wamz
+       use wamphys_init_module, only : eof => no_eof, nom => no_m, z16 => no_zkm, lat33 => no_mlat
+       use wamphys_init_module, only : no_ny33, no_nz16, amno       
+       use  wamphys_const,      only : pi, pi2, con_nzero, d2r => dtr, r2d => r_2_d
+       use machine,           only : kind_phys         
+!
+      implicit none
+! input
+      integer, intent(in)  :: levs         !number of pressure level
+      integer, intent(in)  :: doy          ! day of year from 1 to 365   
+
+      real(kind_phys),    intent(in)  :: f107in       !f10.7 index instant 
+      real(kind_phys),    intent(in)  :: kpain        ! 24hr average kp index
+      real(kind_phys),    intent(in)  :: mlatrad      ! magnetic latitude in radians
+
+      real(kind_phys),    intent(in)  :: alt(levs)    ! in km wam
+      real(kind_phys),    intent(in)  :: pr(levs)     ! in pa
+      real(kind_phys),    intent(in)  :: am(levs)     ! avg mass g/mol
+      real(kind_phys),    intent(in)  :: nair(levs)      !/m3 number density
+! out
+      real(kind_phys),    intent(out) :: no(levs)     ! number density of no (/m3) 
+!
+! locals
+!  we have         33, 16,7 now...
+!      real(kind_phys) :: eof(33,16,3),nom(33,16),z16(16), lat33(33)
+
+      real(kind_phys) ::  mlat          ! degrees  in snoe data
+      real(kind_phys) ::  zm(no_nz16)
+      real(kind_phys) ::  dz(levs)
+      real(kind_phys) ::  f107, kpa
+      real(kind_phys) ::  dx, dl,m1,m2,m3,theta0,dec
+!
+
+      integer :: iref,kref(levs)
+      integer :: i,k,il,k1,k2
+      integer :: kup, kdw      ! [NO]-domain in WAM-layers
+!
+       kpa  = kpain
+       f107 = f107in
+
+       mlat = mlatrad *r2d
+
+!       print *, kpa, f107, ' getno1d-vay-mlat-deg ', mlat
+
+       if(kpa .lt. 0.7)   kpa=0.7
+       if(f107.lt.70.0)   f107 = 70.0
+!
+! find interp latitude lat33 in degrees...
+!     
+! vay-2016: mlat-bug
+        do i=1,no_ny33-1
+          if(mlat.gt.lat33(i).and.mlat.lt.lat33(i+1)) then
+            iref=i
+            dl=(mlat-lat33(i))/(lat33(i+1)-lat33(i))
+            exit
+          endif
+        enddo
+!vay oct-2016 add abs(mlat) > 80.
+         if (mlat.le.lat33(1)) then 
+            dl = 0.
+            iref =1
+         endif
+         if (mlat.ge.lat33(no_ny33)) then 
+            dl = 1.
+            iref =no_ny33-1
+         endif
+!
+!  snoe no interpolated to model grid (molecules/cm^3)
+!... eof1 - kpa
+!     m1 =  kpa * 0.689254 - 1.53366
+      m1 =  kpa * 0.785760 - 1.94262           !waccmx-2015 eof1
+      
+!... eof2 - declination
+      theta0 = pi2/365.*float(doy - 1)
+      dec = 0.006918 - 0.399912 * cos(theta0)   + 0.070257 * sin(theta0)   &      
+          - 0.006758 * cos(2.*theta0) + 0.000907 * sin(2.*theta0)          &
+          - 0.002697 * cos(3.*theta0) + 0.001480 * sin(3.*theta0)
+      dec = dec * r2d  
+      
+      m2 = -.319782 + dec*(.0973109 + dec*(.00048981 - dec*.000103608))
+      m3 =  alog10(f107) * 6.44069 - 13.9832                 !waccmx-2015 eof3  
+!   
+!
+!... zonal mean distrib. is sum of mean and eofs
+! (dl)*no(i+1) + (1-dl)*no(i) interpolation to wam "mlat"
+!  wx-code     do k = 1,nlev
+!  zm(:,k) = no_mean(:,k) - m1 * eofs(:,k,1) + m2 * eofs(:,k,2) - m3 * eofs(:,k,3) 
+!              end do
+    
+   do k=1,no_nz16
+     zm(k) =  &
+       dl*(nom(iref+1,k)- m1*eof(iref+1,k,1)+ m2*eof(iref+1,k,2)- m3*eof(iref+1,k,3))+ &                              
+(1.-dl)*(nom(iref,k)- m1*eof(iref,k,1)+ m2*eof(iref,k,2)- m3*eof(iref,k,3))
+       
+     if (zm(k).le. 0.0) zm(k)=con_nzero
+    enddo
+    zm = zm*1.e6          ! zm transform fom cm-3 to m-3  ok... due to data units
+!
+! vertical interp, from k1 to k2-1, extend k2 to levs, keep 
+! cons 1 to k1-1
+!
+
+!interpolate
+ 
+!        print *, ' getno-zmno ', maxval(zm), minval(zm)
+ 
+        no(1:levs)=con_nzero
+        call  interpol_wamz( no_nz16, z16, zm, levs, alt, no, kup, kdw ) 
+
+!        print *, ' getno-zmnoi ', maxval(no), minval(no)
+       
+!
+!extrapolate  above kup
+!
+        do k=kup+1,levs
+           dx =log(pr(k-1))-log(pr(k))
+           no(k)=no(k-1)*nair(k)/nair(k-1)*               &                    
+              exp(dx*(1.-.5*amno*(1./am(k-1)+1./am(k))))
+        enddo
+	
+!	
+!attenuation below kdw
+!	
+        do k=kdw-1,1,-1
+!          
+           no(k)=no(kdw)*exp(-(kdw-k)*(kdw-k)*.1)
+        enddo	
+!
+! extra-check for positive no
+!
+        do k=1,levs
+          no(k)=max(no(k), con_nzero)
+        enddo
+	
+!	return
+!	
+! below "empircal" tuning NO-ehnancement for Geo storms
+!
+! incease [no] by a factor when kpa gt 5.0, same with ctipe, based on champ
+! neutral density obervations ????? WAM-empirical tuning of NO-profiles kpa ????
+!                                   inconsistent with SNOE-model
+!  
+        do k=1,levs
+          if (kpa.gt.5.0.and.kpa.le.6.0) then
+            no(k) = no(k)*1.5
+          elseif (kpa.gt.6.0.and.kpa.le.7.0) then
+            no(k) = no(k)*2.5
+          elseif (kpa.gt.7.0.and.kpa.le.8.0) then
+            no(k) = no(k)*3.5
+          elseif (kpa.gt.8.0.and.kpa.le.9.0) then
+            no(k) = no(k)*4.5
+          endif
+        enddo
+!
+!
+! check no
+!       print *, ' getno-zmnoi2 ', maxval(no), minval(no)
+!        print *, 'kup getno, iref', kup, iref, con_nzero
+      return
+      end subroutine wam_getno1d    
+!           
+     subroutine wamphys_coolno1d(np,nps,t,o_n, o2_n, no_n, qno)   
+!     
+! sik may   2022 ccpp-version 
+!vay oct 1  2015 clean-up
+!    oct 28 2016 for new trunk
+!      use   physcons, only : bz =>  con_boltz             
+!-------------------------------------------------------------------------
+! calculate no cooling   Kockarts, G. (1980). Nitric oxide cooling
+!-------------------------------------------------------------------------
+!  **
+!  input:
+!  t temperature profile k
+!  o atomic oxygen number density profile m-3
+!  no nitric oxide number density profile m-3
+!  output:
+!  qno: no cooling rate j/m3
+!  ** 
+      use machine,           only : kind_phys 
+      implicit none
+      integer, intent(in):: np                          ! numer of pressure levels
+      integer, intent(in):: nps                         ! pressure index to start
+      real(kind_phys), intent(in)   :: o_n(np),no_n(np) ! number density/m3   
+      real(kind_phys), intent(in)   :: o2_n(np)           
+      real(kind_phys), intent(in)   :: t(np)        ! temp (k)   
+!out  
+      real(kind_phys), intent(out)  :: qno(np)
+      real(kind_phys) :: qnox(np)        
+!locals     
+      real(kind_phys) :: k10,hv, a10, g
+      real(kind_phys) :: a1,a2,a3,om1,om     
+      real(kind_phys) :: a10ghv, hvbz, a23   
+      real(kind_phys) :: bz
+      real(kind_phys) ::  no_deact, o1_rate, o2_rate,phot_e    
+      integer i, k
+!
+!vay-2015/16
+!                           ! hv=phot_e  = 3.726e-13_r8   at 5.3 mkm (erg)
+!
+       o1_rate = 2.7e-11*1.e-6      !3.3-3.6(-12)
+       o2_rate = 2.4e-14*1.e-6
+       phot_e  = 3.726e-13
+       
+       a10=13.3             !  trans_prob = 13.3_r8       
+       bz=1.38e-23          ! boltzman
+       k10=2.7e-17          ! k10*[o3p] vs 2.7 in waccm  k10=3.6e-17 
+                            ! decreased because cm3/s = 10(-11)
+                            !                   m3/s    10(-17)                                       
+       hv=3.726e-20         ! in joules   1 erg is equal to 1.0e-7 joule.
+       hvbz = hv/bz                                                                                                    
+       g=1.0                                                             
+!                                                     
+       a2=5.4e-6*(1./(exp(hvbz/5800.)-1.))    
+       a3=0.5*exp(-hvbz/247.5)
+       a23 = a2+a3
+       a10=13.3     
+       a10ghv = a10*g*hv
+!-------------------------------------------------
+! k10/a10, hbvz, a10ghv, a23 => idear_solar_init
+!=================================================
+      qno(1:nps-1) =0.
+      
+      do i=nps,np                                                   
+        om1=k10*o_n(i)          
+        om=om1/(om1+a10)
+        a1=exp(-hvbz/t(i)) 
+        qno(i)=a10ghv*no_n(i)*om*(a1-a23)      ! should be in "j/kg/s" ~"j/s*[1/m3-no]"
+	if (qno(i) < 0) qno(i) = 0.
+      enddo
+      
+      return
+!
+! Calculate NO cooling (ref: Kockarts, GRL, vol. 7, pp 137-140, 1980)
+! WACCM
+!      qnox(1:nps-1) =0.
+!      do k=nps,np  
+!      
+!       no_deact =  o1_rate * o_n(k) + o2_rate * o2_n(k)      
+!       qnox(k) = 1.e-7 * phot_e * A10 * no_n(k)* exp(-2700./t(k)) &
+!                       * (no_deact / (no_deact + A10)) 
+!      enddo      
+!      qno = qnox
+!====================================
+! deactivation term trans_prob = 13.3_r8  hvbz=2700
+!
+!   nocool(i,k) = -1.e-4 * phot_e * trans_prob* exp(-2700./t(i,k)) &                     
+!                  * no_conc * (no_deact / (no_deact + trans_prob)) 
+! [no] 1/m3
+! [om] dimensionless
+! [a10] -dimensionless
+!      a1*a10*hv*[no]/cp/rho = [K/sec]
+!      a1 -dimens
+! units:     hv*[no]/cp
+!
+      return     
+                                                             
+      end  subroutine wamphys_coolno1d
+!=======================================      
+!
+! EUV/UV: sheat,sh1, sh2, jo2_rate, jo3_rate
+!
+!========================================

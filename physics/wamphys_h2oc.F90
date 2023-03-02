@@ -952,12 +952,13 @@
 ! grav - gravity acceleration (m/s^2) on model pressure grid
 ! mu - atmospheric molecular mass (g/mol) on model pressure grid
 ! lx - array dimension
+
       integer,intent(in):: lx
       real(kind=kind_phys),intent(in):: ctheta
       real(kind=kind_phys),dimension(lx),intent(in):: p0,mmr,grav,mu
 
-!     OUT:
-! h2ohr - heating rates (W/kg) on model pressure grid
+!     OUT: h2ohr - heating rates (W/kg) on model pressure grid
+! 
       real(kind=kind_phys),dimension(lx),intent(out):: h2ohr
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -985,20 +986,20 @@
 ! - solar band fluxes times reference bandwidth (W/m^2)
 ! - l band parameter (m^2/kg)
 ! - b band parameter (dimensionless)
+! in Fomichev & Shved (1988) lband(7)=.137 but in Victor's code it's .138
+
       real(kind=kind_phys),parameter,dimension(iband):: &      
         wfband=(/14.3, 14.42, 21.39, 25.84, 9.3526, 6.848, 4.85, 1.3986/)
       real(kind=kind_phys),parameter,dimension(iband):: &   
          lband=(/.00952, .13, .0335, .769, 2.99, 16.7, .138, 29.2/)
-! in Fomichev & Shved (1988) lband(7)=.137 but in Victor's code it's
-! .138
       real(kind=kind_phys),parameter,dimension(iband):: & 
            bband=(/.26, .27, .26, .258, .305, .312, .3, .33/)    
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Work space
       integer:: i,l
-      real(kind=kind_phys):: p0dp(lx),rodfac,u(lx),work(lx),zeta,wb(lx,iband)
-
+      real(kind=kind_phys):: p0dp(lx),u(lx),work(lx), wb(lx,iband)
+      real(kind=kind_phys):: rodfac, zeta
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Initialize heating rate
       h2ohr(:)=0.
@@ -1013,7 +1014,7 @@
 ! find model fade-off layer xbot-xtop (assumed to be fully within model
 ! domain), where heating rate will be assumed linearly go to 0 and stay
 ! so above.
-      work(:)=log(1e5/p0(:))
+      work(:)=log(1.e5/p0(:))
       do l=1,lx
          if(work(l).lt.xbot) then
             factor(l)=1.

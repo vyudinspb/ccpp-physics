@@ -60,7 +60,7 @@ module  wamphys_init_module
     character(len=255)     :: iondata_file    = 'iondata_tjr.nc'
     character(len=255)     :: tirosdata_file  = 'tiros_tjr.nc' 
      
-    character(len=255)     ::  efield_model   = 'epot'          ! or 'bpot'
+    character(len=255)     ::  efield_model   = 'epot'              ! or 'bpot'
     character(len=255)     ::  SPW_DRIVERS    = 'swpc_fst'
     character(len=255)     ::  SWIN_DRIVERS   = 'swin_wam'
 !
@@ -111,12 +111,26 @@ module  wamphys_init_module
      real(kind=kind_phys) :: gW_fix     = 30. 
      real(kind=kind_phys) :: tiros_activity_fix =7. 
     
-    integer  :: tiros_switch  = 0
+     integer  :: tiros_switch  = 0
+! fixed spw-drivers electric/mag and solar fields/winds   2018/02/01 
+
+     real(kind=kind_phys) ::  bnhp=21.0
+     real(kind=kind_phys) ::  bnhpi= 6   
+     real(kind=kind_phys) ::  bshp =21.0
+     real(kind=kind_phys) ::  bshpi =6
+     real(kind=kind_phys) ::  bswbt =0.4648200
+     real(kind=kind_phys) ::  bswang =180
+     real(kind=kind_phys) ::  bswvel =460.1300
+     real(kind=kind_phys) ::  bswbz =-0.46482
+     real(kind=kind_phys) ::  bswden =5.0       
+    
+    
     namelist /wamphys_nml/ JH0,      JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1,      &
                            skeddy0, skeddy_semiann, skeddy_ann,                        &
                            tkeddy0, tkeddy_semiann, tkeddy_ann,                        &
                            f107_fix, f107a_fix, kp_fix, kpa_fix,                       &
-			   gw_fix, tiros_activity_fix, tiros_switch,                   & 
+			   gw_fix, tiros_activity_fix, tiros_switch,                   &
+			bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&			    
 			   spw_drivers, efield_model, swin_drivers,do_init_tides,      &
 			   do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
 !
@@ -658,9 +672,9 @@ module  wamphys_init_module
 	print *		
 	print *,' wam_comp nlev_h2o/co2', nlev_h2o,nlevc_h2o,nlev_co2
 	print *, 'wamphys-prlog', prlog(1), prlog(43), prlog(levs)
-	do k=1,levs
-	 write(6,333) k, prlog(k), o3ra(k)*1.e6, h2ora(k)*1.e6
-	enddo 
+!	do k=1,levs
+!	 write(6,333) k, prlog(k), o3ra(k)*1.e6, h2ora(k)*1.e6
+!	enddo 
 	print *, 'wamphys-prlog', prlog(1), prlog(43), prlog(levs)		
 !	pause	' wam_composition_init150 '	
       endif
@@ -841,13 +855,16 @@ module  wamphys_init_module
       
       if (trim(efmodel) == 'epot') then     
         call read_potential(W05SC_Epot_file)
+	if (me == master ) write(*, *)  'efield_init read_potential W05SC_Epot ', trim(efmodel)
       else
         call read_potential(W05SC_Bpot_file)
+	if (me == master ) write(*, *)  'efield_init read_potential W05SC_Bpot ', trim(efmodel)
       endif
 
       call read_schatable(W05SC_HAtbl_file)
+! 	if (me == master ) write(*, *)  'efield_init read(W05SC_HAtbl) '    
       call       read_bndy(W05SC_Bndy_file)
-
+! 	if (me == master ) write(*, *)  'efield_init read(W05SC_Bndy) '  
       
    end subroutine  wam_efield_init 
    
@@ -1092,7 +1109,11 @@ module  wamphys_init_module
 
         iernc=nf90_close(ncid)
 	if ( me == master ) then
+	
          print *, ' solar_readno_snoewx - performed '
+!         write(*,*) ' VAYsnoe ZKM:', no_zkm(1), ': ', no_zkm(nz)
+!         write(*,*) ' VAYsnoe MLT:', no_mlat(1), ': ', no_mlat(ny)
+!         write(*,*) ' VAYsnoe NO:',  maxval(no_m), minval(no_m)	 
         endif    
       end subroutine wam_readno_snoewx
       
@@ -1181,7 +1202,7 @@ end  subroutine wamphys_idate_calendar
       real(kind=kind_phys) :: sinlat(im),coslat(im),xlon(im),xlat(im)
       integer, intent(in)  :: dayno                                    ! day of year     
 ! output
-      real(kind=kind_phys), intent(out) ::     xmu(im)       !cos solar zenith angle
+      real(kind=kind_phys), intent(out) ::     xmu(im)                 !cos solar zenith angle
       
 ! output magnetic and electric parameters 
 
@@ -1190,20 +1211,20 @@ end  subroutine wamphys_idate_calendar
       real(kind=kind_phys), intent(out) :: maglat(im)  !magnetic latitude (rad)
       real(kind=kind_phys), intent(out) :: wbtot(im)    !mapgnetic field strength
       real(kind=kind_phys), intent(out) :: wdipang(im)  !dip angle (degree)
-      real(kind=kind_phys), intent(out) :: essa(im)    !magnetic local time
-      real(kind=kind_phys), intent(out) :: sda         ! solar declination angle (rad)
-      real(kind=kind_phys), intent(out) :: utsec       !universal time      
+      real(kind=kind_phys), intent(out) :: essa(im)     !magnetic local time
+      real(kind=kind_phys), intent(out) :: sda          ! solar declination angle (rad)
+      real(kind=kind_phys), intent(out) :: utsec        !universal time      
 !local   
       real(kind=kind_phys) :: wcormag(im),   wcmorg(im)
    
       real(kind=kind_phys) :: cns, ss, cc,  ch, ty
-      real(kind=kind_phys) ::  pid2, dtr
+      real(kind=kind_phys) ::  pid2, dtr, rtd,  latpix
       integer :: i
 !  compute cosine of solar zenith angle for both hemispheres.
       
       pid2 = .5*pi
       dtr=pi/180.
-      
+      rtd = 1./dtr
       utsec=solhr*3600.
       cns = pi*(solhr-12.)/12.+slag
       do i=1,im
@@ -1224,19 +1245,189 @@ end  subroutine wamphys_idate_calendar
 !           get maglat maglon btot from  "getmag" in idea_ion.f
 !   
 
-      call interp2_ionfield(im, xlat, xlon, wcormag, wbtot, wdipang, cormag, btot, dipang, glon, glat)
-      
-      call spole_ion(im,xlat,xlon,utsec, sda, maglon, essa, wcmorg)
+!      call interp2_ionfield(im, xlat, xlon, wcormag, wbtot, wdipang,  cormag, btot, dipang, glon, glat)      
+!      call spole_ion(im,xlat,xlon,utsec, sda, maglon, essa, wcmorg)
+!      do i=1,im
+!         maglat(i)= pid2-wcormag(i)*DTR
+!      enddo      
 !      
-!old     call getmag(im,utsec,xlat,xlon,sda,btot,dipang,maglon,maglat,essa)
+      call getmag(im,utsec,xlat,xlon, sda, wbtot, wdipang, maglon, maglat, essa)
+!      write(*, *) 'sda-presolar', sda, utsec, dayno
 !
 ! inside interp_ionfield
-
-      do i=1,im
-         maglat(i)= pid2-wcormag(i)*DTR
-      enddo	       
+!  
+      do i=1,im  
+         latpix =xlat(i)*rtd
+      enddo        
+          
       return
       
       end subroutine wamphys_presolar
+!================      
+      subroutine getmag(im,utsec,rlat,rlon,sda,btot,dipang,maglon,maglat,essa) 
+      use machine,                 only: kind_phys
+      implicit none
+      real(kind=kind_phys), parameter    ::pi=3.141592653,dtr=pi/180., pid2=.5*pi       
+      integer              :: im
+      real(kind=kind_phys) :: utsec, sda
+      real(kind=kind_phys) :: rlon(im),rlat(im)
+      real(kind=kind_phys), intent(out) :: maglon(im)   !magnetic longitude (rad)
+      real(kind=kind_phys), intent(out) :: maglat(im)   !magnetic latitude (rad)
+      real(kind=kind_phys), intent(out) :: btot(im)     !mapgnetic field strength
+      real(kind=kind_phys), intent(out) :: dipang(im)   !dip angle (degree)
+      real(kind=kind_phys), intent(out) :: essa(im)     !magnetic local time  
       
+! locals
+      real(kind=kind_phys) ::  cormag(im),cmorg(im)
+      integer              ::  i  
+      
+      call xer_interp_field(im,rlat,rlon,cormag,btot,dipang)
+      btot=btot*1.e-9
+      
+      do i=1,im
+         maglat(i)=pid2-cormag(i)* dtr
+      enddo	
+             
+      call xer_spole(im,rlat,rlon,utsec,sda,maglon,essa, cmorg)
+        
+      return                  
+      end subroutine getmag
+      
+      subroutine xer_spole(im,rlat,phir,utsec,sda,phimr,essa,cmorg)
+      use machine,                 only: kind_phys      
+      implicit none
+      
+      real(kind=kind_phys), parameter    ::pi=3.141592653,dtr=pi/180.
+      
+      integer,intent(in) :: im          ! number of longitude 
+      real(kind=kind_phys),   intent(in) :: rlat(im)        !geo latitude (rad)
+      real(kind=kind_phys),   intent(in) :: phir(im)    !geo longitude (rad)
+      real(kind=kind_phys),   intent(in) :: utsec       !ut second
+      real(kind=kind_phys),   intent(in) :: sda         !solar declination angle (rad)
+      real(kind=kind_phys),   intent(out):: phimr(im)   !maglongitude (rad)        
+      real(kind=kind_phys),   intent(out):: essa(im)    !magnetic local time    
+      real(kind=kind_phys),   intent(out):: cmorg(im)          
+! local variables
+      real(kind=kind_phys) th,th1,phi1,sinth,sinth1,costh1,sinph1,cosph1,ac1,bc1,cc1, &  
+      ac2,bc2,cc2,phim,ssp,sspr,csda,as1,bs1,cs1,as2,bs2,cs2,gml, cmag
+      integer i
+!
+      do i=1,im
+      th=pi/2.-rlat(i)
+!
+! set pole coord. for each hemis.
+!
+      if (rlat(i).ge.0.0) then
+       th1=9.25*dtr
+       phi1=-78.0*dtr
+      else
+       th1=16.32*dtr
+       phi1=-54.0*dtr
+      end if
+!
+      sinth=sin(th)
+      sinth1=sin(th1)
+      costh1=cos(th1)
+      sinph1=sin(phi1)
+      cosph1=cos(phi1)
+!
+!     do i=1,im
+      ac1=sinth*cos(phir(i))
+      bc1=sinth*sin(phir(i))
+      cc1=cos(th)
+      ac2=ac1*costh1*cosph1+bc1*costh1*sinph1-cc1*sinth1
+      if((abs(ac2)).lt.0.001)ac2=0.001
+      bc2=-ac1*sinph1+bc1*cosph1
+      cc2=ac1*sinth1*cosph1+bc1*sinth1*sinph1+cc1*costh1
+      cmorg(i)=acos(cc2)
+      phimr(i)=atan2(bc2,ac2)
+      phim=phimr(i)/dtr
+!     ssp=360.-utsec/240.
+      ssp=180.-utsec/240.
+      sspr=ssp*dtr
+      csda=pi/2.-sda
+      as1=cos(sspr)*sin(csda)
+      bs1=sin(sspr)*sin(csda)
+      cs1=cos(csda)
+      as2=as1*costh1*cosph1+bs1*costh1*sinph1-cs1*sinth1
+      if((abs(as2)).lt.0.001)as2=0.001
+      bs2=-as1*sinph1+bs1*cosph1
+      cs2=as1*sinth1*cosph1+bs1*sinth1*sinph1+cs1*costh1
+      gml=atan2(bs2,as2)/dtr
+      essa(i)=phim-gml
+      enddo
+      return
+      end subroutine xer_spole  
+          
+      subroutine xer_interp_field(im,rlat,rlon,cormago,btoto,dipango)
+!
+!  VAY DANGER !!!!!!
+! interp works only for [20,91]  46 center + fixed ddlat=180/90? and ddlon=360/20?
+!
+!
+!      USE IDEA_ION_INPUT, only :
+!     & cormag, btot, dipang, glat, glon, nxmag,nymag
 
+
+      use machine,              only   : kind_phys
+      use wamphys_set_data_ion, only   :  cormag, btot, dipang, glon, glat      
+      implicit none
+      
+      integer,intent(in)  :: im            ! number of longitude
+      real(kind=kind_phys),   intent(in)  :: rlat(im)      ! latitude (rad)
+      real(kind=kind_phys),   intent(in)  :: rlon(im)      ! longitude (rad)
+!
+      real(kind=kind_phys),   intent(out) :: cormago(im),btoto(im),dipango(im)
+!
+! local variable
+!      real(kind=kind_phys) cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
+!
+      real(kind=kind_phys) dll,dl,ddlat,ddlon,a1,a2,b1,b2,aa,bb
+      integer i,iref,jref,jref1
+      integer ::  jcen, ixdim 
+!
+! lat lon interval
+      ddlat= 3.4906585033333331E-002
+      ddlon= 0.3141592653000000
+      jcen =46 
+       ixdim =20    
+! 
+      do i=1,im
+! get latitude index
+        iref=int(rlat(i)/ddlat)+  jcen
+        dl=(rlat(i)-glat(iref))/ddlat
+! print*,iref,dl
+! get longitude index
+        jref=int(rlon(i)/ddlon)+1
+        jref1=jref+1
+        if(jref1.gt.ixdim) jref1=jref1 - ixdim
+        dll=(rlon(i)-glon(jref))/ddlon
+! print*,i,jref,jref1,dll
+!
+        a1=cormag(jref,iref)
+        a2=cormag(jref1,iref)
+        b1=cormag(jref,iref+1)
+        b2=cormag(jref1,iref+1)
+        aa=(1.-dll)*a1+dll*a2
+        bb=(1.-dll)*b1+dll*b2
+        cormago(i)=(1.-dl)*aa+dl*bb
+!
+        a1=btot(jref,iref)
+        a2=btot(jref1,iref)
+        b1=btot(jref,iref+1)
+        b2=btot(jref1,iref+1)
+        aa=(1.-dll)*a1+dll*a2
+        bb=(1.-dll)*b1+dll*b2
+        btoto(i)=(1.-dl)*aa+dl*bb
+!
+        a1=dipang(jref,iref)
+        a2=dipang(jref1,iref)
+        b1=dipang(jref,iref+1)
+        b2=dipang(jref1,iref+1)
+        aa=(1.-dll)*a1+dll*a2
+        bb=(1.-dll)*b1+dll*b2
+        dipango(i)=(1.-dl)*aa+dl*bb
+!
+      enddo
+      return
+      end subroutine xer_interp_field

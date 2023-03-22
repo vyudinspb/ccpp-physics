@@ -147,7 +147,232 @@
   dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_tracers)
   type = real
   kind = kind_phys
-  intent = inout     
+  intent = inout
+[lssav]
+  standard_name = flag_for_diagnostics
+  long_name = flag for calculating diagnostic fields
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[ldiag3d]
+  standard_name = flag_for_diagnostics_3D
+  long_name = flag for calculating 3-D diagnostic fields
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[qdiag3d]
+  standard_name = flag_for_tracer_diagnostics_3D
+  long_name = flag for 3d tracer diagnostic fields
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[index_of_process_wammd]
+  standard_name = index_of_wamolec_process_in_cumulative_change_index
+  long_name = index of wam molecular dissipation process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_process_wamrad]
+  standard_name = index_of_wamrad_process_in_cumulative_change_index
+  long_name = index of wam rad process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_process_wamion]
+  standard_name = index_of_wamion_process_in_cumulative_change_index
+  long_name = index of wam ion process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_temperature]
+  standard_name = index_of_temperature_in_cumulative_change_index
+  long_name = index of temperature in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_x_wind]
+  standard_name = index_of_x_wind_in_cumulative_change_index
+  long_name = index of x-wind in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_y_wind]
+  standard_name = index_of_y_wind_in_cumulative_change_index
+  long_name = index of x-wind in first dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[index_of_process_wamphys]
+  standard_name = index_of_wamphys_process_in_cumulative_change_index
+  long_name = index of wamphys process in second dimension of array cumulative change index
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[flag_for_wam_generic_tend]
+  standard_name = flag_for_generic_tendency_due_to_wamphys
+  long_name = true if GFS_WAM_generic should calculate tendencies
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[nto1]
+  standard_name = index_of_aoxygen_mixing_ratio_in_tracer_concentration_array
+  long_name = tracer index for atomic oxygen mass mixing ratio
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[nto2]
+  standard_name = index_of_moxygen_mixing_ratio_in_tracer_concentration_array
+  long_name = tracer index for molecular oxygen mass mixing ratio
+  units = index
+  dimensions = ()
+  type = integer 
+  intent = in   
+[ntoz]
+  standard_name = index_of_ozone_mixing_ratio_in_tracer_concentration_array
+  long_name = tracer index for ozone mixing ratio
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+[dtend]
+  standard_name = cumulative_change_of_state_variables
+  long_name = diagnostic tendencies for state variables
+  units = mixed
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,cumulative_change_of_state_variables_outer_index_max)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dtidx]
+  standard_name = cumulative_change_of_state_variables_outer_index
+  long_name = index of state-variable and process in last dimension of diagnostic tendencies array AKA cumulative_change_index
+  units = index
+  dimensions = (number_of_tracers_plus_one_hundred,number_of_cumulative_change_processes)
+  type = integer
+  intent = in
+[dudt_wammd]
+  standard_name = instant_momentum_tendency_in_x_wind_due_to_wam_molecular_diss
+  long_name = instantaneous zonal wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in 
+[dvdt_wammd]
+  standard_name = instant_momentum_tendency_in_y_wind_due_to_wam_molecular_diss
+  long_name = instantaneous meridional wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = in
+[dtdt_wammd]
+  standard_name = instant_temperature_tendency_due_to_wam_molecular_diss
+  long_name = instantaneous temperature tendency due to wam molecular dissipation
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[dudt_wamion]
+  standard_name = instant_momentum_tendency_in_x_wind_due_to_wam_ion
+  long_name = instantaneous zonal wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = in
+[dvdt_wamion]
+  standard_name = instant_momentum_tendency_in_y_wind_due_to_wam_ion
+  long_name = instantaneous meridional wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = in
+[dtdt_wamion]
+  standard_name = instant_temperature_tendency_due_to_wam_ion
+  long_name = instantaneous temperature tendency due to wam ion
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[dtdt_wamrad]
+  standard_name = instant_temperature_tendency_due_to_wam_rad
+  long_name = instantaneous temperature tendency due to wam rad
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys       
+  intent = in
+[du3dt_wammd]
+  standard_name = tav_momentum_tendency_in_x_wind_due_to_wam_molecular_diss
+  long_name = time averaged zonal wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dv3dt_wammd]
+  standard_name = tav_momentum_tendency_in_y_wind_due_to_wam_molecular_diss
+  long_name = time averaged meridional wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dt3dt_wammd]
+  standard_name = tav_temperature_tendency_due_to_wam_molecular_diss
+  long_name = time averaged temperature tendency due to wam molecular dissipation
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[du3dt_wamion]
+  standard_name = tav_momentum_tendency_in_x_wind_due_to_wam_ion
+  long_name = time averaged zonal wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dv3dt_wamion]
+  standard_name = tav_momentum_tendency_in_y_wind_due_to_wam_ion
+  long_name = time averaged meridional wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dt3dt_wamion]
+  standard_name = tav_temperature_tendency_due_to_wam_ion
+  long_name = time averaged temperature tendency due to wam ion
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[dt3dt_wamrad]
+  standard_name = tav_temperature_tendency_due_to_wam_rad
+  long_name = time averaged temperature tendency due to wam rad
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout 
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP

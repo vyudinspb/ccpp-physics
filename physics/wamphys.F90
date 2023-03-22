@@ -255,6 +255,9 @@ contains
           ugrsin, vgrsin, tgrsin, qgrsin, prsi, prsl, prslk, phii, phil,       &
           dudt, dvdt, dtdt, dqdt, dudt_iwamph, dvdt_iwamph, dtdt_iwamph,       &
 	  do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	 
+          dudt_wammd,dvdt_wammd,dtdt_wammd,                                    &   !Add more diag vars wchen
+          dudt_wamion,dvdt_wamion,dtdt_wamion,                                 &
+          dtdt_wamrad,                                                         &	 
           gzmt, gmmt, gjhr, gshr, go2dr, errmsg, errflg)
 	  
 !
@@ -330,6 +333,10 @@ contains
 	    
          real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_iwamph, dvdt_iwamph,   dtdt_iwamph
          real(kind=kind_phys), intent(out), dimension(im, levs) :: do1dt_iwamph, do2dt_iwamph, dqdt_iwamph
+         ! Add more diag var
+         real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_wammd, dvdt_wammd,   dtdt_wammd
+         real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_wamion, dvdt_wamion,   dtdt_wamion	 
+         real(kind=kind_phys), intent(out),dimension(im, levs) :: dtdt_wamrad	 
 	 
 !=========================================================
 !    
@@ -499,7 +506,7 @@ contains
 !=========================
 
       call wamphys_molec_dissipation(me, master, im, levs,grav,prsi,prsl,  &
-                   ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho)	
+                   ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho,dudt_wammd,dvdt_wammd,dtdt_wammd)	 ! add more tend diag vars wchen
      	   
        call wamrad_o3prof(im, levs,ntrac, nto3,  qgrs ,am, nair, o3_ng)
        
@@ -558,6 +565,8 @@ contains
                              dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3) 
 			     		
          tgrs = tgrs + wtot * dtp  
+ ! add more tend diag vars wchen
+         dtdt_wamrad = wtot
 
 
        endif
@@ -582,7 +591,10 @@ contains
         ugrs = ugrs +dtp*dudt_ion
 	vgrs = vgrs +dtp*dvdt_ion
 	tgrs = tgrs +dtp*dtdt_ion
-	
+ ! add more tend diag vars wchen
+  dudt_wamion = dudt_ion
+  dvdt_wamion = dvdt_ion
+  dtdt_wamion = dtdt_ion
 !	call wamphys_dadj(prsi, tgrs, im, levs, me, master)
 !	call wamphys_dadj_or(prsi, tgrs, im, levs+1, me, master)	
  345    continue 

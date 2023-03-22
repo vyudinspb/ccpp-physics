@@ -768,7 +768,63 @@
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys 
-  intent = out                           	  
+  intent = out
+[dudt_wammd]
+  standard_name = instant_momentum_tendency_in_x_wind_due_to_wam_molecular_diss
+  long_name = instantaneous zonal wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = out
+[dvdt_wammd]
+  standard_name = instant_momentum_tendency_in_y_wind_due_to_wam_molecular_diss
+  long_name = instantaneous meridional wind momentum tendency due to wam molecular dissipation
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = out
+[dtdt_wammd]
+  standard_name = instant_temperature_tendency_due_to_wam_molecular_diss
+  long_name = instantaneous temperature tendency due to wam molecular dissipation
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[dudt_wamion]
+  standard_name = instant_momentum_tendency_in_x_wind_due_to_wam_ion
+  long_name = instantaneous zonal wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = out
+[dvdt_wamion]
+  standard_name = instant_momentum_tendency_in_y_wind_due_to_wam_ion
+  long_name = instantaneous meridional wind momentum tendency due to wam ion
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys 
+  intent = out
+[dtdt_wamion]
+  standard_name = instant_temperature_tendency_due_to_wam_ion
+  long_name = instantaneous temperature tendency due to wam ion
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[dtdt_wamrad]
+  standard_name = instant_temperature_tendency_due_to_wam_rad
+  long_name = instantaneous temperature tendency due to wam rad
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys                             	  
+  intent = out
 [gzmt]
   standard_name = tendency_of_WAM_horizontal_eastward_zonal_winds_from_IPE_ion_drag
   long_name =  tendency WAM horizontal eastward zonal winds 

@@ -10,7 +10,7 @@
 
       implicit none
 
-      public :: sfc_diff_init, sfc_diff_run, sfc_diff_finalize
+      public :: sfc_diff_run
       public :: stability
 
       private
@@ -19,16 +19,9 @@
 
       contains
 
-      subroutine sfc_diff_init
-      end subroutine sfc_diff_init
-
-      subroutine sfc_diff_finalize
-      end subroutine sfc_diff_finalize
-
-!> \defgroup GFS_diff_main GFS Surface Layer Scheme Module
+!> \defgroup GFS_diff_main GFS Surface Layer Module
+!> This module calculates surface roughness length.
 !> @{
-!> \brief This subroutine calculates surface roughness length.
-!!
 !! This subroutine includes the surface roughness length formulation
 !! based on the surface sublayer scheme in
 !! Zeng and Dickinson (1998) \cite zeng_and_dickinson_1998.
@@ -96,7 +89,8 @@
       integer, dimension(:), intent(in) :: vegtype
 
       logical, intent(in) :: redrag ! reduced drag coeff. flag for high wind over sea (j.han)
-      logical, dimension(:), intent(in) :: flag_iter, wet, dry, icy
+      logical, dimension(:), intent(in) :: flag_iter, dry, icy
+      logical, dimension(:), intent(inout) :: wet
 
       logical, intent(in) :: thsfc_loc ! Flag for reference pressure in theta calculation
 
@@ -171,7 +165,6 @@
 !  ps is in pascals, wind is wind speed,
 !  surface roughness length is converted to m from cm
 !
-
 !       write(0,*)'in sfc_diff, sfc_z0_type=',sfc_z0_type
 
       do i=1,im
@@ -383,7 +376,9 @@
               call znot_t_v7(wind10m, ztmax_wat(i))   ! 10-m wind,m/s, ztmax(m)
             else if (sfc_z0_type > 0) then
               write(0,*)'no option for sfc_z0_type=',sfc_z0_type
-              stop
+              errflg = 1
+              errmsg = 'ERROR(sfc_diff_run): no option for sfc_z0_type'
+              return
             endif
 !
             call stability
@@ -448,7 +443,6 @@
 
       return
       end subroutine sfc_diff_run
-!> @}
 
 !----------------------------------------
 !>\ingroup GFS_diff_main
@@ -852,7 +846,5 @@
         endif
 
         END SUBROUTINE znot_t_v7
-
-
-!---------------------------------
+!> @}
       end module sfc_diff

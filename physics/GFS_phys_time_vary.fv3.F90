@@ -4,7 +4,6 @@
 !>\defgroup mod_GFS_phys_time_vary GFS Physics Time Update
 !! This module contains GFS physics time vary subroutines including ozone, stratospheric water vapor,
 !! aerosol, IN&CCN and surface properties updates.
-!> @{
    module GFS_phys_time_vary
 
 #ifdef _OPENMP
@@ -42,6 +41,8 @@
                                dwsat_table,dksat_table,psisat_table, &
                                isurban_table,isbarren_table,         &
                                isice_table,iswater_table
+      use wamphys_swdef
+      use wamphys_swio_data, only :  read_swio_data, swio_time_interp
 
       implicit none
 
@@ -65,12 +66,13 @@
 !! \htmlinclude GFS_phys_time_vary_init.html
 !!
 !>\section gen_GFS_phys_time_vary_init GFS_phys_time_vary_init General Algorithm
-!! @{
+!> @{
       subroutine GFS_phys_time_vary_init (                                                         &
-              me, master, ntoz, h2o_phys, iaerclm, iccn, iflip, im, nx, ny, idate, xlat_d, xlon_d, &
+              me, master, ntoz, h2o_phys, iaerclm, iccn, iaermdl, iflip, im, levs,                 &
+              nx, ny, idate, xlat_d, xlon_d,                                                       &
               jindx1_o3, jindx2_o3, ddy_o3, ozpl, jindx1_h, jindx2_h, ddy_h, h2opl,fhour,          &
               jindx1_aer, jindx2_aer, ddy_aer, iindx1_aer, iindx2_aer, ddx_aer, aer_nm,            &
-              jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, imap, jmap,              &
+              jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, imap, jmap,do_wamphys,   &
               do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau,                            &
               isot, ivegsrc, nlunit, sncovr, sncovr_ice, lsm, lsm_noahmp, lsm_ruc, min_seaice,     &
               fice, landfrac, vtype, weasd, lsoil, zs, dzs, lsnow_lsm_lbound, lsnow_lsm_ubound,    &
@@ -80,23 +82,29 @@
               zwtxy, xlaixy, xsaixy, lfmassxy, stmassxy, rtmassxy, woodxy, stblcpxy, fastcpxy,     &
               smcwtdxy, deeprechxy, rechxy, snowxy, snicexy, snliqxy, tsnoxy , smoiseq, zsnsoxy,   &
               slc, smc, stc, tsfcl, snowd, canopy, tg3, stype, con_t0c, lsm_cold_start, nthrds,    &
-              errmsg, errflg)
+              lkm, use_lake_model, lakefrac, lakedepth, iopt_lake, iopt_lake_clm, iopt_lake_flake, &
+              lakefrac_threshold, lakedepth_threshold, errmsg, errflg)
 
          implicit none
 
          ! Interface variables
-         integer,              intent(in)    :: me, master, ntoz, iccn, iflip, im, nx, ny
+         integer,              intent(in)    :: me, master, ntoz, iccn, iflip, im, nx, ny, levs, iaermdl
          logical,              intent(in)    :: h2o_phys, iaerclm, lsm_cold_start
-         integer,              intent(in)    :: idate(:)
-         real(kind_phys),      intent(in)    :: fhour
+         logical,              intent(in)    :: do_wamphys
+         integer,              intent(in)    :: idate(:), iopt_lake, iopt_lake_clm, iopt_lake_flake
+         real(kind_phys),      intent(in)    :: fhour, lakefrac_threshold, lakedepth_threshold
          real(kind_phys),      intent(in)    :: xlat_d(:), xlon_d(:)
+
+         integer,              intent(in) :: lkm
+         integer,              intent(inout)  :: use_lake_model(:)
+         real(kind=kind_phys), intent(in   )  :: lakefrac(:), lakedepth(:)
 
          integer,              intent(inout) :: jindx1_o3(:), jindx2_o3(:), jindx1_h(:), jindx2_h(:)
          real(kind_phys),      intent(inout) :: ddy_o3(:),  ddy_h(:)
          real(kind_phys),      intent(in)    :: ozpl(:,:,:), h2opl(:,:,:)
          integer,              intent(inout) :: jindx1_aer(:), jindx2_aer(:), iindx1_aer(:), iindx2_aer(:)
          real(kind_phys),      intent(inout) :: ddy_aer(:), ddx_aer(:)
-         real(kind_phys),      intent(in)    :: aer_nm(:,:,:)
+         real(kind_phys),      intent(out)   :: aer_nm(:,:,:)
          integer,              intent(inout) :: jindx1_ci(:), jindx2_ci(:), iindx1_ci(:), iindx2_ci(:)
          real(kind_phys),      intent(inout) :: ddy_ci(:), ddx_ci(:)
          integer,              intent(inout) :: imap(:), jmap(:)
@@ -196,16 +204,17 @@
          jamax=-999
 
 !$OMP parallel num_threads(nthrds) default(none)                                    &
-!$OMP          shared (me,master,ntoz,h2o_phys,im,nx,ny,idate)                      &
+!$OMP          shared (me,master,ntoz,h2o_phys,im,nx,ny,levs,idate)                 &
 !$OMP          shared (xlat_d,xlon_d,imap,jmap,errmsg,errflg)                       &
 !$OMP          shared (levozp,oz_coeff,oz_pres,ozpl)                                &
 !$OMP          shared (levh2o,h2o_coeff,h2o_pres,h2opl)                             &
 !$OMP          shared (iamin, iamax, jamin, jamax)                                  &
-!$OMP          shared (iaerclm,ntrcaer,aer_nm,iflip,iccn)                           &
+!$OMP          shared (iaerclm,iaermdl,ntrcaer,aer_nm,iflip,iccn)                   &
 !$OMP          shared (jindx1_o3,jindx2_o3,ddy_o3,jindx1_h,jindx2_h,ddy_h)          &
 !$OMP          shared (jindx1_aer,jindx2_aer,ddy_aer,iindx1_aer,iindx2_aer,ddx_aer) &
 !$OMP          shared (jindx1_ci,jindx2_ci,ddy_ci,iindx1_ci,iindx2_ci,ddx_ci)       &
 !$OMP          shared (do_ugwp_v1,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)        &
+!$OMP          shared (do_wamphys)                                                  &
 !$OMP          shared (isot,ivegsrc,nlunit,sncovr,sncovr_ice,lsm,lsm_ruc)           &
 !$OMP          shared (min_seaice,fice,landfrac,vtype,weasd,snupx,salp_data)        &
 !$OMP          private (ix,i,j,rsnow,vegtyp)
@@ -253,28 +262,22 @@
          end if
 
 !$OMP section
-!> - Call read_aerdata() to read aerosol climatology
+!> - Call read_aerdata() to read aerosol climatology, Anning added coupled
+!>  added coupled gocart and radiation option to initializing aer_nm
          if (iaerclm) then
-            ! Consistency check that the value for ntrcaerm set in GFS_typedefs.F90
-            ! and used to allocate aer_nm matches the value defined in aerclm_def
-            if (size(aer_nm, dim=3).ne.ntrcaerm) then
-               write(errmsg,'(2a,i0,a,i0)') "Value error in GFS_phys_time_vary_init: ",     &
-                     "ntrcaerm from aerclm_def does not match value in GFS_typedefs.F90: ", &
-                     ntrcaerm, " /= ", size(aer_nm, dim=3)
-               errflg = 1
-            else
-               ! Update the value of ntrcaer in aerclm_def with the value defined
-               ! in GFS_typedefs.F90 that is used to allocate the Tbd DDT.
-               ! If iaerclm is .true., then ntrcaer == ntrcaerm
-               ntrcaer = size(aer_nm, dim=3)
-               ! Read aerosol climatology
-               call read_aerdata (me,master,iflip,idate,errmsg,errflg)
-            endif
+           ntrcaer = ntrcaerm
+           call read_aerdata (me,master,iflip,idate,errmsg,errflg)
+         else if(iaermdl ==2 ) then
+           do ix=1,ntrcaerm
+             do j=1,levs
+               do i=1,im
+                 aer_nm(i,j,ix) = 1.e-20_kind_phys
+               end do
+             end do
+           end do
+           ntrcaer = ntrcaerm
          else
-            ! Update the value of ntrcaer in aerclm_def with the value defined
-            ! in GFS_typedefs.F90 that is used to allocate the Tbd DDT.
-            ! If iaerclm is .false., then ntrcaer == 1
-            ntrcaer = size(aer_nm, dim=3)
+           ntrcaer = 1
          endif
 
 !$OMP section
@@ -292,8 +295,14 @@
          endif
 
 !$OMP section
+!> - Call swio data
+         if (do_wamphys) then
+            call read_swio_data(me, master, errmsg, errflg)         
+         endif
+
+!$OMP section
 !> - Initialize soil vegetation (needed for sncovr calculation further down)
-         call set_soilveg(me, isot, ivegsrc, nlunit)
+         call set_soilveg(me, isot, ivegsrc, nlunit, errmsg, errflg)
 
 !$OMP end sections
 
@@ -676,6 +685,27 @@
            endif noahmp_init
          endif lsm_init
 
+!Lake model
+         if(lkm>0 .and. iopt_lake>0) then
+           ! A lake model is enabled.
+           do i = 1, im
+             !if (lakefrac(i) > 0.0 .and. lakedepth(i) > 1.0 ) then
+
+             ! The lake data must say there's a lake here (lakefrac) with a depth (lakedepth)
+             if (lakefrac(i) > lakefrac_threshold .and. lakedepth(i) > lakedepth_threshold ) then
+               ! This is a lake point. Inform the other schemes to use a lake model, and possibly nsst (lkm)
+               use_lake_model(i) = lkm
+               cycle
+             else
+               ! Not a valid lake point.
+               use_lake_model(i) = 0
+             endif
+           enddo
+         else
+           ! Lake model is disabled or settings are invalid.
+           use_lake_model = 0
+         endif
+
          is_initialized = .true.
 
       contains
@@ -705,26 +735,29 @@
          end function find_eq_smc
 
       end subroutine GFS_phys_time_vary_init
-!! @}
+!> @}
 
 !> \section arg_table_GFS_phys_time_vary_timestep_init Argument Table
 !! \htmlinclude GFS_phys_time_vary_timestep_init.html
 !!
 !>\section gen_GFS_phys_time_vary_timestep_init GFS_phys_time_vary_timestep_init General Algorithm
-!! @{
+!> @{
       subroutine GFS_phys_time_vary_timestep_init (                                                 &
             me, master, cnx, cny, isc, jsc, nrcm, im, levs, kdt, idate, nsswr, fhswr, lsswr, fhour, &
             imfdeepcnv, cal_pre, random_clds, nscyc, ntoz, h2o_phys, iaerclm, iccn, clstp,          &
             jindx1_o3, jindx2_o3, ddy_o3, ozpl, jindx1_h, jindx2_h, ddy_h, h2opl, iflip,            &
             jindx1_aer, jindx2_aer, ddy_aer, iindx1_aer, iindx2_aer, ddx_aer, aer_nm,               &
-            jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, in_nm, ccn_nm,              &
+            jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, in_nm, ccn_nm, fn_nml,      &
             imap, jmap, prsl, seed0, rann, nthrds, nx, ny, nsst, tile_num, nlunit, lsoil, lsoil_lsm,&
             kice, ialb, isot, ivegsrc, input_nml_file, use_ufo, nst_anl, frac_grid, fhcyc, phour,   &
             lakefrac, min_seaice, min_lakeice, smc, slc, stc, smois, sh2o, tslb, tiice, tg3, tref,  &
             tsfc, tsfco, tisfc, hice, fice, facsf, facwf, alvsf, alvwf, alnsf, alnwf, zorli, zorll, &
             zorlo, weasd, slope, snoalb, canopy, vfrac, vtype, stype, shdmin, shdmax, snowd,        &
             cv, cvb, cvt, oro, oro_uf, xlat_d, xlon_d, slmsk, landfrac,                             &
-            do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau, tau_amf, errmsg, errflg)
+            do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau, tau_amf, do_wamphys,          &
+!           csw_f107, csw_f107d, csw_kp, csw_kpa, csw_ap, csw_apa, csw_nhp, csw_nhpi, csw_shp,      &
+!           csw_shpi, csw_den, csw_ang, csw_bz, csw_bt, csw_vel, csw_time, sw_ktprev,               &
+            errmsg, errflg)
 
          implicit none
 
@@ -749,7 +782,7 @@
          integer,              intent(in)    :: seed0
          real(kind_phys),      intent(inout) :: rann(:,:)
 
-         logical,              intent(in)    :: do_ugwp_v1
+         logical,              intent(in)    :: do_ugwp_v1,do_wamphys
          integer,              intent(in)    :: jindx1_tau(:), jindx2_tau(:)
          real(kind_phys),      intent(in)    :: ddy_j1tau(:), ddy_j2tau(:)
          real(kind_phys),      intent(inout) :: tau_amf(:)
@@ -758,6 +791,7 @@
          integer,              intent(in)    :: nthrds, nx, ny, nsst, tile_num, nlunit, lsoil
          integer,              intent(in)    :: lsoil_lsm, kice, ialb, isot, ivegsrc
          character(len=*),     intent(in)    :: input_nml_file(:)
+         character(len=*),     intent(in)    :: fn_nml
          logical,              intent(in)    :: use_ufo, nst_anl, frac_grid
          real(kind_phys),      intent(in)    :: fhcyc, phour, lakefrac(:), min_seaice, min_lakeice,  &
                                                 xlat_d(:), xlon_d(:), landfrac(:)
@@ -772,7 +806,11 @@
 
          character(len=*),     intent(out)   :: errmsg
          integer,              intent(out)   :: errflg
-
+!WAMPHYS
+         real(kind=kind_phys)  :: csw_f107, csw_f107d, csw_kp, csw_kpa, csw_ap, csw_apa  
+         real(kind=kind_phys)  :: csw_nhp,  csw_nhpi,  csw_shp,csw_shpi, csw_den, csw_ang 
+         real(kind=kind_phys)  :: csw_bz,   csw_bt,    csw_vel,   csw_time       
+         integer :: sw_ktprev 
          ! Local variables
          integer :: i, j, k, iseed, iskip, ix
          real(kind=kind_phys) :: wrk(1)
@@ -797,7 +835,9 @@
 !$OMP          shared(ozpl,ddy_o3,h2o_phys,jindx1_h,jindx2_h,h2opl,ddy_h,iaerclm,master) &
 !$OMP          shared(levs,prsl,iccn,jindx1_ci,jindx2_ci,ddy_ci,iindx1_ci,iindx2_ci)     &
 !$OMP          shared(ddx_ci,in_nm,ccn_nm,do_ugwp_v1,jindx1_tau,jindx2_tau,ddy_j1tau)    &
-!$OMP          shared(ddy_j2tau,tau_amf,iflip)                                           &
+!$OMP          shared(ddy_j2tau,tau_amf,iflip,do_wamphys,csw_f107,csw_f107d,csw_kp)      &
+!$OMP          shared(csw_kpa,csw_ap,csw_apa,csw_nhp,csw_nhpi,csw_shp,csw_shpi,csw_den)  &
+!$OMP          shared(csw_ang,csw_bz,csw_bt,csw_vel,csw_time,sw_ktprev)                  &
 !$OMP          private(iseed,iskip,i,j,k)
 
 !$OMP sections
@@ -880,6 +920,16 @@
                                jindx1_tau, jindx2_tau,       &
                                ddy_j1tau, ddy_j2tau, tau_amf)
          endif
+!$OMP section
+!> - Call  
+
+         if (do_wamphys) then
+            call swio_time_interp(me, master, im, idate, fhour,            &
+                 csw_f107, csw_f107d,  csw_kp, csw_kpa, csw_ap, csw_apa,  &
+              csw_nhp,  csw_nhpi,  csw_shp,   csw_shpi, csw_den, csw_ang, &
+              csw_bz,   csw_bt,    csw_vel,   csw_time, sw_ktprev)
+!            csw_f107(:) =  csw_f107_scal                                      
+         endif
 
 !$OMP end sections
 !$OMP end parallel
@@ -898,25 +948,25 @@
 !> - Call gcycle() to repopulate specific time-varying surface properties for AMIP/forecast runs
          if (nscyc >  0) then
            if (mod(kdt,nscyc) == 1) THEN
-             call gcycle (me, nthrds, nx, ny, isc, jsc, nsst, tile_num, nlunit,              &
+             call gcycle (me, nthrds, nx, ny, isc, jsc, nsst, tile_num, nlunit, fn_nml,      &
                  input_nml_file, lsoil, lsoil_lsm, kice, idate, ialb, isot, ivegsrc,         &
                  use_ufo, nst_anl, fhcyc, phour, landfrac, lakefrac, min_seaice, min_lakeice,&
                  frac_grid, smc, slc, stc, smois, sh2o, tslb, tiice, tg3, tref, tsfc,        &
                  tsfco, tisfc, hice, fice, facsf, facwf, alvsf, alvwf, alnsf, alnwf,         &
                  zorli, zorll, zorlo, weasd, slope, snoalb, canopy, vfrac, vtype,            &
                  stype, shdmin, shdmax, snowd, cv, cvb, cvt, oro, oro_uf,                    &
-                 xlat_d, xlon_d, slmsk, imap, jmap)
+                 xlat_d, xlon_d, slmsk, imap, jmap, errmsg, errflg)
            endif
          endif
 
       end subroutine GFS_phys_time_vary_timestep_init
-!! @}
+!> @}
 
 !> \section arg_table_GFS_phys_time_vary_timestep_finalize Argument Table
 !! \htmlinclude GFS_phys_time_vary_timestep_finalize.html
 !!
 !>\section gen_GFS_phys_time_vary_timestep_finalize GFS_phys_time_vary_timestep_finalize General Algorithm
-!! @{
+!> @{
       subroutine GFS_phys_time_vary_timestep_finalize (errmsg, errflg)
 
          implicit none
@@ -930,7 +980,7 @@
          errflg = 0
 
       end subroutine GFS_phys_time_vary_timestep_finalize
-!! @}
+!> @}
 
 !> \section arg_table_GFS_phys_time_vary_finalize Argument Table
 !! \htmlinclude GFS_phys_time_vary_finalize.html
@@ -980,4 +1030,3 @@
       end subroutine GFS_phys_time_vary_finalize
 
    end module GFS_phys_time_vary
-!> @}

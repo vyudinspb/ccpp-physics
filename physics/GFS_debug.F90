@@ -307,7 +307,7 @@
 
       private
 
-      public GFS_diagtoscreen_init, GFS_diagtoscreen_timestep_init, GFS_diagtoscreen_run, GFS_diagtoscreen_finalize
+      public GFS_diagtoscreen_init, GFS_diagtoscreen_timestep_init, GFS_diagtoscreen_run
 
       contains
 
@@ -376,9 +376,6 @@
          end do
 
       end subroutine GFS_diagtoscreen_timestep_init
-
-      subroutine GFS_diagtoscreen_finalize ()
-      end subroutine GFS_diagtoscreen_finalize
 
 !> \section arg_table_GFS_diagtoscreen_run Argument Table
 !! \htmlinclude GFS_diagtoscreen_run.html
@@ -496,6 +493,8 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%oro_uf'    , Sfcprop%oro_uf)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%hice'      , Sfcprop%hice)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%weasd'     , Sfcprop%weasd)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%weasdl'    , Sfcprop%weasdl)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%%weasdi'   , Sfcprop%weasdi)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%canopy'    , Sfcprop%canopy)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%ffmm'      , Sfcprop%ffmm)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%ffhh'      , Sfcprop%ffhh)
@@ -616,7 +615,7 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%in_nm'           , Tbd%in_nm)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%ccn_nm'          , Tbd%ccn_nm)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%aer_nm'          , Tbd%aer_nm)
-                     if (Model%imfdeepcnv == Model%imfdeepcnv_gf) then
+                     if (Model%imfdeepcnv == Model%imfdeepcnv_gf .or. Model%imfdeepcnv == Model%imfdeepcnv_unified) then
                        call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%cactiv'        , Tbd%cactiv)
                        call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%cactiv_m'      , Tbd%cactiv_m)
                        call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Tbd%aod_gf'        , Tbd%aod_gf)
@@ -627,6 +626,9 @@
                      !    call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%fluxr_n ',    Diag%fluxr(:,n))
                      !end do
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%srunoff     ',    Diag%srunoff)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%evbs        ',    Diag%evbs)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%evcw        ',    Diag%evcw)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%sbsno       ',    Diag%sbsno)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%evbsa       ',    Diag%evbsa)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%evcwa       ',    Diag%evcwa)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%snohfa      ',    Diag%snohfa)
@@ -697,6 +699,7 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%tdomzr      ',    Diag%tdomzr)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%tdomip      ',    Diag%tdomip)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%tdoms       ',    Diag%tdoms)
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Diag%trans       ',    Diag%trans)
                      ! CCPP/RUC only
                      if (Model%lsm == Model%lsm_ruc) then
                        call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Sfcprop%wetness  ',  Sfcprop%wetness)
@@ -968,7 +971,7 @@
 
       private
 
-      public GFS_interstitialtoscreen_init, GFS_interstitialtoscreen_timestep_init, GFS_interstitialtoscreen_run, GFS_interstitialtoscreen_finalize
+      public GFS_interstitialtoscreen_init, GFS_interstitialtoscreen_timestep_init, GFS_interstitialtoscreen_run
 
       contains
 
@@ -1039,9 +1042,6 @@
          end do
 
       end subroutine GFS_interstitialtoscreen_timestep_init
-
-      subroutine GFS_interstitialtoscreen_finalize ()
-      end subroutine GFS_interstitialtoscreen_finalize
 
 !> \section arg_table_GFS_interstitialtoscreen_run Argument Table
 !! \htmlinclude GFS_interstitialtoscreen_run.html
@@ -1210,8 +1210,6 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%evap_ice            ', Interstitial%evap_ice                )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%evap_land           ', Interstitial%evap_land               )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%evap_water          ', Interstitial%evap_water              )
-                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%evbs                ', Interstitial%evbs                    )
-                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%evcw                ', Interstitial%evcw                    )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%ext_diag_thompson_reset', Interstitial%ext_diag_thompson_reset)
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%faerlw              ', Interstitial%faerlw                  )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%faersw              ', Interstitial%faersw                  )
@@ -1308,7 +1306,6 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%save_tcp            ', Interstitial%save_tcp                )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%save_u              ', Interstitial%save_u                  )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%save_v              ', Interstitial%save_v                  )
-                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%sbsno               ', Interstitial%sbsno                   )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%scmpsw%uvbfc        ', Interstitial%scmpsw%uvbfc            )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%scmpsw%uvbf0        ', Interstitial%scmpsw%uvbf0            )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%scmpsw%nirbm        ', Interstitial%scmpsw%nirbm            )
@@ -1321,6 +1318,8 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%sigmafrac           ', Interstitial%sigmafrac               )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%sigmatot            ', Interstitial%sigmatot                )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%snowc               ', Interstitial%snowc                   )
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%snowd_ice           ', Interstitial%snowd_ice               )
+                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%snowd_land          ', Interstitial%snowd_land              )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%snohf               ', Interstitial%snohf                   )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%snowmt              ', Interstitial%snowmt                  )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%stress              ', Interstitial%stress                  )
@@ -1333,7 +1332,6 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tprcp_ice           ', Interstitial%tprcp_ice               )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tprcp_land          ', Interstitial%tprcp_land              )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tprcp_water         ', Interstitial%tprcp_water             )
-                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%trans               ', Interstitial%trans                   )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tseal               ', Interstitial%tseal                   )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tsfa                ', Interstitial%tsfa                    )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%tsfc_water          ', Interstitial%tsfc_water              )
@@ -1347,6 +1345,9 @@
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%vdftra              ', Interstitial%vdftra                  )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%vegf1d              ', Interstitial%vegf1d                  )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%wcbmax              ', Interstitial%wcbmax                  )
+!                     call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%weasd_ice           ', Interstitial%weasd_ice              )
+!                    call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%weasd_land          ', Interstitial%weasd_land              )
+!                    call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%weasd_water         ', Interstitial%weasd_water             )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%wind                ', Interstitial%wind                    )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%work1               ', Interstitial%work1                   )
                      call print_var(mpirank, omprank, blkno, Grid%xlat_d, Grid%xlon_d, 'Interstitial%work2               ', Interstitial%work2                   )
@@ -1484,15 +1485,9 @@
 
       private
 
-      public GFS_abort_init, GFS_abort_run, GFS_abort_finalize
+      public GFS_abort_run
 
       contains
-
-      subroutine GFS_abort_init ()
-      end subroutine GFS_abort_init
-
-      subroutine GFS_abort_finalize ()
-      end subroutine GFS_abort_finalize
 
 !> \section arg_table_GFS_abort_run Argument Table
 !! \htmlinclude GFS_abort_run.html
@@ -1528,15 +1523,9 @@
 
       private
 
-      public GFS_checkland_init, GFS_checkland_run, GFS_checkland_finalize
+      public  GFS_checkland_run
 
       contains
-
-      subroutine GFS_checkland_init ()
-      end subroutine GFS_checkland_init
-
-      subroutine GFS_checkland_finalize ()
-      end subroutine GFS_checkland_finalize
 
 !> \section arg_table_GFS_checkland_run Argument Table
 !! \htmlinclude GFS_checkland_run.html

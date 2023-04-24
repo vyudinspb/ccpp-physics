@@ -1,4 +1,4 @@
-!>  \file sfc_nst.f
+!>\file sfc_nst.f
 !!  This file contains the GFS NSST model.
 
 !> This module contains the CCPP-compliant GFS near-surface sea temperature scheme.
@@ -6,18 +6,19 @@
 
       contains
 
-!>\defgroup gfs_nst_main GFS Near-Surface Sea Temperature Scheme Module
-!> \brief This subroutine calls the Thermal Skin-layer and Diurnal Thermocline models to update the NSST profile.
+!>\defgroup gfs_nst_main_mod GFS Near-Surface Sea Temperature Module
+!! This module contains the CCPP-compliant GFS near-surface sea temperature scheme.
+!> @{
+!! This subroutine calls the Thermal Skin-layer and Diurnal Thermocline models to update the NSST profile.
 !! \section arg_table_sfc_nst_run Argument Table
 !! \htmlinclude sfc_nst_run.html
 !!
-!! \section NSST_general_algorithm GFS Near-Surface Sea Temperature Scheme General Algorithm
-!> @{
+!> \section NSST_general_algorithm GFS Near-Surface Sea Temperature Scheme General Algorithm
       subroutine sfc_nst_run                                            &
      &     ( im, hvap, cp, hfus, jcal, eps, epsm1, rvrdm1, rd, rhw0,    &  ! --- inputs:
      &       pi, tgice, sbc, ps, u1, v1, t1, q1, tref, cm, ch,          &
      &       lseaspray, fm, fm10,                                       &
-     &       prsl1, prslki, prsik1, prslk1, wet, use_flake, xlon,       &
+     &       prsl1, prslki, prsik1, prslk1, wet, use_lake_model, xlon,  &
      &       sinlat, stress,                                            &
      &       sfcemis, dlwflx, sfcnsw, rain, timestep, kdt, solhr,xcosz, &
      &       wind, flag_iter, flag_guess, nstf_name1, nstf_name4,       &
@@ -37,7 +38,7 @@
 !       inputs:                                                         !
 !          ( im, ps, u1, v1, t1, q1, tref, cm, ch,                      !
 !            lseaspray, fm, fm10,                                       !
-!            prsl1, prslki, wet, use_flake, xlon, sinlat, stress,       !
+!            prsl1, prslki, wet, use_lake_model, xlon, sinlat, stress,  !
 !            sfcemis, dlwflx, sfcnsw, rain, timestep, kdt,solhr,xcosz,  !
 !            wind,  flag_iter, flag_guess, nstf_name1, nstf_name4,      !
 !            nstf_name5, lprnt, ipr, thsfc_loc,                         !
@@ -88,7 +89,7 @@
 !     prsik1   - real,                                             im   !
 !     prslk1   - real,                                             im   !
 !     wet      - logical, =T if any ocn/lake water (F otherwise)   im   !
-!     use_flake- logical, =T if flake model is used for lake       im   !
+!     use_lake_model- logical, =T if flake model is used for lake  im   !
 !     icy      - logical, =T if any ice                            im   !
 !     xlon     - real, longitude         (radians)                 im   !
 !     sinlat   - real, sin of latitude                             im   !
@@ -193,8 +194,8 @@
 ! For sea spray effect
       logical, intent(in) :: lseaspray
 !
-      logical, dimension(:), intent(in) :: flag_iter, flag_guess, wet,  &
-     &                                     use_flake 
+      logical, dimension(:), intent(in) :: flag_iter, flag_guess, wet
+      integer, dimension(:), intent(in) :: use_lake_model
 !    &,      icy
       logical,                intent(in) :: lprnt
       logical,                intent(in) :: thsfc_loc
@@ -276,7 +277,7 @@ cc
       do_nst = .false.
       do i = 1, im
 !       flag(i) = wet(i) .and. .not.icy(i) .and. flag_iter(i)
-        flag(i) = wet(i) .and. flag_iter(i) .and. .not. use_flake(i)
+        flag(i) = wet(i) .and. flag_iter(i) .and. use_lake_model(i)/=1
         do_nst  = do_nst .or. flag(i)
       enddo
       if (.not. do_nst) return
@@ -285,7 +286,7 @@ cc
 !
       do i=1, im
 !       if(wet(i) .and. .not.icy(i) .and. flag_guess(i)) then
-        if(wet(i) .and. flag_guess(i) .and. .not. use_flake(i)) then
+        if(wet(i) .and. flag_guess(i) .and. use_lake_model(i)/=1) then
           xt_old(i)      = xt(i)
           xs_old(i)      = xs(i)
           xu_old(i)      = xu(i)
@@ -604,7 +605,7 @@ cc
 ! restore nst-related prognostic fields for guess run
       do i=1, im
 !       if (wet(i) .and. .not.icy(i)) then
-        if (wet(i) .and. .not. use_flake(i)) then
+        if (wet(i) .and. use_lake_model(i)/=1) then
           if (flag_guess(i)) then    ! when it is guess of
             xt(i)      = xt_old(i)
             xs(i)      = xs_old(i)
@@ -652,7 +653,7 @@ cc
         enddo
       endif                   ! if ( nstf_name1 > 1 ) then
 !
-!  include sea spray effects
+!> - Include sea spray effects
 !
       do i=1,im
         if(lseaspray .and. flag(i)) then

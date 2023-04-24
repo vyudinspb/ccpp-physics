@@ -3,6 +3,7 @@
   type = scheme
   dependencies = aerclm_def.F,aerinterp.F90,gcycle.F90,h2o_def.f,h2ointerp.f90,iccn_def.F,iccninterp.F90,machine.F,mersenne_twister.f
   dependencies = namelist_soilveg.f,set_soilveg.f,ozinterp.f90,ozne_def.f,sfcsub.F,cires_tauamf_data.F90,noahmp_tables.f90
+    dependencies = wamphys_swdef.F90,wamphys_swio_data.F90
 
 ########################################################################
 [ccpp-arg-table]
@@ -44,6 +45,13 @@
   dimensions = ()
   type = logical
   intent = in
+[iaermdl]
+  standard_name = control_for_aerosol_radiation_scheme
+  long_name = control of aerosol scheme in radiation
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = in
 [iccn]
   standard_name = control_for_ice_cloud_condensation_nuclei_forcing
   long_name = flag for IN and CCN forcing for morrison gettelman microphysics
@@ -61,6 +69,13 @@
 [im]
   standard_name = horizontal_dimension
   long_name = horizontal dimension
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[levs]
+  standard_name = vertical_layer_dimension
+  long_name = number of vertical levels
   units = count
   dimensions = ()
   type = integer
@@ -215,13 +230,13 @@
   kind = kind_phys
   intent = inout
 [aer_nm]
-  standard_name = mass_number_concentration_of_aerosol_from_gocart_climatology
-  long_name = GOCART aerosol climatology number concentration
-  units = kg-1
+  standard_name = mass_mixing_ratio_of_aerosol_from_gocart_or_merra2
+  long_name = mass mixing ratio of aerosol from gocart or merra2
+  units = kg kg-1
   dimensions = (horizontal_dimension,vertical_layer_dimension,number_of_aerosol_tracers_MG)
   type = real
   kind = kind_phys
-  intent = in
+  intent = out
 [jindx1_ci]
   standard_name = lower_latitude_index_of_cloud_nuclei_forcing_for_interpolation
   long_name = interpolation low index for ice and cloud condensation nuclei in the y direction
@@ -280,6 +295,13 @@
   dimensions = (horizontal_dimension)
   type = integer
   intent = inout
+[do_wamphys]
+  standard_name = flag_for_wamphys
+  long_name = flag to activate version 1 of wamphys
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
 [do_ugwp_v1]
   standard_name = flag_for_ugwp_version_1
   long_name = flag to activate ver 1 CIRES UGWP
@@ -888,6 +910,73 @@
   dimensions = ()
   type = integer
   intent = in
+[lkm]
+  standard_name = control_for_lake_model_execution_method
+  long_name = control for lake model execution: 0=no lake, 1=lake, 2=lake+nsst
+  units = flag
+  dimensions = ()
+  type = integer
+  intent = in
+[use_lake_model]
+  standard_name = flag_for_using_lake_model
+  long_name = flag indicating lake points using a lake model
+  units = flag
+  dimensions = (horizontal_dimension)
+  type = integer
+  intent = inout
+[lakefrac]
+  standard_name = lake_area_fraction
+  long_name = fraction of horizontal grid area occupied by lake
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[lakedepth]
+  standard_name = lake_depth
+  long_name = lake depth
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[iopt_lake]
+  standard_name = control_for_lake_model_selection
+  long_name = control for lake model selection
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = in
+[iopt_lake_clm]
+  standard_name = clm_lake_model_control_selection_value
+  long_name = value that indicates clm lake model in the control for lake model selection
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = in
+[iopt_lake_flake]
+  standard_name = flake_model_control_selection_value
+  long_name = value that indicates flake model in the control for lake model selection
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = in
+[lakefrac_threshold]
+  standard_name = lakefrac_threshold_for_enabling_lake_model
+  long_name = fraction of horizontal grid area occupied by lake must be greater than this value to enable a lake model
+  units = frac
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+[lakedepth_threshold]
+  standard_name = lake_depth_threshold_for_enabling_lake_model
+  long_name = lake depth must be greater than this value to enable a lake model
+  units = m
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP
@@ -1211,9 +1300,9 @@
   kind = kind_phys
   intent = in
 [aer_nm]
-  standard_name = mass_number_concentration_of_aerosol_from_gocart_climatology
-  long_name = GOCART aerosol climatology number concentration
-  units = kg-1
+  standard_name = mass_mixing_ratio_of_aerosol_from_gocart_or_merra2
+  long_name = mass mixing ratio of aerosol from gocart or merra2
+  units = kg kg-1
   dimensions = (horizontal_dimension,vertical_layer_dimension,number_of_aerosol_tracers_MG)
   type = real
   kind = kind_phys
@@ -1278,6 +1367,14 @@
   type = real
   kind = kind_phys
   intent = inout
+[fn_nml]
+  standard_name = filename_of_namelist
+  long_name = namelist filename
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=*
+  intent = in
 [imap]
   standard_name = map_of_block_column_number_to_global_i_index
   long_name = map of local index ix to global index i for this block
@@ -1846,6 +1943,13 @@
   type = real
   kind = kind_phys
   intent = inout
+[do_wamphys]
+  standard_name = flag_for_wamphys
+  long_name = flag to activate version 1 of wamphys
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in     
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP

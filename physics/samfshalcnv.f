@@ -1,11 +1,10 @@
 !>  \file samfshalcnv.f
 !!  This file contains the Scale-Aware mass flux Shallow Convection scheme.
 
-!> This module contains the CCPP-compliant scale-aware mass-flux 
-!! shallow convection scheme.
       module samfshalcnv
 
       use samfcnv_aerosols, only : samfshalcnv_aerosols
+      use progsigma, only : progsigma_calc
 
       contains
 
@@ -28,14 +27,10 @@
       end if
       end subroutine samfshalcnv_init
 
-      subroutine samfshalcnv_finalize()
-      end subroutine samfshalcnv_finalize
-
-!> \defgroup SAMF_shal GFS Scale-Aware Mass-Flux Shallow Convection Scheme Module
-!! @{
-!>  \brief This subroutine contains the entirety of the SAMF shallow convection
+!> \defgroup SAMF_shal GFS saSAS Shallow Convection Module
+!>  This subroutine contains the entirety of the SAMF shallow convection
 !!  scheme.
-!!
+!> @{
 !!  This routine follows the \ref SAMFdeep quite closely, although it
 !!  can be interpreted as only having the "static" and "feedback" control
 !!  portions, since the "dynamic" control is not necessary to find the cloud
@@ -54,7 +49,6 @@
 !!  -# Calculate the tendencies of the state variables (per unit cloud base mass flux) and the cloud base mass flux.
 !!  -# For the "feedback control", calculate updated values of the state variables by multiplying the cloud base mass flux and the tendencies calculated per unit cloud base mass flux from the static control.
 !!  \section det_samfshalcnv GFS samfshalcnv Detailed Algorithm
-!!  @{
       subroutine samfshalcnv_run(im,km,itc,ntc,cliq,cp,cvap,            &
      &     eps,epsm1,fv,grav,hvap,rd,rv,                                &
      &     t0c,delt,ntk,ntr,delp,first_time_step,restart,               & 
@@ -77,7 +71,7 @@
       real(kind=kind_phys), intent(in) ::  delt
       real(kind=kind_phys), intent(in) :: psp(:), delp(:,:),            &
      &   prslp(:,:), garea(:), hpbl(:), dot(:,:), phil(:,:),            &
-     &   qmicro(:,:),tmf(:,:),prevsq(:,:),q(:,:)
+     &   qmicro(:,:),tmf(:,:,:),prevsq(:,:),q(:,:)
 
       real(kind=kind_phys), intent(in) :: sigmain(:,:)
 !
@@ -163,11 +157,11 @@ c
 cc
 
 !  parameters for prognostic sigma closure
-      real(kind=kind_phys) omega_u(im,km),zdqca(im,km),qlks(im,km),
+      real(kind=kind_phys) omega_u(im,km),zdqca(im,km),tmfq(im,km),
      &                     omegac(im),zeta(im,km),dbyo1(im,km),
-     &                     sigmab(im)
-      real(kind=kind_phys) gravinv,dxcrtas
-
+     &                     sigmab(im),qadv(im,km)
+      real(kind=kind_phys) gravinv,dxcrtas,invdelt
+      logical flag_shallow
 c  physical parameters
 !     parameter(g=grav,asolfac=0.89)
 !     parameter(g=grav)
@@ -195,7 +189,7 @@ c  physical parameters
       parameter(cinacrmx=-120.,shevf=2.0)
       parameter(dtmax=10800.,dtmin=600.)
       parameter(bet1=1.875,cd1=.506,f1=2.0,gam1=.5)
-      parameter(betaw=.03,dxcrt=15.e3,dxcrtc0=9.e3)
+      parameter(betaw=.03,dxcrtc0=9.e3)
       parameter(h1=0.33333333)
 !  progsigma
       parameter(dxcrtas=30.e3)
@@ -254,6 +248,7 @@ c-----------------------------------------------------------------------
       errflg = 0
 
       gravinv = 1./grav
+      invdelt = 1./delt
 
       elocp = hvap/cp
       el2orc = hvap*hvap/(rv*cp)
@@ -263,6 +258,12 @@ c-----------------------------------------------------------------------
 
       if (.not.hwrf_samfshal) then
              cinacrmn=-80.
+      endif
+
+      if (progsigma) then
+         dxcrt=10.e3
+      else
+         dxcrt=15.e3
       endif
 
 c-----------------------------------------------------------------------
@@ -525,7 +526,6 @@ c
          do i = 1, im
             dbyo1(i,k)=0.
             zdqca(i,k)=0.
-            qlks(i,k)=0.
             omega_u(i,k)=0.
             zeta(i,k)=1.0
          enddo
@@ -1271,7 +1271,7 @@ c
                 qcko(i,k)= qlk + qrch
                 pwo(i,k) = etah * c0t(i,k) * dz * qlk
                 cnvwt(i,k) = etah * qlk * grav / dp
-                qlks(i,k)=qlk
+                zdqca(i,k)=dq/eta(i,k)
               endif
 !
 !  compute buoyancy and drag for updraft velocity
@@ -1436,7 +1436,7 @@ c
                 qcko(i,k) = qlk + qrch
                 pwo(i,k) = etah * c0t(i,k) * dz * qlk
                 cnvwt(i,k) = etah * qlk * grav / dp
-                qlks(i,k)=qlk
+                zdqca(i,k)=dq/eta(i,k)
               endif
             endif
           endif
@@ -1524,7 +1524,7 @@ c
         endif
       enddo
 c
-!> - Calculate the mean updraft velocity in pressure coordinates within the cloud (wc).                                                                                        
+!> - For progsigma =T, calculate the mean updraft velocity in pressure coordinates within the cloud (wc).                                                                                        
       if(progsigma)then                                                                                                                               
          do i = 1, im
             omegac(i) = 0.
@@ -1553,8 +1553,8 @@ c
                if (omegac(i) > val) cnvflg(i)=.false.
             endif
          enddo
-c     
-c Compute zeta for prog closure
+
+!> - For progsigma = T, calculate the xi term in Bengtsson et al. 2022 \cite Bengtsson_2022 (equation 8)
          do k = 2, km1
             do i = 1, im
                if (cnvflg(i)) then
@@ -1602,24 +1602,13 @@ c
           if(dq > 0.) then
             qlko_ktcon(i) = dq
             qcko(i,k) = qrch
-            qlks(i,k) = qlko_ktcon(i)
+            zdqca(i,k) = dq
           endif
         endif
       enddo
       endif
 c
      
-       do k = 2, km1
-        do i = 1, im
-           if (cnvflg(i)) then
-              if(k > kbcon(i) .and. k < ktcon(i)) then
-                 zdqca(i,k)=((qlks(i,k)-qlks(i,k-1)) +
-     &                pwo(i,k)+dellal(i,k))
-              endif
-           endif
-        enddo
-      enddo
-
 c--- compute precipitation efficiency in terms of windshear
 c
 !! - Calculate the wind shear and precipitation efficiency according to equation 58 in Fritsch and Chappell (1980) \cite fritsch_and_chappell_1980 :
@@ -1934,12 +1923,34 @@ c
 c  compute cloud base mass flux as a function of the mean
 c     updraft velcoity
 c
-c Prognostic closure
+!> - From Bengtsson et al. (2022) \cite Bengtsson_2022 prognostic closure scheme, equation 8, call progsigma_calc() to compute updraft area fraction based on a moisture budget
       if(progsigma)then
-         call progsigma_calc(im,km,first_time_step,restart,
-     &        del,tmf,qmicro,dbyo1,zdqca,omega_u,zeta,hvap,delt,
-     &        prevsq,q,kbcon1,ktcon,cnvflg,
-     &        sigmain,sigmaout,sigmab,errmsg,errflg)
+!     Initial computations, dynamic q-tendency
+         if(first_time_step .and. .not.restart)then
+            do k = 1,km
+               do i = 1,im
+                  qadv(i,k)=0.
+               enddo
+            enddo
+         else
+            do k = 1,km
+               do i = 1,im
+                  qadv(i,k)=(q(i,k) - prevsq(i,k))*invdelt
+               enddo
+            enddo
+         endif
+
+         do k = 1,km
+            do i = 1,im
+               tmfq(i,k)=tmf(i,k,1)
+            enddo
+         enddo
+
+         flag_shallow = .true.
+         call progsigma_calc(im,km,first_time_step,restart,flag_shallow,
+     &        del,tmfq,qmicro,dbyo1,zdqca,omega_u,zeta,hvap,delt,
+     &        qadv,kbcon1,ktcon,cnvflg,
+     &        sigmain,sigmaout,sigmab)
       endif
 
 !> - From Han et al.'s (2017) \cite han_et_al_2017 equation 6, calculate cloud base mass flux as a function of the mean updraft velcoity.
@@ -2455,9 +2466,13 @@ c
             if(k > kb(i) .and. k < ktop(i)) then
               tem = 0.5 * (eta(i,k-1) + eta(i,k)) * xmb(i)
               tem1 = pfld(i,k) * 100. / (rd * t1(i,k))
-              sigmagfm(i) = max(sigmagfm(i), betaw)
-              ptem = tem / (sigmagfm(i) * tem1)
-              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*sigmagfm(i)*ptem*ptem
+              if(progsigma)then
+                tem2 = sigmab(i)
+              else
+                tem2 = max(sigmagfm(i), betaw)
+              endif
+              ptem = tem / (tem2 * tem1)
+              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*tem2*ptem*ptem
             endif
           endif
         enddo
@@ -2469,6 +2484,5 @@ c
       return
       end subroutine samfshalcnv_run
 !> @}
-!! @}
       end module samfshalcnv
 

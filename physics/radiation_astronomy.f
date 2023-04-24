@@ -21,18 +21,13 @@
 !         input:                                                       !
 !           ( jdate,kyear,deltsw,deltim,lsol_chg, me )                 !
 !         output:                                                      !
-!           ( slag,sdec,cdec,solcon )                                  !
+!           ( slag,sdec,cdec,solcon,errmsg,errflg)                     !
 !                                                                      !
 !      'coszmn'     -- compute cosin of zenith angles                  !
 !         input:                                                       !
 !           ( xlon,sinlat,coslat,solhr,IM, me )                        !
 !         output:                                                      !
 !           ( coszen,coszdg )                                          !
-!                                                                      !
-!                                                                      !
-!   external modules referenced:                                       !
-!       'module physparam'                  in 'physparam.f'           !
-!       'module physcons'                   in 'physcons.f'            !
 !                                                                      !
 !   program history log:                                               !
 !   - a collection of programs to track solar-earth position           !
@@ -75,8 +70,8 @@
 
 
 
-! \ingroup RRTMG
-!> \defgroup module_radiation_astronomy RRTMG Astronomy Module
+!> \defgroup module_radiation_astronomy Radiation Astronomy Module
+!> @{
 !> \brief This module sets up astronomical quantities for solar radiation
 !!  calculations.
 !!
@@ -93,8 +88,7 @@
 !> This module sets up astronomy quantities for solar radiation calculations.
       module module_radiation_astronomy  
 !
-      use physparam,         only : isolar, solar_file, kind_phys
-      use physcons,          only : con_solr, con_solr_old, con_pi
+      use machine,           only : kind_phys 
       use module_iounitdef,  only : NIRADSF
 !
       implicit   none
@@ -107,17 +101,17 @@
 !    &   VTAGAST='NCEP-Radiation_astronomy v5.1  Nov 2012 '
 
 ! Parameter constants
-      real (kind=kind_phys), parameter :: degrad = 180.0/con_pi
-      real (kind=kind_phys), parameter :: tpi    = 2.0 * con_pi
-      real (kind=kind_phys), parameter :: hpi    = 0.5 * con_pi
+      real (kind=kind_phys) :: degrad
+      real (kind=kind_phys) :: tpi
+      real (kind=kind_phys) :: hpi
+      real (kind=kind_phys) :: pid12
       real (kind=kind_phys), parameter :: f12    = 12.0
       real (kind=kind_phys), parameter :: f3600  = 3600.0
       real (kind=kind_phys), parameter :: czlimt = 0.0001      ! ~ cos(89.99427)
-      real (kind=kind_phys), parameter :: pid12  = con_pi/f12  ! angle per hour
 !     real (kind=kind_phys), parameter :: pid12  = (2.0*asin(1.0))/f12
 
 ! Module variable (to be set in module_radiation_astronomy::sol_init):
-      real (kind=kind_phys), public    :: solc0 = con_solr
+      real (kind=kind_phys), public    :: solc0
       integer   :: isolflg = 10
       character(26) :: solar_fname = ' '
 
@@ -133,7 +127,6 @@
       real (kind=kind_phys) :: anginc=0.0
 ! saved monthly solar constants (isolflg=4 only)
       real (kind=kind_phys) :: smon_sav(12)
-      data smon_sav(1:12) / 12*con_solr /
 
 ! saved year  of data used
       integer               :: iyr_sav =0
@@ -147,14 +140,12 @@
       contains
 ! =================
 
-!>\ingroup module_radiation_astronomy 
 !> This subroutine initializes astronomy process, and set up module
 !! constants.
 !!\param me         print message control flag
 !>\section sol_init_gen sol_init General Algorithm
-!! @{
       subroutine sol_init                                               &
-     &     ( me ) !  ---  inputs
+     &     ( me, isolar, solar_file, con_solr, con_solr_old, con_pi ) !  ---  inputs
 !  ---  outputs: ( none )
 
 !  ===================================================================  !
@@ -163,18 +154,16 @@
 !                                                                       !
 !  inputs:                                                              !
 !     me      - print message control flag                              !
-!                                                                       !
-!  outputs:  (to module variable)                                       !
-!     ( none )                                                          !
-!                                                                       !
-!  external module variable: (in physparam)                             !
-!   isolar    - = 0: use the old fixed solar constant in "physcon"      !
-!               =10: use the new fixed solar constant in "physcon"      !
+!     isolar  - = 0: use the old fixed solar constant in "GFS_typedefs" !
+!               =10: use the new fixed solar constant in "GFS_typedefs" !
 !               = 1: use noaa ann-mean tsi tbl abs-scale with cyc apprx !
 !               = 2: use noaa ann-mean tsi tbl tim-scale with cyc apprx !
 !               = 3: use cmip5 ann-mean tsi tbl tim-scale with cyc apprx!
 !               = 4: use cmip5 mon-mean tsi tbl tim-scale with cyc apprx!
-!   solar_file- external solar constant data table                      !
+!      solar_file - external solar constant data table                  !
+!                                                                       !
+!  outputs:  (to module variable)                                       !
+!     ( none )                                                          !
 !                                                                       !
 !  internal module variable:                                            !
 !   isolflg   - internal solar constant scheme control flag             !
@@ -191,16 +180,23 @@
       implicit none
 
 !  ---  input:
-      integer,  intent(in) :: me
-
+      integer,  intent(in) :: me, isolar
+      character(len=26), intent(in) :: solar_file
+      real(kind=kind_phys), intent(in) :: con_solr, con_solr_old, con_pi
 !  ---  output: ( none )
 
 !  ---  local:
       logical :: file_exist
+      integer :: imonth
 !
 !===>  ...  begin here
 !
       if ( me == 0 ) print *, VTAGAST    !print out version tag
+
+      degrad = 180.0/con_pi
+      tpi    = 2.0 * con_pi
+      hpi    = 0.5 * con_pi
+      pid12  = con_pi/f12  
 
 !  ---  initialization
       isolflg = isolar
@@ -208,6 +204,9 @@
       solar_fname = solar_file
       iyr_sav = 0
       nstp    = 6
+      do imonth = 1,12
+         smon_sav(imonth) = con_solr
+      enddo
 
       if ( isolar == 0 ) then
         solc0   = con_solr_old
@@ -308,10 +307,8 @@
       return
 !...................................
       end subroutine sol_init
-!! @}
 !-----------------------------------
 
-!>\ingroup module_radiation_astronomy
 !> This subroutine computes solar parameters at forecast time.
 !!\param jdate     ncep absolute date and time at fcst time
 !!                 (yr, mon, day, t-zone, hr, min, sec, mil-sec)
@@ -327,11 +324,10 @@
 !!\param solcon             sun-earth distance adjusted solar constant
 !!                           \f$(w/m^2)\f$
 !>\section gen_sol_update sol_update General Algorithm
-!! @{
 !-----------------------------------
       subroutine sol_update                                             &
      &     ( jdate,kyear,deltsw,deltim,lsol_chg, me,                    &     !  ---  inputs
-     &       slag, sdec, cdec, solcon                                   &     !  ---  outputs
+     &       slag, sdec, cdec, solcon, con_pi, errmsg, errflg           &     !  ---  outputs
      &      )
 
 !  ===================================================================  !
@@ -353,6 +349,8 @@
 !    slag          - equation of time in radians                        !
 !    sdec, cdec    - sin and cos of the solar declination angle         !
 !    solcon        - sun-earth distance adjusted solar constant (w/m2)  !
+!    errmsg        - CCPP error message                                 !
+!    errflg        - CCPP error flag                                    !
 !                                                                       !
 !                                                                       !
 !  module variable:                                                     !
@@ -386,10 +384,12 @@
       integer, intent(in) :: jdate(:), kyear, me
       logical, intent(in) :: lsol_chg
 
-      real (kind=kind_phys), intent(in) :: deltsw, deltim
+      real (kind=kind_phys), intent(in) :: deltsw, deltim, con_pi
 
 !  ---  output:
       real (kind=kind_phys), intent(out) :: slag, sdec, cdec, solcon
+      character(len=*), intent(out) :: errmsg
+      integer,          intent(out) :: errflg
 
 !  ---  locals:
       real (kind=kind_phys), parameter :: hrday = 1.0/24.0    ! frc day/hour
@@ -408,6 +408,10 @@
 !
 !===>  ...  begin here
 !
+! Initialize the CCPP error handling variables
+      errmsg = ''
+      errflg = 0
+
 !  --- ...  forecast time
       iyear = jdate(1)
       imon  = jdate(2)
@@ -430,7 +434,10 @@
           inquire (file=solar_fname, exist=file_exist)
           if ( .not. file_exist ) then
             print *,' !!! ERROR! Can not find solar constant file!!!'
-            stop
+            errflg = 1
+            errmsg = "ERROR(radiation_astronomy): solar constant file"//&
+     &           " not found"
+            return
           else
             iyr = iyear
 
@@ -585,7 +592,7 @@
 !> -# Call solar()
       call solar                                                        &
 !  ---  inputs:
-     &     ( jd, fjd,                                                   &
+     &     ( jd, fjd, con_pi,                                           &
 !  ---  outputs:
      &       r1, dlt, alp                                               &
      &     )
@@ -638,9 +645,7 @@
 !...................................
       end subroutine sol_update
 !-----------------------------------
-!! @}
 
-!>\ingroup module_radiation_astronomy
 !> This subroutine computes radius vector, declination and right
 !! ascension of sun, and equation of time.
 !!\param[in] jd   julian day
@@ -649,10 +654,9 @@
 !!\param[out] dlt declination of sun in radians
 !!\param[out] alp right ascension of sun in radians
 !>\section solar_gen solar General Algorithm
-!! @{
 !-----------------------------------
       subroutine solar                                                  &
-     &     ( jd, fjd,                                                   &       !  ---  inputs
+     &     ( jd, fjd, con_pi,                                           &       !  ---  inputs
      &       r1, dlt, alp                                               &       !  ---  outputs
      &     )
 
@@ -684,7 +688,7 @@
       implicit none
 
 !  ---  inputs:
-      real (kind=kind_phys), intent(in) :: fjd
+      real (kind=kind_phys), intent(in) :: fjd, con_pi
       integer,               intent(in) :: jd
 
 !  ---  outputs:
@@ -804,10 +808,8 @@
       return
 !...................................
       end subroutine solar
-!! @}
 !-----------------------------------
 
-!>\ingroup module_radiation_astronomy
 !> This subroutine computes mean cos solar zenith angle over SW calling
 !! interval.
 !!\param xlon       grids' longitudes in radians, work both on
@@ -821,7 +823,6 @@
 !!                  interval
 !!\param coszdg     average of cosz over entire sw call interval
 !>\section coszmn_gen coszmn General Algorithm
-!! @{
 !-----------------------------------
       subroutine coszmn                                                 &
      &     ( xlon,sinlat,coslat,solhr, IM, me,                          &     !  ---  inputs
@@ -898,16 +899,16 @@
 
       do i = 1, IM
         coszdg(i) = coszen(i) * rstp
-        if (istsun(i) > 0) coszen(i) = coszen(i) / istsun(i)
+        if (istsun(i) > 0 .and. coszen(i) /= 0.0_kind_phys) then
+          coszen(i) = coszen(i) / istsun(i)
+        endif 
       enddo
 !
       return
 !...................................
       end subroutine coszmn
-!! @}
 !-----------------------------------
 
-!>\ingroup module_radiation_astronomy
 !> This subroutine prints out forecast date, time, and astronomy
 !! quantities.
 !!\param[in] jd    forecast julian day
@@ -917,7 +918,6 @@
 !!\param[in] r1    earth-sun radius vector in meter
 !!\param[in] solc  solar constant in \f$w/m^2\f$
 !>\section prtime_gen prtime General Algorithm
-!! @{
 !-----------------------------------
       subroutine prtime                                                 &
      &     ( jd, fjd, dlt, alp, r1, solc                                &    !  ---  inputs
@@ -1033,10 +1033,10 @@
       return
 !...................................
       end subroutine prtime
-!! @}
 !-----------------------------------
 
 !
 !...........................................!
       end module module_radiation_astronomy !
+!> @}
 !===========================================!

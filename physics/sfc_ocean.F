@@ -7,28 +7,25 @@
       module sfc_ocean
       implicit none
       private
-      public :: sfc_ocean_init, sfc_ocean_run, sfc_ocean_finalize
+      public :: sfc_ocean_run
 
       contains
 
-      subroutine sfc_ocean_init()
-      end subroutine sfc_ocean_init
 
-      subroutine sfc_ocean_finalize()
-      end subroutine sfc_ocean_finalize
-
-!>\defgroup gfs_ocean_main GFS Simple Ocean Scheme Module
+!>\defgroup gfs_ocean_main GFS Simple Ocean Module
 !! This subroutine calculates thermodynamical properties over
 !! open water.
+!>@{
 !! \section arg_table_sfc_ocean_run Argument Table
 !! \htmlinclude sfc_ocean_run.html
 !!
+!!>\section gen_sfc_ocean GFS Simple Ocean scheme General Algorithm
       subroutine sfc_ocean_run                                          &
 !...................................
 !  ---  inputs:
      &     ( im, hvap, cp, rd, eps, epsm1, rvrdm1, ps, u1, v1, t1, q1,  &
      &       tskin, cm, ch, lseaspray, fm, fm10,                        &
-     &       prsl1, prslki, wet, use_flake, wind,                       &,  ! --- inputs
+     &       prsl1, prslki, wet, use_lake_model, wind,                  &,  ! --- inputs
      &       flag_iter, use_med_flux, dqsfc_med, dtsfc_med,             &
      &       qsurf, cmm, chh, gflux, evap, hflx, ep,                    &   ! --- outputs
      &       errmsg, errflg                                             &
@@ -42,7 +39,7 @@
 !    call sfc_ocean                                                     !
 !       inputs:                                                         !
 !        ( im, ps, u1, v1, t1, q1, tskin, cm, ch, lseaspray, fm, fm10,  !
-!            prsl1, prslki, wet, use_flake, wind, flag_iter,            !
+!            prsl1, prslki, wet, use_lake_model, wind, flag_iter,       !
 !            use_med_flux,                                              !
 !       outputs:                                                        !
 !            qsurf, cmm, chh, gflux, evap, hflx, ep )                   !
@@ -117,7 +114,8 @@
 ! For sea spray effect
       logical, intent(in) :: lseaspray
 !
-      logical, dimension(:), intent(in) :: flag_iter, wet, use_flake
+      logical, dimension(:), intent(in) :: flag_iter, wet
+      integer, dimension(:), intent(in) :: use_lake_model
 !
       logical, intent(in) :: use_med_flux
 
@@ -164,10 +162,10 @@
       hvapi = one/hvap
       elocp = hvap/cp
 !
-!  --- ...  flag for open water
+!> - Flag for open water
       do i = 1, im
-        flag(i) = (wet(i) .and. flag_iter(i) .and. .not. use_flake(i))
-!  --- ...  initialize variables. all units are supposedly m.k.s. unless specified
+        flag(i) = (wet(i) .and. flag_iter(i) .and. use_lake_model(i)/=1)
+!> - Initialize variables. all units are supposedly m.k.s. unless specified
 !           ps is in pascals, wind is wind speed,
 !           rho is density, qss is sat. hum. at surface
 
@@ -199,7 +197,7 @@
             cmm(i)   = cm(i) * wind(i)
             chh(i)   = rho(i) * tem
 
-!  --- ...  sensible and latent heat flux over open water
+!> - Calcualte sensible and latent heat flux over open water
 
             hflx(i)  = rch * (tskin(i) - t1(i) * prslki(i))
 
@@ -211,7 +209,7 @@
         endif
       enddo
 !
-!  include sea spray effects
+!> - Include sea spray effects
 !
       do i=1,im
         if(lseaspray .and. flag(i)) then
@@ -251,4 +249,5 @@
 !...................................
       end subroutine sfc_ocean_run
 !-----------------------------------
+!>@}
       end module sfc_ocean

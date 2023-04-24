@@ -6,12 +6,12 @@
 !! This module contains the front end to NSSL microphysics scheme.
 module mp_nssl
 
-    use machine, only : kind_phys, kind_real
+    use machine, only : kind_phys
     use module_mp_nssl_2mom, only : nssl_2mom_init, nssl_2mom_driver
 
     implicit none
 
-    public :: mp_nssl_init, mp_nssl_run, mp_nssl_finalize
+    public :: mp_nssl_init, mp_nssl_run
 
     private
     logical :: is_initialized = .False.
@@ -21,7 +21,6 @@ module mp_nssl
 
 !>\ingroup nsslmp
 !> This subroutine is a wrapper around the nssl_2mom_init().
-!! \section arg_table_mp_nssl_init Argument Table
 !>@{
 !> \section arg_table_mp_nssl_init Argument Table
 !! \htmlinclude mp_nssl_init.html
@@ -32,6 +31,7 @@ module mp_nssl
                               con_t0c, con_cliq, con_csol, con_eps,   &
                               imp_physics, imp_physics_nssl,  &
                               nssl_cccn, nssl_alphah, nssl_alphahl, &
+                              nssl_alphar, nssl_ehw0_in, nssl_ehlw0_in,   &
                               nssl_ccn_on, nssl_hail_on, nssl_invertccn ) 
                               
 
@@ -53,6 +53,7 @@ module mp_nssl
          integer,                   intent(in)    :: imp_physics
          integer,                   intent(in)    :: imp_physics_nssl
          real(kind_phys),           intent(in)    :: nssl_cccn, nssl_alphah, nssl_alphahl
+         real(kind_phys),           intent(in)    :: nssl_alphar, nssl_ehw0_in, nssl_ehlw0_in 
          logical,                   intent(in)    :: nssl_ccn_on, nssl_hail_on, nssl_invertccn
 
          ! Local variables: dimensions used in nssl_init
@@ -116,6 +117,7 @@ module mp_nssl
          nssl_params(11) = 0 ! nssl_ipelec_tmp
          nssl_params(12) = 11 ! nssl_isaund
          nssl_params(13) = 0 ! 1= turn on cccna; 0 = turn off
+         nssl_params(14)  = nssl_alphar
          
          nssl_qccn = nssl_cccn/1.225
       !   if (mpirank==mpiroot) then
@@ -130,7 +132,7 @@ module mp_nssl
 
 !           write(0,*) 'call nssl_2mom_init'
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0, &
-                     ihvol=ihailv,errmsg=errmsg,errflg=errflg,myrank=mpirank,mpiroot=mpiroot)
+                ihvol=ihailv,nssl_ehw0=nssl_ehw0_in,nssl_ehlw0=nssl_ehlw0_in,errmsg=errmsg,errflg=errflg,myrank=mpirank,mpiroot=mpiroot)
 
          ! For restart runs, the init is done here
          if (restart) then
@@ -801,21 +803,5 @@ module mp_nssl
 
     end subroutine mp_nssl_run
 !>@}
-
-#if 0
-!! \section arg_table_mp_nssl_finalize Argument Table
-!! \htmlinclude mp_nssl_finalize.html
-!!
-#endif
-    subroutine mp_nssl_finalize(errflg, errmsg)
-        implicit none
-         character(len=*),          intent(  out) :: errmsg
-         integer,                   intent(  out) :: errflg
-
-        errflg = 0
-        errmsg = ''
-
-
-    end subroutine mp_nssl_finalize
 
 end module mp_nssl

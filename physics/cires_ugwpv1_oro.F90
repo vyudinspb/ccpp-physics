@@ -1,3 +1,6 @@
+!>\file cires_ugwpv1_oro.F90
+!!
+
 module cires_ugwpv1_oro
   use cires_ugwpv1_sporo
 contains
@@ -999,7 +1002,9 @@ contains
 !    
           enddo
           print *
-          stop
+          errflg = 1
+          errmsg = 'ERROR(orogw_v1): '
+          return
         endif
        endif
        

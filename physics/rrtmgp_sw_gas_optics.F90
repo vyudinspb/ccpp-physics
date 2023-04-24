@@ -1,10 +1,16 @@
+!> \file rrtmgp_sw_gas_optics.F90
+!!
+!> \defgroup rrtmgp_sw_gas_optics rrtmgp_sw_gas_optics.F90
+!!
+!! \brief This module contains a routine to initialize the k-distribution data used
+!! by the RRTMGP shortwave radiation scheme.
+!!
 module rrtmgp_sw_gas_optics
   use machine,                only: kind_phys
   use mo_rte_kind,            only: wl
   use mo_gas_optics_rrtmgp,   only: ty_gas_optics_rrtmgp
   use mo_gas_concentrations,  only: ty_gas_concs
   use radiation_tools,        only: check_error_msg
-  use mo_optical_props,       only: ty_optical_props_2str
   use netcdf
 #ifdef MPI
   use mpi
@@ -73,25 +79,36 @@ module rrtmgp_sw_gas_optics
        scale_by_complement_upperSW          ! Absorption is scaled by concentration of scaling_gas (F) or its complement (T)
 contains
 
-  ! #########################################################################################
-  ! SUBROUTINE sw_gas_optics_init
-  ! #########################################################################################
+  ! ######################################################################################
+!>\defgroup rrtmgp_sw_gas_optics_mod GFS RRTMGP-SW Gas Optics Module
+!> @{
 !! \section arg_table_rrtmgp_sw_gas_optics_init
 !! \htmlinclude rrtmgp_sw_gas_optics.html
 !!
-  subroutine rrtmgp_sw_gas_optics_init(rrtmgp_root_dir, rrtmgp_sw_file_gas,                 &
+!> \ingroup rrtmgp_sw_gas_optics
+!!
+!! RRTMGP relies heavility on derived-data-types, which contain type-bound procedures 
+!! that are referenced frequently throughout the RRTMGP shortwave scheme. The data needed
+!! for the correlated k-distribution is also contained within this type. Within this module,
+!! the full k-distribution data is read in, reduced by the "active gases" provided, and
+!! loaded into the RRTMGP DDT, ty_gas_optics_rrtmgp.
+!!
+!! \section rrtmgp_sw_gas_optics_init
+!> @{ 
+  ! ######################################################################################  
+  subroutine rrtmgp_sw_gas_optics_init(rrtmgp_root_dir, rrtmgp_sw_file_gas,              &
        active_gases_array, mpicomm, mpirank, mpiroot, errmsg, errflg)
 
     ! Inputs
     character(len=128),intent(in) :: &
          rrtmgp_root_dir,  & ! RTE-RRTMGP root directory
-         rrtmgp_sw_file_gas  ! RRTMGP file containing coefficients used to compute gaseous optical properties
+         rrtmgp_sw_file_gas  ! RRTMGP file containing K-distribution data
+    character(len=*), dimension(:), intent(in) :: &
+         active_gases_array  ! List of active gases from namelist as array
     integer,intent(in) :: &
          mpicomm,          & ! MPI communicator
          mpirank,          & ! Current MPI rank
          mpiroot             ! Master MPI rank
-    character(len=*), dimension(:), intent(in) :: &
-         active_gases_array ! List of active gases from namelist as array
 
     ! Outputs
     character(len=*), intent(out) :: &
@@ -100,11 +117,10 @@ contains
          errflg              ! CCPP error code
 
     ! Local variables
-    integer :: status, ncid, dimid, varID, iGas, mpierr, iChar
+    integer :: status, ncid, dimid, varID, mpierr, iChar
     integer,dimension(:),allocatable :: temp1, temp2, temp3, temp4
     character(len=264) :: sw_gas_props_file
-    type(ty_gas_concs) :: gas_concentrations  ! RRTMGP DDT containing active trace gases
-
+    type(ty_gas_concs) :: gas_concs  ! RRTMGP DDT containing active trace gases
 
     ! Initialize
     errmsg = ''
@@ -441,6 +457,7 @@ contains
        call mpi_bcast(scaling_gas_lowerSW(iChar),      &
             len(scaling_gas_lowerSW(iChar)),      MPI_CHARACTER,        mpiroot, mpicomm, mpierr)
     enddo
+
     do iChar=1,nminor_absorber_intervals_upperSW
        call mpi_bcast(minor_gases_upperSW(iChar),      &
             len(minor_gases_upperSW(iChar)),      MPI_CHARACTER,        mpiroot, mpicomm, mpierr)
@@ -466,9 +483,8 @@ contains
     ! Initialize RRTMGP DDT's...
     !
     ! #######################################################################################
-    allocate(gas_concentrations%gas_name(1:size(active_gases_array)))
-    gas_concentrations%gas_name(:) = active_gases_array(:)
-    call check_error_msg('sw_gas_optics_init',sw_gas_props%load(gas_concentrations,         &
+    call check_error_msg('rrtmgp_sw_gas_optics_init_gas_concs',gas_concs%init(active_gases_array))
+    call check_error_msg('rrtmgp_sw_gas_optics_init_load',sw_gas_props%load(gas_concs,      &
          gas_namesSW, key_speciesSW, band2gptSW, band_limsSW, press_refSW, press_ref_tropSW,&
          temp_refSW, temp_ref_pSW, temp_ref_tSW, vmr_refSW, kmajorSW, kminor_lowerSW,       &
          kminor_upperSW, gas_minorSW, identifier_minorSW, minor_gases_lowerSW,              &
@@ -480,112 +496,6 @@ contains
          sb_defaultSW, rayl_lowerSW, rayl_upperSW))
 
   end subroutine rrtmgp_sw_gas_optics_init
-
-  ! #########################################################################################
-  ! SUBROUTINE rrtmgp_sw_gas_optics_run
-  ! #########################################################################################
-!! \section arg_table_rrtmgp_sw_gas_optics_run
-!! \htmlinclude rrtmgp_sw_gas_optics.html
-!!
-  subroutine rrtmgp_sw_gas_optics_run(doSWrad, nCol, nLev, ngptsGPsw, nday, idxday,  p_lay, &
-       p_lev, toa_src_sw, t_lay, t_lev, active_gases_array, gas_concentrations, solcon,     &
-       sw_optical_props_clrsky, errmsg, errflg)
-
-    ! Inputs
-    logical, intent(in) :: &
-         doSWrad                 ! Flag to calculate SW irradiances
-    integer,intent(in) :: &
-         ngptsGPsw,            & ! Number of spectral (g) points.
-         nDay,                 & ! Number of daylit points.
-         nCol,                 & ! Number of horizontal points
-         nLev                    ! Number of vertical levels
-    integer,intent(in),dimension(ncol) :: &
-         idxday                  ! Indices for daylit points.
-    real(kind_phys), dimension(ncol,nLev), intent(in) :: &
-         p_lay,                & ! Pressure @ model layer-centers (Pa)
-         t_lay                   ! Temperature (K)
-    real(kind_phys), dimension(ncol,nLev+1), intent(in) :: &
-         p_lev,                & ! Pressure @ model layer-interfaces (Pa)
-         t_lev                   ! Temperature @ model levels
-    type(ty_gas_concs),intent(inout) :: &
-         gas_concentrations      ! RRTMGP DDT: trace gas concentrations (vmr)
-    real(kind_phys), intent(in) :: &
-         solcon                  ! Solar constant
-
-    ! Output
-    character(len=*), intent(out) :: &
-         errmsg                  ! CCPP error message
-    integer,          intent(out) :: &
-         errflg                  ! CCPP error code
-    type(ty_optical_props_2str),intent(out) :: &
-         sw_optical_props_clrsky ! RRTMGP DDT: clear-sky shortwave optical properties, spectral (tau,ssa,g) 
-    real(kind_phys), dimension(nCol,ngptsGPsw), intent(out) :: &
-         toa_src_sw              ! TOA incident spectral flux (W/m2)
-    character(len=*), dimension(:), intent(in) :: &
-         active_gases_array ! List of active gases from namelist as array
-
-    ! Local variables
-    integer :: ij,iGas
-    real(kind_phys), dimension(ncol,nLev) :: vmrTemp
-    real(kind_phys), dimension(nday,ngptsGPsw) :: toa_src_sw_temp
-    type(ty_gas_concs)  ::  gas_concentrations_daylit
-
-    ! Initialize CCPP error handling variables
-    errmsg = ''
-    errflg = 0
-
-    if (.not. doSWrad) return
-
-    gas_concentrations%gas_name(:) = active_gases_array(:)
-
-    toa_src_sw(:,:) = 0._kind_phys
-    if (nDay .gt. 0) then
-       ! Allocate space
-       call check_error_msg('rrtmgp_sw_gas_optics_run_alloc_2str',&
-            sw_optical_props_clrsky%alloc_2str(nday, nLev, sw_gas_props))
-
-       gas_concentrations_daylit%ncol = nDay
-       gas_concentrations_daylit%nlay = nLev
-       allocate(gas_concentrations_daylit%gas_name(gas_concentrations%get_num_gases()))
-       allocate(gas_concentrations_daylit%concs(gas_concentrations%get_num_gases()))
-       do iGas=1,gas_concentrations%get_num_gases()
-          allocate(gas_concentrations_daylit%concs(iGas)%conc(nDay, nLev))
-       enddo
-       gas_concentrations_daylit%gas_name(:) = active_gases_array(:)
-
-       ! Subset the gas concentrations.
-       do iGas=1,gas_concentrations%get_num_gases()
-          call check_error_msg('rrtmgp_sw_gas_optics_run_get_vmr',&
-               gas_concentrations%get_vmr(trim(gas_concentrations_daylit%gas_name(iGas)),vmrTemp))
-          call check_error_msg('rrtmgp_sw_gas_optics_run_set_vmr',&
-               gas_concentrations_daylit%set_vmr(trim(gas_concentrations_daylit%gas_name(iGas)),vmrTemp(idxday(1:nday),:)))
-       enddo
-
-       ! Call SW gas-optics
-       call check_error_msg('rrtmgp_sw_gas_optics_run',sw_gas_props%gas_optics(&
-            p_lay(idxday(1:nday),:),          & ! IN  - Pressure @ layer-centers (Pa)
-            p_lev(idxday(1:nday),:),          & ! IN  - Pressure @ layer-interfaces (Pa)
-            t_lay(idxday(1:nday),:),          & ! IN  - Temperature @ layer-centers (K)
-            gas_concentrations_daylit,        & ! IN  - RRTMGP DDT: trace gas volumne mixing-ratios
-            sw_optical_props_clrsky,          & ! OUT - RRTMGP DDT: Shortwave optical properties, by
-                                                !                   spectral point (tau,ssa,g)
-            toa_src_sw_temp))                   ! OUT - TOA incident shortwave radiation (spectral)
-       toa_src_sw(idxday(1:nday),:) = toa_src_sw_temp
-
-       ! Scale incident flux
-       do ij=1,nday
-          toa_src_sw(idxday(ij),:) = toa_src_sw(idxday(ij),:)*solcon/ &
-                                     sum(toa_src_sw(idxday(ij),:))
-       enddo
-    endif
-
-  end subroutine rrtmgp_sw_gas_optics_run
-
-  ! #########################################################################################
-  ! SUBROUTINE rrtmgp_sw_gas_optics_finalize
-  ! #########################################################################################
-  subroutine rrtmgp_sw_gas_optics_finalize()
-  end subroutine rrtmgp_sw_gas_optics_finalize
-
+!> @}
 end module rrtmgp_sw_gas_optics
  

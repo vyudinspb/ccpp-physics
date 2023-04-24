@@ -7,7 +7,8 @@
       module samfdeepcnv
 
       use samfcnv_aerosols, only : samfdeepcnv_aerosols
-
+      use progsigma, only : progsigma_calc
+ 
       contains
 
       subroutine samfdeepcnv_init(imfdeepcnv,imfdeepcnv_samf,            &
@@ -29,13 +30,10 @@
 
       end subroutine samfdeepcnv_init
 
-      subroutine samfdeepcnv_finalize()
-      end subroutine samfdeepcnv_finalize
-
-!> \defgroup SAMFdeep GFS Scale-Aware Mass-Flux Deep Convection Scheme Module
-!! @{
-!>  \brief This subroutine contains the entirety of the SAMF deep convection
+!> \defgroup SAMFdeep GFS saSAS Deep Convection Module
+!> This subroutine contains the entirety of the SAMF deep convection
 !! scheme.
+!> @{
 !!
 !! For grid sizes larger than threshold value, as in Grell (1993) \cite grell_1993 , the SAMF
 !! deep convection scheme can be described in terms of three types of
@@ -74,7 +72,6 @@
 !!  -# For the "feedback control", calculate updated values of the state variables by multiplying the cloud base mass flux and the tendencies calculated per unit cloud base mass flux from the static control.
 !!
 !!  \section samfdeep_detailed GFS samfdeepcnv Detailed Algorithm
-!!  @{
       subroutine samfdeepcnv_run (im,km,first_time_step,restart,        &
      &    tmf,qmicro,itc,ntc,cliq,cp,cvap,                              &
      &    eps,epsm1,fv,grav,hvap,rd,rv,                                 &
@@ -106,7 +103,7 @@
       real(kind=kind_phys), intent(in) :: nthresh
       real(kind=kind_phys), intent(in) :: ca_deep(:)
       real(kind=kind_phys), intent(in) :: sigmain(:,:),qmicro(:,:),     &
-     &     tmf(:,:),q(:,:), prevsq(:,:)
+     &     tmf(:,:,:),q(:,:), prevsq(:,:)
       real(kind=kind_phys), intent(out) :: rainevap(:)
       real(kind=kind_phys), intent(out) :: sigmaout(:,:)
       logical, intent(in)  :: do_ca,ca_closure,ca_entr,ca_trigger
@@ -213,9 +210,10 @@ cj
      &                     bb1,     bb2,     wucb
 !
 !  parameters for prognostic sigma closure                                                                                                                                                      
-      real(kind=kind_phys) omega_u(im,km),zdqca(im,km),qlks(im,km),
-     &     omegac(im),zeta(im,km),dbyo1(im,km),sigmab(im)
-      real(kind=kind_phys) gravinv
+      real(kind=kind_phys) omega_u(im,km),zdqca(im,km),tmfq(im,km),
+     &     omegac(im),zeta(im,km),dbyo1(im,km),sigmab(im),qadv(im,km)
+      real(kind=kind_phys) gravinv,invdelt
+      logical flag_shallow
 c  physical parameters
 !     parameter(grav=grav,asolfac=0.958)
 !     parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
@@ -241,7 +239,7 @@ c  physical parameters
 !     parameter(cinacrmx=-120.,cinacrmn=-120.)
       parameter(cinacrmx=-120.,cinacrmn=-80.)
       parameter(bet1=1.875,cd1=.506,f1=2.0,gam1=.5)
-      parameter(betaw=.03,dxcrtuf=15.e3)
+      parameter(betaw=.03)
 
 !
 !  local variables and arrays
@@ -309,6 +307,7 @@ c    &            .743,.813,.886,.947,1.138,1.377,1.896/
       errflg = 0
 
       gravinv = 1./grav
+      invdelt = 1./delt
 
       elocp = hvap/cp
       el2orc = hvap*hvap/(rv*cp)
@@ -588,7 +587,6 @@ c
          do i = 1, im
             dbyo1(i,k)=0.
             zdqca(i,k)=0.
-            qlks(i,k)=0.
             omega_u(i,k)=0.
             zeta(i,k)=1.0
          enddo
@@ -1518,7 +1516,7 @@ c
                 pwavo(i) = pwavo(i) + pwo(i,k)
 !               cnvwt(i,k) = (etah*qlk + pwo(i,k)) * grav / dp
                 cnvwt(i,k) = etah * qlk * grav / dp
-                qlks(i,k)=qlk
+                zdqca(i,k)=dq/eta(i,k)
               endif
 !
 !  compute buoyancy and drag for updraft velocity
@@ -1622,7 +1620,7 @@ c
 c
       do i = 1, im
         flg(i) = cnvflg(i)
-        ktcon1(i) = kmax(i)
+        ktcon1(i) = ktcon(i)
       enddo
       do k = 2, km1
         do i = 1, im
@@ -1641,8 +1639,11 @@ c
 !             aa2(i) = aa2(i) +
 !!   &                 dz1 * eta(i,k) * grav * fv *
 !    &                 dz1 * grav * fv *
-!    &                 max(val,(qeso(i,k) - qo(i,k)))
-              if(aa2(i) < 0.) then
+!    &                 max(val,(qeso(i,k) - qo(i,k)))        
+!NRL MNM: Limit overshooting not to be deeper than half the actual cloud              
+              tem  = 0.5 * (zi(i,ktcon(i))-zi(i,kbcon(i)))
+              tem1 = zi(i,k)-zi(i,ktcon(i))
+              if(aa2(i) < 0. .or. tem1 >= tem) then
                 ktcon1(i) = k
                 flg(i) = .false.
               endif
@@ -1690,7 +1691,7 @@ c
                 pwavo(i) = pwavo(i) + pwo(i,k)
 !               cnvwt(i,k) = (etah*qlk + pwo(i,k)) * grav / dp
                 cnvwt(i,k) = etah * qlk * grav / dp
-                qlks(i,k)=qlk
+                zdqca(i,k)=dq/eta(i,k)
               endif
             endif
           endif
@@ -1779,7 +1780,7 @@ c
       enddo
 c
 
-!> - Calculate the mean updraft velocity within the cloud (wc),cast in pressure coordinates.                                                                                                                                  
+!> - For progsigma = T, calculate the mean updraft velocity within the cloud (omegac),cast in pressure coordinates.                                                                                                                                  
       if(progsigma)then                                                                                                                                                            
          do i = 1, im
             omegac(i) = 0.
@@ -1809,7 +1810,7 @@ c
             endif
          enddo
 
-!> - Calculate the xi term in Bengtsson et al. 2022 (equation 8)
+!> - For progsigma = T, calculate the xi term in Bengtsson et al. 2022 \cite Bengtsson_2022 (equation 8)
          do k = 2, km1
             do i = 1, im
                if (cnvflg(i)) then
@@ -1860,27 +1861,12 @@ c
           if(dq > 0.) then
             qlko_ktcon(i) = dq
             qcko(i,k) = qrch
-            qlks(i,k) = qlko_ktcon(i)
+            zdqca(i,k) = dq
           endif
         endif
       enddo
       endif
 c
-
-c store term needed for "termC" in prognostic area fraction closure
-      if(progsigma)then
-         do k = 2, km1
-            do i = 1, im
-               dp = 1000. * del(i,k)
-               if (cnvflg(i)) then
-                  if(k > kbcon(i) .and. k < ktcon(i)) then
-                     zdqca(i,k)=((qlks(i,k)-qlks(i,k-1)) +
-     &                    pwo(i,k)+dellal(i,k))
-                  endif
-               endif
-            enddo
-         enddo
-      endif
 
 ccccc if(lat.==.latd.and.lon.==.lond.and.cnvflg(i)) then
 ccccc   print *, ' aa1(i) before dwndrft =', aa1(i)
@@ -2468,8 +2454,10 @@ c
 !
       if(progsigma)then
          dxcrtas=30.e3
+         dxcrtuf=10.e3
       else
          dxcrtas=8.e3
+         dxcrtuf=15.e3
       endif
 
 
@@ -2881,12 +2869,35 @@ c
         endif
       enddo
 
-!> - From Bengtsson et al. (2022) Prognostic closure scheme, equation 8, compute updraft area fraction based on a moisture budget
+!> - From Bengtsson et al. (2022) \cite Bengtsson_2022 prognostic closure scheme, equation 8, call progsigma_calc() to compute updraft area fraction based on a moisture budget
       if(progsigma)then
-         call progsigma_calc(im,km,first_time_step,restart,
-     &        del,tmf,qmicro,dbyo1,zdqca,omega_u,zeta,hvap,delt,
-     &        prevsq,q,kbcon1,ktcon,cnvflg,
-     &        sigmain,sigmaout,sigmab,errmsg,errflg)
+
+!Initial computations, dynamic q-tendency                                                                                                                                               
+         if(first_time_step .and. .not.restart)then
+            do k = 1,km
+               do i = 1,im
+                  qadv(i,k)=0.
+               enddo
+            enddo
+         else
+            do k = 1,km
+               do i = 1,im
+                  qadv(i,k)=(q(i,k) - prevsq(i,k))*invdelt
+               enddo
+            enddo
+         endif
+         
+         do k = 1,km
+            do i = 1,im
+               tmfq(i,k)=tmf(i,k,1)
+            enddo
+         enddo
+
+         flag_shallow = .false.
+         call progsigma_calc(im,km,first_time_step,restart,flag_shallow,
+     &        del,tmfq,qmicro,dbyo1,zdqca,omega_u,zeta,hvap,delt,
+     &        qadv,kbcon1,ktcon,cnvflg,
+     &        sigmain,sigmaout,sigmab)
       endif
 
 !> - From Han et al.'s (2017) \cite han_et_al_2017 equation 6, calculate cloud base mass flux as a function of the mean updraft velcoity for the grid sizes where the quasi-equilibrium assumption of Arakawa-Schubert is not valid any longer.
@@ -3518,9 +3529,13 @@ c
             if(k > kb(i) .and. k < ktop(i)) then
               tem = 0.5 * (eta(i,k-1) + eta(i,k)) * xmb(i)
               tem1 = pfld(i,k) * 100. / (rd * t1(i,k))
-              sigmagfm(i) = max(sigmagfm(i), betaw)
-              ptem = tem / (sigmagfm(i) * tem1)
-              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*sigmagfm(i)*ptem*ptem
+              if(progsigma)then
+                tem2 = sigmab(i)
+              else
+                tem2 = max(sigmagfm(i), betaw)
+              endif
+              ptem = tem / (tem2 * tem1)
+              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*tem2*ptem*ptem
             endif
           endif
         enddo
@@ -3532,9 +3547,13 @@ c
             if(k > 1 .and. k <= jmin(i)) then
               tem = 0.5*edto(i)*(etad(i,k-1)+etad(i,k))*xmb(i)
               tem1 = pfld(i,k) * 100. / (rd * t1(i,k))
-              sigmagfm(i) = max(sigmagfm(i), betaw)
-              ptem = tem / (sigmagfm(i) * tem1)
-              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*sigmagfm(i)*ptem*ptem
+              if(progsigma)then
+                tem2 = sigmab(i)
+              else
+                tem2 = max(sigmagfm(i), betaw)
+              endif
+              ptem = tem / (tem2 * tem1)
+              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*tem2*ptem*ptem
             endif
           endif
         enddo
@@ -3562,6 +3581,5 @@ c
       end subroutine samfdeepcnv_run
 
 !> @}
-!! @}
 
       end module samfdeepcnv

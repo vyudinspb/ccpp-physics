@@ -27,9 +27,6 @@
         end if
       end subroutine myjsfc_wrapper_init
 
-      subroutine myjsfc_wrapper_finalize ()
-      end subroutine myjsfc_wrapper_finalize
-
 !!
 !> \brief This scheme (1) performs pre-myjsfc work, (20 runs the myj sfc layer scheme, and (3) performs post-myjsfc work
 !! \section arg_table_myjsfc_wrapper_run Argument Table
@@ -52,7 +49,7 @@
      &  phy_myj_a1u, phy_myj_a1t, phy_myj_a1q,     &
      &  pblh, slmsk, zorl, ustar, rib,             &
      &  cm,ch,stress,ffm,ffh,fm10,fh2,             &
-     &  landfrac,lakefrac,oceanfrac,fice,          &
+     &  landfrac,         oceanfrac,fice,          &
      &  z0rl_wat,  z0rl_lnd,  z0rl_ice,            &   ! intent(inout)
      &  ustar_wat, ustar_lnd, ustar_ice,           &   ! intent(inout)
      &  cm_wat,    cm_lnd,    cm_ice,              &   ! intent(inout)
@@ -121,7 +118,7 @@
       real(kind=kind_phys),dimension(:),intent(inout)   ::   &
      &        cm, ch, stress, ffm, ffh, fm10, fh2
       real(kind=kind_phys), dimension(:), intent(inout) ::   &
-     &        landfrac, lakefrac, oceanfrac, fice
+     &        landfrac, oceanfrac, fice
       real(kind=kind_phys), dimension(:), intent(inout) ::   &
      &                    z0rl_wat,  z0rl_lnd,  z0rl_ice,    &
      &                   ustar_wat, ustar_lnd, ustar_ice,    &
@@ -337,7 +334,7 @@
      &         ,phy_f2d_myj(1:im,13)                         &
      &         ,1,im,1,1,1,levs                              &
      &         ,1,im,1,1,1,levs                              &
-     &         ,1,im,1,1,1,levs)
+     &         ,1,im,1,1,1,levs, errmsg, errflg)
 
       do i = 1, im
          if(flag_iter(i))then

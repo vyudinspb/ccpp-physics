@@ -17,8 +17,7 @@
 
       contains
 
-!>\ingroup Noah_LSM
-!! This subroutine contains the CCPP-compliant lsm_noah_init to initialize soil vegetation.
+!> This subroutine contains the CCPP-compliant lsm_noah_init to initialize soil vegetation.
 !! \section arg_table_lsm_noah_init Argument Table
 !! \htmlinclude lsm_noah_init.html
 !!
@@ -62,7 +61,7 @@
       end if
       
       !--- initialize soil vegetation
-      call set_soilveg(me, isot, ivegsrc, nlunit)
+      call set_soilveg(me, isot, ivegsrc, nlunit, errmsg, errflg)
 
       pores (:) = maxsmc (:)
       resid (:) = drysmc (:)
@@ -70,7 +69,7 @@
       end subroutine lsm_noah_init
 
 
-!! \section arg_table_lsm_noah_finalize Argument Table
+!> \section arg_table_lsm_noah_finalize Argument Table
 !! \htmlinclude lsm_noah_finalize.html
 !!
       subroutine lsm_noah_finalize(errmsg, errflg)
@@ -203,15 +202,15 @@
 !  ====================    end of description    =====================  !
 
 !>\defgroup Noah_LSM GFS Noah LSM Model
-!! \brief This is Noah LSM driver module, with the functionality of 
+!!  This is Noah LSM driver module, with the functionality of 
 !! preparing variables to run Noah LSM gfssflx(), calling Noah LSM and post-processing
 !! variables for return to the parent model suite including unit conversion, as well
 !! as diagnotics calculation.
+!> @{
 !! \section arg_table_lsm_noah_run Argument Table
 !! \htmlinclude lsm_noah_run.html
 !!
-!> \section general_noah_drv GFS sfc_drv General Algorithm
-!>  @{
+!> \section general_noah_drv Noah LSM General Algorithm
       subroutine lsm_noah_run                                           &
      &     ( im, km, grav, cp, hvap, rd, eps, epsm1, rvrdm1, ps,        & !  ---  inputs:
      &       t1, q1, soiltyp, vegtype, sigmaf,                          &
@@ -221,7 +220,8 @@
      &       lheatstrg, isot, ivegsrc,                                  &
      &       bexppert, xlaipert, vegfpert,pertvegf,                     &  ! sfc perts, mgehne
      &       albdvis_lnd, albdnir_lnd, albivis_lnd, albinir_lnd,        &  
-     &       adjvisbmd, adjnirbmd, adjvisdfd, adjnirdfd,                &  
+     &       adjvisbmd, adjnirbmd, adjvisdfd, adjnirdfd, rhonewsn1,     &  
+     &       exticeden,                                                 &
 !  ---  in/outs:
      &       weasd, snwdph, tskin, tprcp, srflag, smc, stc, slc,        &
      &       canopy, trans, tsurf, zorl,                                &
@@ -253,7 +253,7 @@
      &                  -1.0_kind_phys, -2.0_kind_phys /
 
 !  ---  input:
-      integer, intent(in) :: im, km, isot, ivegsrc
+      integer, intent(in) :: im, km, isot, ivegsrc 
       real (kind=kind_phys), intent(in) :: grav, cp, hvap, rd, eps,     &
      &       epsm1, rvrdm1
       real (kind=kind_phys), intent(in) :: pertvegf
@@ -266,13 +266,13 @@
      &       snoalb, sfalb, zf,                                         &
      &       bexppert, xlaipert, vegfpert,                              &
      &       albdvis_lnd, albdnir_lnd, albivis_lnd, albinir_lnd,        &
-     &       adjvisbmd, adjnirbmd, adjvisdfd, adjnirdfd
+     &       adjvisbmd, adjnirbmd, adjvisdfd, adjnirdfd, rhonewsn1
 
       real (kind=kind_phys),  intent(in) :: delt
 
       logical, dimension(:), intent(in) :: flag_iter, flag_guess, land
 
-      logical, intent(in) :: lheatstrg
+      logical, intent(in) :: lheatstrg, exticeden
 
 !  ---  in/out:
       real (kind=kind_phys), dimension(:), intent(inout) :: weasd,      &
@@ -293,7 +293,7 @@
 !  ---  locals:
       real (kind=kind_phys), dimension(im) :: rch, rho,                 &
      &       q0, qs1, theta1,       weasd_old, snwdph_old,              &
-     &       tprcp_old, srflag_old, tskin_old, canopy_old
+     &       tprcp_old, srflag_old, tskin_old, canopy_old              
 
       real (kind=kind_phys), dimension(km) :: et, sldpth, stsoil,       &
      &       smsoil, slsoil
@@ -310,8 +310,8 @@
      &       smcdry, smcref, smcmax, sneqv, snoalb1d, snowh,            &
      &       snomlt, sncovr, soilw, soilm, ssoil, tsea, th2, tbot,      &
      &       xlai, zlvl, swdn, tem, z0, bexpp, xlaip, vegfp,            &
-     &       mv, sv, alphav, betav, vegftmp, cpinv, hvapi, elocp
-
+     &       mv, sv, alphav, betav, vegftmp, cpinv, hvapi, elocp,       &
+     &       rhonewsn 
       integer :: couple, ice, nsoil, nroot, slope, stype, vtype
       integer :: i, k, iflag
 !
@@ -327,7 +327,6 @@
       errflg = 0
 
 !> - Save land-related prognostic fields for guess run.
-
       do i = 1, im
         if (land(i) .and. flag_guess(i)) then
           weasd_old(i)  = weasd(i)
@@ -336,7 +335,6 @@
           canopy_old(i) = canopy(i)
           tprcp_old(i)  = tprcp(i)
           srflag_old(i) = srflag(i)
-
           do k = 1, km
             smc_old(i,k) = smc(i,k)
             stc_old(i,k) = stc(i,k)
@@ -362,8 +360,7 @@
           sbsno(i)  = zero
           snowc(i)  = zero
           snohf(i)  = zero
-
-!> - initialize variables wind, q, and rh at level 1.
+!> - Initialize variables wind, q, and rh at level 1.
 
           q0(i)   = max(q1(i), qmin)   !* q1=specific humidity at level 1 (kg/kg)
           theta1(i) = t1(i) * prslki(i) !* adiabatic temp at level 1 (k)
@@ -372,13 +369,12 @@
           qs1(i) = fpvs( t1(i) )        !* qs1=sat. humidity at level 1 (kg/kg)
           qs1(i) = max(eps*qs1(i) / (prsl1(i)+epsm1*qs1(i)), qmin)
           q0 (i) = min(qs1(i), q0(i))
-
           do k = 1, km
             zsoil(i,k) = zsoil_noah(k)
           enddo
 
 !> - Prepare variables to run Noah LSM:
-!!  -   1. configuration information (c):
+!  -   1. configuration information (c):
 ! couple   couple-uncouple flag (=1: coupled, =0: uncoupled)
 ! ffrozp   flag for snow-rain detection (1.=snow, 0.=rain)
 ! ice      sea-ice flag (=1: sea-ice, =0: land)
@@ -405,7 +401,7 @@
             sldpth(k) = zsoil(i,k-1) - zsoil(i,k)
           enddo
 
-!>  -   2. forcing data (f):
+!  -   2. forcing data (f):
 ! lwdn     lw dw radiation flux (\f$W m^{-2}\f$)
 ! solnet  - net sw radiation flux (dn-up) (\f$W m^{-2}\f$)
 ! sfcprs  - pressure at height zlvl above ground (pascals)
@@ -430,7 +426,7 @@
           th2    = theta1(i)
           q2     = q0(i)
 
-!>  -   3. other forcing (input) data (i):
+!  -   3. other forcing (input) data (i):
 ! sfcspd  - wind speed (\f$m s^{-1}\f$) at height zlvl above ground
 ! q2sat   - sat mixing ratio at height zlvl above ground (\f$kg kg^{-1}\f$)
 ! dqsdt2  - slope of sat specific humidity curve at t=sfctmp (\f$kg kg^{-1} k^{-1}\f$)
@@ -439,7 +435,7 @@
           q2sat =  qs1(i)
           dqsdt2 = q2sat * a23m4/(sfctmp-a4)**2
 
-!>  -   4. canopy/soil characteristics (s):
+!  -   4. canopy/soil characteristics (s):
 ! vegtyp  - vegetation type (integer index)                   -> vtype
 ! soiltyp - soil type (integer index)                         -> stype
 ! slopetyp- class of sfc slope (integer index)                -> slope
@@ -455,7 +451,7 @@
           slope = slopetyp(i)
           shdfac= sigmaf(i)
 
-!>  - Call surface_perturbation::ppfbet() to perturb vegetation fraction that goes into gsflx().
+!>  - Call surface_perturbation::ppfbet() to perturb vegetation fraction that goes into gfssflx().
 !  perturb vegetation fraction that goes into sflx, use the same
 !  perturbation strategy as for albedo (percentile matching)
 !! Following Gehne et al. (2018) \cite gehne_et_al_2018, a perturbation of vegetation
@@ -486,7 +482,7 @@
           alb  = sfalb(i)
           tbot = tg3(i)
 
-!>  -   5. history (state) variables (h):
+!  -   5. history (state) variables (h):
 ! cmc        - canopy moisture content (\f$m\f$)
 ! t1         - ground/canopy/snowpack effective skin temperature (\f$K\f$)   -> tsea
 ! stc(nsoil) - soil temp (\f$K\f$)                                         -> stsoil
@@ -522,10 +518,11 @@
 !  ---- ... outside sflx, roughness uses cm as unit
           z0 = zorl(i) * 0.01_kind_phys
 !  ---- mgehne, sfc-perts
-!  - Apply perturbation of soil type b parameter and leave area index.
+!> - Apply perturbation of soil type b parameter and leave area index.
           bexpp  = bexppert(i)                   ! sfc perts, mgehne
           xlaip  = xlaipert(i)                   ! sfc perts, mgehne
-
+!> - New snow depth variables 
+          rhonewsn = rhonewsn1(i)
 !> - Call Noah LSM gfssflx().
 
           call gfssflx                                                  & ! ccppdox: these is sflx in mpbl
@@ -534,6 +531,7 @@
      &       swdn, solnet, lwdn, sfcems, sfcprs, sfctmp,                &
      &       sfcspd, prcp, q2, q2sat, dqsdt2, th2, ivegsrc,             &
      &       vtype, stype, slope, shdmin1d, alb, snoalb1d,              &
+     &       rhonewsn, exticeden,                                       &
      &       bexpp, xlaip,                                              & ! sfc-perts, mgehne
      &       lheatstrg,                                                 &
 !  ---  input/outputs:
@@ -544,19 +542,20 @@
      &       edir, et, ett, esnow, drip, dew, beta, etp, ssoil,         &
      &       flx1, flx2, flx3, runoff1, runoff2, runoff3,               &
      &       snomlt, sncovr, rc, pc, rsmin, xlai, rcs, rct, rcq,        &
-     &       rcsoil, soilw, soilm, smcwlt, smcdry, smcref, smcmax)
+     &       rcsoil, soilw, soilm, smcwlt, smcdry, smcref, smcmax,      &
+     &       errmsg, errflg )
 
 !> - Noah LSM: prepare variables for return to parent model and unit conversion.
-!>  -   6. output (o):
-!!\n  eta     - actual latent heat flux (\f$W m^{-2}\f$: positive, if upward from sfc)
-!!\n  sheat   - sensible heat flux (\f$W m^{-2}\f$: positive, if upward from sfc)
-!!\n  beta    - ratio of actual/potential evap (dimensionless)
-!!\n  etp     - potential evaporation (\f$W m^{-2}\f$)
-!!\n  ssoil   - soil heat flux (\f$W m^{-2}\f$: negative if downward from surface)
-!!\n  runoff1 - surface runoff (\f$m s^{-1}\f$), not infiltrating the surface
-!!\n  runoff2 - subsurface runoff (\f$m s^{-1}\f$), drainage out bottom
-!!\n  xlai    - leaf area index (dimensionless)
-!!\n  rca     - canopy resistance (s/m)
+!  -   6. output (o):
+!  eta     - actual latent heat flux (\f$W m^{-2}\f$: positive, if upward from sfc)
+!  sheat   - sensible heat flux (\f$W m^{-2}\f$: positive, if upward from sfc)
+!  beta    - ratio of actual/potential evap (dimensionless)
+!  etp     - potential evaporation (\f$W m^{-2}\f$)
+!  ssoil   - soil heat flux (\f$W m^{-2}\f$: negative if downward from surface)
+!  runoff1 - surface runoff (\f$m s^{-1}\f$), not infiltrating the surface
+!  runoff2 - subsurface runoff (\f$m s^{-1}\f$), drainage out bottom
+!  xlai    - leaf area index (dimensionless)
+!  rca     - canopy resistance (s/m)
 
           evap(i)  = eta
           hflx(i)  = sheat
@@ -598,54 +597,54 @@
           lai(i) = xlai
           rca(i) = rc
 
-!>  - Do not return the following output fields to parent model:
-!!\n  ec      - canopy water evaporation (m s-1)
-!!\n  edir    - direct soil evaporation (m s-1)
-!!\n  et(nsoil)-plant transpiration from a particular root layer (m s-1)
-!!\n  ett     - total plant transpiration (m s-1)
-!!\n  esnow   - sublimation from (or deposition to if <0) snowpack (m s-1)
-!!\n  drip    - through-fall of precip and/or dew in excess of canopy
-!!              water-holding capacity (m)
-!!\n  dew     - dewfall (or frostfall for t<273.15) (m)
-!!\n  beta    - ratio of actual/potential evap (dimensionless)
-!!\n  flx1    - precip-snow sfc (w m-2)
-!!\n  flx2    - freezing rain latent heat flux (w m-2)
-!!\n  flx3    - phase-change heat flux from snowmelt (w m-2)
-!!\n  snomlt  - snow melt (m) (water equivalent)
-!!\n  sncovr  - fractional snow cover (unitless fraction, 0-1)
-!!\n  runoff3 - numerical trunctation in excess of porosity (smcmax)
-!!              for a given soil layer at the end of a time step
-!!\n  rc      - canopy resistance (s m-1)
-!!\n  pc      - plant coefficient (unitless fraction, 0-1) where pc*etp
-!!              = actual transp
-!!\n  rsmin   - minimum canopy resistance (s m-1)
-!!\n  rcs     - incoming solar rc factor (dimensionless)
-!!\n  rct     - air temperature rc factor (dimensionless)
-!!\n  rcq     - atmos vapor pressure deficit rc factor (dimensionless)
-!!\n  rcsoil  - soil moisture rc factor (dimensionless)
-!!\n  soilw   - available soil moisture in root zone (unitless fraction
-!!              between smcwlt and smcmax)
-!!\n  soilm   - total soil column moisture content (frozen+unfrozen) (m)
-!!\n  smcwlt  - wilting point (volumetric)
-!!\n  smcdry  - dry soil moisture threshold where direct evap frm top
-!!              layer ends (volumetric)
-!!\n  smcref  - soil moisture threshold where transpiration begins to
-!!              stress (volumetric)
-!!\n  smcmax  - porosity, i.e. saturated value of soil moisture
-!!              (volumetric)
-!!\n  nroot   - number of root layers, a function of veg type, determined
-!!              in subroutine redprm.
+!  - Do not return the following output fields to parent model:
+!  ec      - canopy water evaporation (m s-1)
+!  edir    - direct soil evaporation (m s-1)
+!  et(nsoil)-plant transpiration from a particular root layer (m s-1)
+!  ett     - total plant transpiration (m s-1)
+!  esnow   - sublimation from (or deposition to if <0) snowpack (m s-1)
+!  drip    - through-fall of precip and/or dew in excess of canopy
+!              water-holding capacity (m)
+!  dew     - dewfall (or frostfall for t<273.15) (m)
+!  beta    - ratio of actual/potential evap (dimensionless)
+!  flx1    - precip-snow sfc (w m-2)
+!  flx2    - freezing rain latent heat flux (w m-2)
+!  flx3    - phase-change heat flux from snowmelt (w m-2)
+!  snomlt  - snow melt (m) (water equivalent)
+!  sncovr  - fractional snow cover (unitless fraction, 0-1)
+!  runoff3 - numerical trunctation in excess of porosity (smcmax)
+!              for a given soil layer at the end of a time step
+!  rc      - canopy resistance (s m-1)
+!  pc      - plant coefficient (unitless fraction, 0-1) where pc*etp
+!              = actual transp
+!  rsmin   - minimum canopy resistance (s m-1)
+!  rcs     - incoming solar rc factor (dimensionless)
+!  rct     - air temperature rc factor (dimensionless)
+!  rcq     - atmos vapor pressure deficit rc factor (dimensionless)
+!  rcsoil  - soil moisture rc factor (dimensionless)
+!  soilw   - available soil moisture in root zone (unitless fraction
+!              between smcwlt and smcmax)
+!  soilm   - total soil column moisture content (frozen+unfrozen) (m)
+!  smcwlt  - wilting point (volumetric)
+!  smcdry  - dry soil moisture threshold where direct evap frm top
+!              layer ends (volumetric)
+!  smcref  - soil moisture threshold where transpiration begins to
+!              stress (volumetric)
+!  smcmax  - porosity, i.e. saturated value of soil moisture
+!              (volumetric)
+!  nroot   - number of root layers, a function of veg type, determined
+!              in subroutine redprm.
 
 !       endif   ! end if flag_iter and flag
 !     enddo   ! end do_i_loop
 
-!> - Compute specific humidity at surface (\a qsurf).
+!> - Compute specific humidity at surface (\p qsurf).
 
           rch(i)   = rho(i) * cp * ch(i) * wind(i)
           qsurf(i) = q1(i)  + evap(i) / (elocp * rch(i))
 
-!> - Compute surface upward sensible heat flux (\a hflx) and evaporation
-!! flux (\a evap).
+!> - Compute surface upward sensible heat flux (\p hflx) and evaporation
+!! flux (\p evap).
           tem     = one / rho(i)
           hflx(i) = hflx(i) * tem * cpinv
           evap(i) = evap(i) * tem * hvapi

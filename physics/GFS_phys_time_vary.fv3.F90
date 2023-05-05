@@ -6,7 +6,7 @@
 !! aerosol, IN&CCN and surface properties updates.
    module GFS_phys_time_vary
 
-#ifdef _OPENMP
+#ifdef OPENMP
       use omp_lib
 #endif
 
@@ -924,10 +924,10 @@
 !> - Call  
 
          if (do_wamphys) then
-            call swio_time_interp(me, master, im, idate, fhour,            &
-                 csw_f107, csw_f107d,  csw_kp, csw_kpa, csw_ap, csw_apa,  &
-              csw_nhp,  csw_nhpi,  csw_shp,   csw_shpi, csw_den, csw_ang, &
-              csw_bz,   csw_bt,    csw_vel,   csw_time, sw_ktprev)
+!            call swio_time_interp(me, master, im, idate, fhour,            &
+!                 csw_f107, csw_f107d,  csw_kp, csw_kpa, csw_ap, csw_apa,  &
+!              csw_nhp,  csw_nhpi,  csw_shp,   csw_shpi, csw_den, csw_ang, &
+!              csw_bz,   csw_bt,    csw_vel,   csw_time, sw_ktprev)
 !            csw_f107(:) =  csw_f107_scal                                      
          endif
 

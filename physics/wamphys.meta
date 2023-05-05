@@ -8,7 +8,6 @@
   dependencies = wamphys_rad_o2_o3.F90,wamphys_tracer_run.F90,wamphys_molec_dissipation.F90
   dependencies = wamphys_sheat_jrates.F90 
   dependencies = wamphys_weimer2005.F90,wamphys_efield.F90,wamphys_ion_empirmodels.F90,wamphys_ion.F90
-#  dependencies = wamphys_swdef.F90
 ########################################################################
 [ccpp-arg-table]
   name = wamphys_init

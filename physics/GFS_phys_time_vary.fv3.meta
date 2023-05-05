@@ -3,7 +3,7 @@
   type = scheme
   dependencies = aerclm_def.F,aerinterp.F90,gcycle.F90,h2o_def.f,h2ointerp.f90,iccn_def.F,iccninterp.F90,machine.F,mersenne_twister.f
   dependencies = namelist_soilveg.f,set_soilveg.f,ozinterp.f90,ozne_def.f,sfcsub.F,cires_tauamf_data.F90,noahmp_tables.f90
-    dependencies = wamphys_swdef.F90,wamphys_swio_data.F90
+  dependencies = wamphys_swdef.F90,wamphys_swio_data.F90
 
 ########################################################################
 [ccpp-arg-table]

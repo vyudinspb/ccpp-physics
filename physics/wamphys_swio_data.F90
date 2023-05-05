@@ -177,10 +177,10 @@ contains
 	  stop
 	 endif
 !	 
-	
+        print *,'swio 181bf csw_t,sw_t,w2,w1',csw_time,sw_time,w2,w1
 	 w2 = (csw_time-sw_time(it1))/(sw_time(it2)-sw_time(it1))
 	 w1 = 1.0-w2     
-	 
+       print *,'swio 181af csw_t,sw_t,w2,w1',csw_time,sw_time,w2,w1
        csw_f107 = sw_f107(it1)*w1 +sw_f107(it2)*w2
        csw_f107d = sw_f107d(it1)*w1 +sw_f107d(it2)*w2 
        csw_kpa = sw_kpa(it1)*w1 +sw_kpa(it2)*w2        

@@ -6,7 +6,7 @@
 !! aerosol, IN&CCN and surface properties updates.
    module GFS_phys_time_vary
 
-#ifdef OPENMP
+#ifdef _OPENMP
       use omp_lib
 #endif
 
@@ -41,8 +41,6 @@
                                dwsat_table,dksat_table,psisat_table, &
                                isurban_table,isbarren_table,         &
                                isice_table,iswater_table
-      use wamphys_swdef
-      use wamphys_swio_data, only :  read_swio_data, swio_time_interp
 
       implicit none
 
@@ -72,7 +70,7 @@
               nx, ny, idate, xlat_d, xlon_d,                                                       &
               jindx1_o3, jindx2_o3, ddy_o3, ozpl, jindx1_h, jindx2_h, ddy_h, h2opl,fhour,          &
               jindx1_aer, jindx2_aer, ddy_aer, iindx1_aer, iindx2_aer, ddx_aer, aer_nm,            &
-              jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, imap, jmap,do_wamphys,   &
+              jindx1_ci, jindx2_ci, ddy_ci, iindx1_ci, iindx2_ci, ddx_ci, imap, jmap,              &
               do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau,                            &
               isot, ivegsrc, nlunit, sncovr, sncovr_ice, lsm, lsm_noahmp, lsm_ruc, min_seaice,     &
               fice, landfrac, vtype, weasd, lsoil, zs, dzs, lsnow_lsm_lbound, lsnow_lsm_ubound,    &
@@ -90,7 +88,6 @@
          ! Interface variables
          integer,              intent(in)    :: me, master, ntoz, iccn, iflip, im, nx, ny, levs, iaermdl
          logical,              intent(in)    :: h2o_phys, iaerclm, lsm_cold_start
-         logical,              intent(in)    :: do_wamphys
          integer,              intent(in)    :: idate(:), iopt_lake, iopt_lake_clm, iopt_lake_flake
          real(kind_phys),      intent(in)    :: fhour, lakefrac_threshold, lakedepth_threshold
          real(kind_phys),      intent(in)    :: xlat_d(:), xlon_d(:)
@@ -214,7 +211,6 @@
 !$OMP          shared (jindx1_aer,jindx2_aer,ddy_aer,iindx1_aer,iindx2_aer,ddx_aer) &
 !$OMP          shared (jindx1_ci,jindx2_ci,ddy_ci,iindx1_ci,iindx2_ci,ddx_ci)       &
 !$OMP          shared (do_ugwp_v1,jindx1_tau,jindx2_tau,ddy_j1tau,ddy_j2tau)        &
-!$OMP          shared (do_wamphys)                                                  &
 !$OMP          shared (isot,ivegsrc,nlunit,sncovr,sncovr_ice,lsm,lsm_ruc)           &
 !$OMP          shared (min_seaice,fice,landfrac,vtype,weasd,snupx,salp_data)        &
 !$OMP          private (ix,i,j,rsnow,vegtyp)
@@ -292,12 +288,6 @@
 !> - Call tau_amf dats for  ugwp_v1
          if (do_ugwp_v1) then
             call read_tau_amf(me, master, errmsg, errflg)
-         endif
-
-!$OMP section
-!> - Call swio data
-         if (do_wamphys) then
-            call read_swio_data(me, master, errmsg, errflg)         
          endif
 
 !$OMP section
@@ -754,10 +744,7 @@
             tsfc, tsfco, tisfc, hice, fice, facsf, facwf, alvsf, alvwf, alnsf, alnwf, zorli, zorll, &
             zorlo, weasd, slope, snoalb, canopy, vfrac, vtype, stype, shdmin, shdmax, snowd,        &
             cv, cvb, cvt, oro, oro_uf, xlat_d, xlon_d, slmsk, landfrac,                             &
-            do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau, tau_amf, do_wamphys,          &
-!           csw_f107, csw_f107d, csw_kp, csw_kpa, csw_ap, csw_apa, csw_nhp, csw_nhpi, csw_shp,      &
-!           csw_shpi, csw_den, csw_ang, csw_bz, csw_bt, csw_vel, csw_time, sw_ktprev,               &
-            errmsg, errflg)
+            do_ugwp_v1, jindx1_tau, jindx2_tau, ddy_j1tau, ddy_j2tau, tau_amf, errmsg, errflg)
 
          implicit none
 
@@ -782,7 +769,7 @@
          integer,              intent(in)    :: seed0
          real(kind_phys),      intent(inout) :: rann(:,:)
 
-         logical,              intent(in)    :: do_ugwp_v1,do_wamphys
+         logical,              intent(in)    :: do_ugwp_v1
          integer,              intent(in)    :: jindx1_tau(:), jindx2_tau(:)
          real(kind_phys),      intent(in)    :: ddy_j1tau(:), ddy_j2tau(:)
          real(kind_phys),      intent(inout) :: tau_amf(:)
@@ -806,11 +793,7 @@
 
          character(len=*),     intent(out)   :: errmsg
          integer,              intent(out)   :: errflg
-!WAMPHYS
-         real(kind=kind_phys)  :: csw_f107, csw_f107d, csw_kp, csw_kpa, csw_ap, csw_apa  
-         real(kind=kind_phys)  :: csw_nhp,  csw_nhpi,  csw_shp,csw_shpi, csw_den, csw_ang 
-         real(kind=kind_phys)  :: csw_bz,   csw_bt,    csw_vel,   csw_time       
-         integer :: sw_ktprev 
+
          ! Local variables
          integer :: i, j, k, iseed, iskip, ix
          real(kind=kind_phys) :: wrk(1)
@@ -835,9 +818,7 @@
 !$OMP          shared(ozpl,ddy_o3,h2o_phys,jindx1_h,jindx2_h,h2opl,ddy_h,iaerclm,master) &
 !$OMP          shared(levs,prsl,iccn,jindx1_ci,jindx2_ci,ddy_ci,iindx1_ci,iindx2_ci)     &
 !$OMP          shared(ddx_ci,in_nm,ccn_nm,do_ugwp_v1,jindx1_tau,jindx2_tau,ddy_j1tau)    &
-!$OMP          shared(ddy_j2tau,tau_amf,iflip,do_wamphys,csw_f107,csw_f107d,csw_kp)      &
-!$OMP          shared(csw_kpa,csw_ap,csw_apa,csw_nhp,csw_nhpi,csw_shp,csw_shpi,csw_den)  &
-!$OMP          shared(csw_ang,csw_bz,csw_bt,csw_vel,csw_time,sw_ktprev)                  &
+!$OMP          shared(ddy_j2tau,tau_amf,iflip)                                           &
 !$OMP          private(iseed,iskip,i,j,k)
 
 !$OMP sections
@@ -919,16 +900,6 @@
            call tau_amf_interp(me, master, im, idate, fhour, &
                                jindx1_tau, jindx2_tau,       &
                                ddy_j1tau, ddy_j2tau, tau_amf)
-         endif
-!$OMP section
-!> - Call  
-
-         if (do_wamphys) then
-!            call swio_time_interp(me, master, im, idate, fhour,            &
-!                 csw_f107, csw_f107d,  csw_kp, csw_kpa, csw_ap, csw_apa,  &
-!              csw_nhp,  csw_nhpi,  csw_shp,   csw_shpi, csw_den, csw_ang, &
-!              csw_bz,   csw_bt,    csw_vel,   csw_time, sw_ktprev)
-!            csw_f107(:) =  csw_f107_scal                                      
          endif
 
 !$OMP end sections

@@ -3,7 +3,6 @@
   type = scheme
   dependencies = aerclm_def.F,aerinterp.F90,gcycle.F90,h2o_def.f,h2ointerp.f90,iccn_def.F,iccninterp.F90,machine.F,mersenne_twister.f
   dependencies = namelist_soilveg.f,set_soilveg.f,ozinterp.f90,ozne_def.f,sfcsub.F,cires_tauamf_data.F90,noahmp_tables.f90
-  dependencies = wamphys_swdef.F90,wamphys_swio_data.F90
 
 ########################################################################
 [ccpp-arg-table]
@@ -295,13 +294,6 @@
   dimensions = (horizontal_dimension)
   type = integer
   intent = inout
-[do_wamphys]
-  standard_name = flag_for_wamphys
-  long_name = flag to activate version 1 of wamphys
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
 [do_ugwp_v1]
   standard_name = flag_for_ugwp_version_1
   long_name = flag to activate ver 1 CIRES UGWP
@@ -1943,13 +1935,6 @@
   type = real
   kind = kind_phys
   intent = inout
-[do_wamphys]
-  standard_name = flag_for_wamphys
-  long_name = flag to activate version 1 of wamphys
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in     
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP

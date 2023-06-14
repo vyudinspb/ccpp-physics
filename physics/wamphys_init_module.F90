@@ -63,14 +63,13 @@ module  wamphys_init_module
     character(len=255)     ::  efield_model   = 'epot'              ! or 'bpot'
     character(len=255)     ::  SPW_DRIVERS    = 'swpc_fst'
     character(len=255)     ::  SWIN_DRIVERS   = 'swin_wam'
-!
+
 !   tracers and NO-model
-!
+
     character(len=255)     :: file_glob_tracers = 'wam_rm3_globcomp.nc' 
     character(len=255)     :: file_no_snoe = 'snoe_eof.nc'  
 ! solar-annual
-!   wam_nems_imf_2012.nc   wasolar_dan_20161019.nc
-!             
+!   wam_nems_imf_2012.nc   wasolar_dan_20161019.nc             
 
     real(kind=kind_phys) :: soro_gg = 0.      ! sea level for gravity in upper layers    
     real(kind=kind_phys) :: wam_JH0 =  1.75
@@ -129,21 +128,21 @@ module  wamphys_init_module
                            skeddy0, skeddy_semiann, skeddy_ann,                        &
                            tkeddy0, tkeddy_semiann, tkeddy_ann,                        &
                            f107_fix, f107a_fix, kp_fix, kpa_fix,                       &
-			   gw_fix, tiros_activity_fix, tiros_switch,                   &
-			bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&			    
-			   spw_drivers, efield_model, swin_drivers,do_init_tides,      &
-			   do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
-!
-!SPW_DRIVERS, SWIN_DRIVERS
+			         gw_fix, tiros_activity_fix, tiros_switch,                   &
+			         bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&			    
+			         spw_drivers, efield_model, swin_drivers,do_init_tides,      &
+			         do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
+
+! SPW_DRIVERS, SWIN_DRIVERS
 ! allocatable arrays, initilized during "cires_ugwp_init" &
 !                     released   during "cires_ugwp_finalize"
-!
+
    real(kind=kind_phys), allocatable :: kvg(:), ktg(:), krad(:), kion(:)
    real(kind=kind_phys), allocatable :: zkm(:), pmb(:), zlog(:)
    real(kind=kind_phys), allocatable :: rfdis(:), rfdist(:)
-!
+ 
 ! wamphys-grid and global profiles defined on (1:levs, surf to top).
-!
+
    real(kind=kind_phys), allocatable ::  pr_idea(:), prlog(:)
    real(kind=kind_phys), allocatable ::  h2ora(:),o3ra(:)
    real(kind=kind_phys), allocatable ::  gglob(:), muglob(:), zglob(:), tglob(:)
@@ -165,9 +164,9 @@ module  wamphys_init_module
    real(kind=kind_phys), allocatable   ::  no_eof(:, : ,:)
    real(kind=kind_phys) , allocatable  ::  no_m(:,:)
    real(kind=kind_phys), allocatable   ::  no_zkm(:), no_mlat(:) 
-!
+ 
 ! co2/h2o
-!   
+   
     real(kind=kind_phys), allocatable   :: co2my(:)
     real(kind=kind_phys),allocatable,dimension(:) ::  & 
          gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff      
@@ -193,23 +192,23 @@ module  wamphys_init_module
    real (kind=kind_phys)  :: bz, rbz, amo,amn2, amo2, amo3, amh2o, amno
    real (kind=kind_phys)  :: rmo, rmo2, rmn2, rmh2o,rmo3
    		      
-      real (kind=kind_phys), parameter:: muo =3.9e-7    ! viscosity coefficient
+   real (kind=kind_phys), parameter:: muo =3.9e-7    ! viscosity coefficient
 !                                                          of O (kg/m/s) 
-      real (kind=kind_phys), parameter:: muo2=4.03e-7   ! viscosity coefficient
+   real (kind=kind_phys), parameter:: muo2=4.03e-7   ! viscosity coefficient
 !                                                          of O2 (kg/m/s) 
-      real (kind=kind_phys), parameter:: mun2=3.43e-7   ! viscosity coefficient
+   real (kind=kind_phys), parameter:: mun2=3.43e-7   ! viscosity coefficient
 !                                                         of N2 (kg/m/s) 
-      real (kind=kind_phys), parameter:: lao =75.9e-5   ! thermal conductivity
+   real (kind=kind_phys), parameter:: lao =75.9e-5   ! thermal conductivity
 !                                                      coefficient of O (W/m/K)
-      real (kind=kind_phys), parameter:: lao2=56.e-5    ! thermal conductivity
+   real (kind=kind_phys), parameter:: lao2=56.e-5    ! thermal conductivity
 !                                                      coefficient of O2(W/m/K)
-      real (kind=kind_phys), parameter:: lan2=56.e-5    ! thermal conductivity
+   real (kind=kind_phys), parameter:: lan2=56.e-5    ! thermal conductivity
 !                                                      coefficient of N2(W/m/K)
-      real (kind=kind_phys), parameter:: cpo =2.5       !specific heats of o
-      real (kind=kind_phys), parameter:: cpo2=3.5       !specific heats of o2
-      real (kind=kind_phys), parameter:: cpn2=3.5       !specific heats of n2
-      
-      real (kind=kind_phys), parameter::  pref = 1.e5, rpref =1./pref  
+   real (kind=kind_phys), parameter:: cpo =2.5       !specific heats of o
+   real (kind=kind_phys), parameter:: cpo2=3.5       !specific heats of o2
+   real (kind=kind_phys), parameter:: cpn2=3.5       !specific heats of n2
+   
+   real (kind=kind_phys), parameter::  pref = 1.e5, rpref =1./pref  
                 
    contains
    
@@ -221,8 +220,7 @@ module  wamphys_init_module
 
   subroutine  wamphys_init_all(me, master, nlunit, logunit, jdat_gfs, &
        fn_nml23, fn_nml2, lonr, latr, levs, ak, bk, dtp, errmsg, errflg)
-!
-!
+
     use  netcdf   
     use  wamphys_set_merge_rad,  only : npsrad,  prdot02       != 1.e5*exp(-xbl)   hpa  
 
@@ -251,18 +249,17 @@ module  wamphys_init_module
     integer :: k
     
     integer :: ddd_wam,    curday_wam
-!    real(kind=kind_phys) ::  pref
+!   real(kind=kind_phys) ::  pref
     real(kind=kind_phys), allocatable ::  prpa(:)  
     
     ! Initialize CCPP error handling variables
     errmsg = ''
     errflg = 0
-!    pref = 1.e5
+!   pref = 1.e5
     
 
-
-    if (me == master) print *, ' READ input.nml fnml2 '
-    if (me == master) print *, trim (fn_nml2), ' namelist in wamphys_init'
+!   if (me == master) print *, ' READ input.nml fnml2 '
+!   if (me == master) print *, trim (fn_nml2), ' namelist in wamphys_init'
     inquire (file =trim (fn_nml2) , exist = exists)
 !
     if (.not. exists) then
@@ -284,8 +281,6 @@ module  wamphys_init_module
       
 ! write version number and namelist to log file
     if (me == master) then
-
-	
         write (6, *) " ================================================================== "
         write (6, *) "CCPP wamphys_namelist from ", trim (fn_nml2)
         write (6, nml = wamphys_nml)		
@@ -295,19 +290,18 @@ module  wamphys_init_module
         write (6, *) " ================================================================== "	
         write (6, *) 	 ddd_wam, ' jdat_gfs ddd of year '	
     endif
-!
+
 ! Allocate fixed WAM vertical profiles on the mid-layer grid
-!         
+        
     allocate( pr_idea(levs),   prlog(levs)  )
     allocate( h2ora(levs),     o3ra(levs)   )
     allocate( zkm(levs),   pmb(levs), zlog(levs))
-!    allocate( prsilvl(levs) )
+!   allocate( prsilvl(levs) )
     allocate(gglob(levs), muglob(levs), zglob(levs), tglob(levs))
-!  
+   
 123 format(i4,4(2x, e10.3))  
-   do k=1, levs
-!       pmb(k)   = ak(k)*100. + pref*bk(k)         ! Pa -unit  Pref = 1.e5 pa, pmb = Pa
-       
+    do k=1, levs
+!      pmb(k)   = ak(k)*100. + pref*bk(k)         ! Pa -unit  Pref = 1.e5 pa, pmb = Pa      
        pmb(k)   = (ak(k)+ak(k+1))*.5 + pref*(bk(k)+bk(k+1))*.5
        
        pr_idea(k) = 0.01* pmb(k)             ! in mb or hPa 
@@ -322,82 +316,77 @@ module  wamphys_init_module
 !===========================
     enddo   
    
-      do k=1,levs
-        if(pmb(k).le.prdot02) then
-          npsrad=k
-          exit
-        endif
-      enddo  
+    do k=1,levs
+      if(pmb(k).le.prdot02) then
+        npsrad=k
+        exit
+      endif
+    enddo  
 
-    
- if (me == master) then 
-       print *, ' npsrad ', npsrad,   pmb(npsrad), prdot02 
-        print *  
-       print *, 'pref, rpref ',    pref, rpref
-   do k=1, levs   
    
-   write(6,121) k, ak(k), pmb(k), bk(k), pr_idea(k), prlog(k)
-   enddo   
-   print *
-   print *, ' zlog ', zlog(1), zlog(levs)
-   print *, ' prlog ', prlog(1), prlog(43), prlog(levs)     
- endif       
+    if (me == master) then 
+      !  print *, 'npsrad', npsrad,   pmb(npsrad), prdot02 
+      !  print *, 'pref, rpref ',    pref, rpref
+      do k=1, levs   
+         write(6,121) k, ak(k), pmb(k), bk(k), pr_idea(k), prlog(k)
+      enddo   
+     !  print *, ' zlog ', zlog(1), zlog(levs)
+     !  print *, ' prlog ', prlog(1), prlog(43), prlog(levs)     
+    endif       
 121 format(i4, 5(2x, e10.3))
 
 
-      call wam_composition_init150(levs, me, master)  ! defines k71, k43 etc.. 
-      if (me == master) print *, ' wamphys_init_module after wam_composition_init150 '
-      
-      call get_global_grav_mu_zgeo (levs, me,master)
-      
-       if (me == master) print *, ' wamphys_init_module after get_global_grav_mu_zgeo'  
+    call wam_composition_init150(levs, me, master)  ! defines k71, k43 etc.. 
+!   if (me == master) print *, ' wamphys_init_module after wam_composition_init150 '
+     
+    call get_global_grav_mu_zgeo (levs, me,master)    
+!   if (me == master) print *, ' wamphys_init_module after get_global_grav_mu_zgeo'  
          
 !   call gravco2(levs, philco2, soro_gg, gg) 
+
 ! check dimension of pmb  ..... sounds like Pa
-!
-!wamphys_radsolar_init.F90:! efficiencies suggested by Mlynchack and Solomon for UV-heating rates 40-110 km
-!
+! wamphys_radsolar_init.F90:! efficiencies suggested by Mlynchack and Solomon for UV-heating rates 40-110 km
+
 ! init solar-radiation efficiencies
-!   
- if (do_init_wamrad) then 
- 
-   allocate(co2my(levs))    
-   call wam_co2cin(prlog(k43),pmb(k43), muglob(k43),gglob(k43),co2my(k43), &
-                    nlev_co2,me,master) 
-   co2my(1:k43-1) = co2my(k43)		      
-
-   if (.not.allocated(prpa)) allocate(prpa(nlevc_h2o))  
-   prpa(1:nlevc_h2o) = pmb(k71:levs)
    
-!nlevc_h2o=levs-k71+1   
-
-   allocate(gh2ort(levs), gh2ovb(levs),dg1rt(levs),dg2rt(levs)  )
-   allocate( dg1vb(levs),dg2vb(levs),gdp(levs))
-   allocate( xx(levs),wvmmrc(levs),coeff(levs))
+    if (do_init_wamrad) then 
+    
+      allocate(co2my(levs))    
+      call wam_co2cin(prlog(k43),pmb(k43), muglob(k43),gglob(k43),co2my(k43), &
+                       nlev_co2,me,master) 
+      co2my(1:k43-1) = co2my(k43)		      
    
-   call wam_h2ocin(prpa, nlevc_h2o,  me, master, &
-        gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71), &
-        dg1vb(k71),dg2vb(k71),gdp(k71),xx(k71),wvmmrc(k71),coeff(k71) )
-	
-!    if(me == master) then
-!      print*, ' wam_h2ocin dims ', levs, k71, nlevc_h2o
-!      do k=k71, levs  
-!       print *, ' h2ocin ', k, xx(k), gh2ort(k), dg1rt(k)
-!      enddo
-!      print*, ' h2ocin ++++++++ ', me
-!!    endif  
-   deallocate (prpa) 
+      if (.not.allocated(prpa)) allocate(prpa(nlevc_h2o))  
+      prpa(1:nlevc_h2o) = pmb(k71:levs)
+      
+      !nlevc_h2o=levs-k71+1   
    
-!      if(me == master) stop ' wam_h2ocin '
-   allocate (effeuv(levs), effuv(levs))  
-    allocate (eff_hart(levs), eff_hugg(levs), eff_chap(levs), eff_herz(levs))
-    allocate (eff_srb(levs), eff_src(levs), eff_lya(levs))
-    allocate (o2_scale_factor(levs),  srbeff(levs) )
-    allocate (wam_oh(levs),  wam_ho2(levs) )         
-!    
-! old-WAM use single "ef-array" for O2-O3 UV-radiation
-!   
-  
+      allocate(gh2ort(levs), gh2ovb(levs),dg1rt(levs),dg2rt(levs)  )
+      allocate( dg1vb(levs),dg2vb(levs),gdp(levs))
+      allocate( xx(levs),wvmmrc(levs),coeff(levs))
+      
+      call wam_h2ocin(prpa, nlevc_h2o,  me, master,                          &
+           gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71),                    &
+           dg1vb(k71),dg2vb(k71),gdp(k71),xx(k71),wvmmrc(k71),coeff(k71) )
+   	
+   !    if(me == master) then
+   !      print*, ' wam_h2ocin dims ', levs, k71, nlevc_h2o
+   !      do k=k71, levs  
+   !       print *, ' h2ocin ', k, xx(k), gh2ort(k), dg1rt(k)
+   !      enddo
+   !      print*, ' h2ocin ++++++++ ', me
+   !    endif  
+      deallocate (prpa) 
+      
+   !  if(me == master) stop ' wam_h2ocin '
+      allocate (effeuv(levs), effuv(levs))  
+      allocate (eff_hart(levs), eff_hugg(levs), eff_chap(levs), eff_herz(levs))
+      allocate (eff_srb(levs), eff_src(levs), eff_lya(levs))
+      allocate (o2_scale_factor(levs),  srbeff(levs) )
+      allocate (wam_oh(levs),  wam_ho2(levs) )         
+      
+   ! old-WAM use single "ef-array" for O2-O3 UV-radiation  
+     
       eff_srb(1:levs) =1.00
       eff_lya(1:levs) =0.95
       eff_src(1:levs) =0.85   ! should be modified to introduce vertical profile with min at ~90km
@@ -410,42 +399,38 @@ module  wamphys_init_module
       call heat_uv_eff(levs, eff_hart, eff_src, me, master)                        !from idea_o2_o3.f  
       
       call get_eff_zlog( levs, zlog, effuv, effeuv,  o2_scale_factor, srbeff, me, master) 
-!
+
       call wam_readno_snoewx(file_no_snoe, me, master)
       
       call wam_solar_radphoto_init(me, master) 
-      
- endif    ! init wam radiation     
+         
+    endif    ! init wam radiation     
        
     if (do_init_wamtracers) call wam_tracer_init(levs, me, master)
 
- if (do_init_wamion) then 
- 
-      call wam_ion_init(levs, me, master) 
-      efield_model = 'epot'
-      call wam_efield_init(efield_model, me, master)
-      
- endif    ! init wam-ionosphere          
-!
+    if (do_init_wamion) then 
+    
+         call wam_ion_init(levs, me, master) 
+         efield_model = 'epot'
+         call wam_efield_init(efield_model, me, master)
+         
+    endif    ! init wam-ionosphere          
+
 ! FV3 has ca-adjustments  
 !           call ideaca_init(prsilvl,levs+1)
-   
-!
 !======================
     module_is_initialized = .true.
     
     if (me == master) print *, ' wamphys_init is initialized ', module_is_initialized
 
-    end subroutine wamphys_init_all
-!
-!    
-    subroutine get_global_grav_mu_zgeo (levs, me, master)   ! defined in module gglob, muglob, zglob, soro_gg 
+  end subroutine wamphys_init_all
+    
+  subroutine get_global_grav_mu_zgeo (levs, me, master)   ! defined in module gglob, muglob, zglob, soro_gg 
      use  netcdf   
      use  physcons , only : re => con_rerth, grav => con_g
      use wamphys_math_interp, only : idea_comp150_interp
      implicit none
-     integer, intent(in)             :: levs, me, master    
-     
+     integer, intent(in)             :: levs, me, master        
 !=======================================================================================================    
 !/scratch1/NCEPDEV/swpc/Valery.Yudin/save/BASE_SVN/BASE_WAM_DATA/WAM_COMP/wam_rm3_globcomp.nc  
 !        lev = 150 ;
@@ -459,101 +444,101 @@ module  wamphys_init_module
      
     integer :: ncid,  iernc, vid, dimid, status         
     integer :: k, nlev, nvar
-!
+
     real(kind=kind_phys), allocatable :: pdata(:), tdata(:), zdata(:), mudata(:) 
-    real(kind=kind_phys) :: g0re2       
-    iernc=NF90_OPEN(trim(file_glob_tracers), nf90_nowrite, ncid)
+    real(kind=kind_phys) :: g0re2  
+
+    iernc = NF90_OPEN(trim(file_glob_tracers), nf90_nowrite, ncid)
     g0re2 = grav*re*re
+
     if(iernc.ne.0) then         			    
        print *, 'cannot file_glob_tracers file=',trim(file_glob_tracers)			    
-          return
-        else
+       return
+    else
 	
        status = nf90_inq_dimid(ncid, "lev", DimID)
 !      if (status /= nf90_noerr) call handle_err(status)
-!
+
        status = nf90_inquire_dimension(ncid, DimID,  len = nlev)      
        status = nf90_inq_dimid(ncid, "var", DimID)
        status = nf90_inquire_dimension(ncid, DimID,  len =nvar )
        
-           if (me == master)  print *, nlev, nvar, ' nlev-nvar dimd of file_glob_tracers'
-	   if (nlev .le. 0 .or. nvar .le. 0) then 
+       if (me == master)  print *, nlev, nvar, ' nlev-nvar dimd of file_glob_tracers'
+	 if (nlev .le. 0 .or. nvar .le. 0) then 
 	       print *, 'tracer-file=',    trim(file_glob_tracers)	   
 	       print *, ' nlev =', nlev, 'nvar=',nvar
 	       stop
-	   endif
-  	   
-        if (.not.allocated(vmr_wam))  allocate (vmr_wam(nlev, nvar))
-        if (.not.allocated(wam_hya))  allocate (wam_hya(nlev)) 
-        if (.not.allocated(wam_hyb))  allocate (wam_hyb(nlev)) 	        
+	 endif
+ 	   
+       if (.not.allocated(vmr_wam))  allocate (vmr_wam(nlev, nvar))
+       if (.not.allocated(wam_hya))  allocate (wam_hya(nlev)) 
+       if (.not.allocated(wam_hyb))  allocate (wam_hyb(nlev)) 	        
 
-        iernc=nf90_inq_varid( ncid, 'vmr_wam', vid )
-        iernc= nf90_get_var( ncid, vid, vmr_wam)
-        iernc=nf90_inq_varid( ncid, 'whyam', vid )
-        iernc= nf90_get_var( ncid, vid, wam_hya)
-        iernc=nf90_inq_varid( ncid, 'whybm', vid )
-        iernc= nf90_get_var( ncid, vid, wam_hyb)		
-  	iernc=nf90_close(ncid)
+       iernc=nf90_inq_varid( ncid, 'vmr_wam', vid )
+       iernc= nf90_get_var( ncid, vid, vmr_wam)
+       iernc=nf90_inq_varid( ncid, 'whyam', vid )
+       iernc= nf90_get_var( ncid, vid, wam_hya)
+       iernc=nf90_inq_varid( ncid, 'whybm', vid )
+       iernc= nf90_get_var( ncid, vid, wam_hyb)		
+  	 iernc=nf90_close(ncid)
 	
-	endif 
-	if (levs == nlev ) then
-	 zglob(:) = vmr_wam(:, ind_zg)*1.e3
-	 tglob(:) = vmr_wam(:, ind_tg)
-	 muglob(:) = vmr_wam(:, ind_mu)
-	 gglob(:)  = g0re2/((re+zglob(:))*(re+zglob(:)))
-	 if (me ==  master) then
-	 print *,  ' ggglob ', minval(gglob), maxval(gglob)
-	 print *,  ' zglob ', minval(zglob), maxval(zglob) 
-	 print *,  ' tglob ', minval(tglob), maxval(tglob) 
-	 endif	 
-	else
-!	 print *,  ' levs =/= 150 ', levs, nlev	
-	 allocate(pdata(nlev), tdata(nlev), zdata(nlev), mudata(nlev)) 
-	 pdata(:) = -alog(wam_hyb +wam_hya)
-	 zdata(:) = vmr_wam(:, ind_zg)
-	 tdata(:) = vmr_wam(:, ind_tg) 
-	 mudata(:) = vmr_wam(:, ind_mu)
-	 call idea_comp150_interp(zdata, pdata, nlev, prlog, zglob, levs)
-	 call idea_comp150_interp(tdata, pdata, nlev, prlog, tglob, levs) 
-	 call idea_comp150_interp(mudata, pdata, nlev, prlog, muglob, levs) 	
-	 gglob(:)  = g0re2/((re+zglob(:)*1.e3)*(re+zglob(:)*1.e3)) 	  
-!	
+    endif 
+    if (levs == nlev ) then
+      zglob(:) = vmr_wam(:, ind_zg)*1.e3
+      tglob(:) = vmr_wam(:, ind_tg)
+      muglob(:) = vmr_wam(:, ind_mu)
+      gglob(:)  = g0re2/((re+zglob(:))*(re+zglob(:)))
+      if (me ==  master) then
+        print *,  ' ggglob ', minval(gglob), maxval(gglob)
+        print *,  ' zglob ', minval(zglob), maxval(zglob) 
+        print *,  ' tglob ', minval(tglob), maxval(tglob) 
+      endif	 
+    else
+!	print *,  ' levs =/= 150 ', levs, nlev	
+      allocate(pdata(nlev), tdata(nlev), zdata(nlev), mudata(nlev)) 
+      pdata(:) = -alog(wam_hyb +wam_hya)
+      zdata(:) = vmr_wam(:, ind_zg)
+      tdata(:) = vmr_wam(:, ind_tg) 
+      mudata(:) = vmr_wam(:, ind_mu)
+      call idea_comp150_interp(zdata, pdata, nlev, prlog, zglob, levs)
+      call idea_comp150_interp(tdata, pdata, nlev, prlog, tglob, levs) 
+      call idea_comp150_interp(mudata, pdata, nlev, prlog, muglob, levs) 	
+      gglob(:)  = g0re2/((re+zglob(:)*1.e3)*(re+zglob(:)*1.e3)) 	  	
 ! different vertical model grids
-!	interpolate zdata => zglob
-!     
-	endif   
-	 if (me ==  master) then
-	 print *,  ' gglob ', minval(gglob), maxval(gglob)
-	 print *,  ' zglob ', minval(zglob), maxval(zglob) 
-	 print *,  ' tglob ', minval(tglob), maxval(tglob) 
-	 print *,  ' muglob ', minval(muglob), maxval(muglob)
-	 endif	
+!	interpolate zdata => zglob     
+    endif   
+    if (me ==  master) then
+      print *,  ' gglob ', minval(gglob), maxval(gglob)
+      print *,  ' zglob ', minval(zglob), maxval(zglob) 
+      print *,  ' tglob ', minval(tglob), maxval(tglob) 
+      print *,  ' muglob ', minval(muglob), maxval(muglob)
+    endif	
 	 
-	 if (allocated (pdata)) then 
-	    deallocate (pdata)
-	    deallocate (tdata)
-	    deallocate (zdata)	
-	    deallocate (mudata)	
-	 endif   
-	 
-	 if(allocated(wam_hya)) then
-	   deallocate( vmr_wam)
-	   deallocate(wam_hya)
-	   deallocate(wam_hyb)
-	 endif 
+    if (allocated (pdata)) then 
+      deallocate (pdata)
+      deallocate (tdata)
+      deallocate (zdata)	
+      deallocate (mudata)	
+    endif   
+    
+    if(allocated(wam_hya)) then
+      deallocate( vmr_wam)
+      deallocate(wam_hya)
+      deallocate(wam_hyb)
+    endif 
 	        	    
 	return  
     end  subroutine get_global_grav_mu_zgeo    
     
   subroutine wam_solar_radphoto_init(me, master)    
-!
+
      implicit none
      integer, intent(in)                 :: me, master   
      integer :: j, jinv
      
-        do j = 1, nwaves  
-        jinv = nwaves+1-j
-!
+     do j = 1, nwaves  
+         jinv = nwaves+1-j
+
          csao(j)   = sigeuv_o(jinv)*unit_conv
          csao2(j)  = sigeuv_o2(jinv)*unit_conv
          csao3(j)  = sigeuv_o3(jinv)*unit_conv
@@ -566,13 +551,13 @@ module  wamphys_init_module
          csdeo2(j) = csio2(j)*bro2del(jinv)
 	 
          rwpcc(j)  = pcc/(drlmeuv(jinv)*1.e-2)      
-         enddo
-!
+      enddo
+
       RETURN  
   end subroutine wam_solar_radphoto_init
   
         
-    subroutine wam_composition_init150(levs, me, master)
+  subroutine wam_composition_init150(levs, me, master)
     
     use wamphys_math_interp, only : idea_comp150_interp    
     
@@ -583,153 +568,140 @@ module  wamphys_init_module
 
     integer             :: k, npn, np        
     integer             :: mpn, mp	
-        if(levs.eq.150) then
-!          prlog150 = prlog(1:levs)	 ! -log(P150_Pa)
-          k41=41
-          k110=110
-          k71=71
-          k105=105
-          k100=100
+    if (levs.eq.150) then
+!     prlog150 = prlog(1:levs)	 ! -log(P150_Pa)
+      k41=41
+      k110=110
+      k71=71
+      k105=105
+      k100=100
 ! co2
-          k43=43
+      k43=43
 ! ion
-          k91=91
+      k91=91
 ! merge
-          k47=47
-          k64=64
-          k81=81
-          k87=87
+      k47=47
+      k64=64
+      k81=81
+      k87=87
 	  
-        else
-!
+    else
 ! different V-grid from "levs=150 GSMWAM grid"
-!       prlog(k) = alog(1000./pr_idea(k))
-!	
-          k71=levs
-          k81=levs
-          k87=levs
-          k91=levs
-          k100=levs
-          k105=levs
-          k110=levs
-	  k41=levs
-	  k64 = levs
-	  k43 =levs
-          do k=2,levs-10
-          if(prlog(k).ge.prlog150(41).and.prlog(k-1).lt.prlog150(41))   k41=k
-          if(prlog(k).ge.prlog150(71).and.prlog(k-1).lt.prlog150(71))   k71=k
-          if(prlog(k).le.prlog150(110).and.prlog(k+1).gt.prlog150(110)) k110=k
-          if(prlog(k).ge.prlog150(100).and.prlog(k-1).lt.prlog150(100)) k100=k
-          if(prlog(k).le.prlog150(105).and.prlog(k+1).gt.prlog150(105)) k105=k
-          if(prlog(k).ge.prlog150(43).and.prlog(k-1).lt.prlog150(43))   k43=k
-          if(prlog(k).ge.prlog150(91).and.prlog(k-1).lt.prlog150(91))   k91=k
-          if(prlog(k).ge.prlog150(47).and.prlog(k-1).lt.prlog150(47))   k47=k
-          if(prlog(k).ge.prlog150(64).and.prlog(k-1).lt.prlog150(64))   k64=k
-          if(prlog(k).ge.prlog150(81).and.prlog(k-1).lt.prlog150(81))   k81=k
-          if(prlog(k).ge.prlog150(87).and.prlog(k-1).lt.prlog150(87))   k87=k
-          enddo
-        endif
+!     prlog(k) = alog(1000./pr_idea(k))	
+      k71=levs
+      k81=levs
+      k87=levs
+      k91=levs
+      k100=levs
+      k105=levs
+      k110=levs
+      k41=levs
+      k64 = levs
+      k43 =levs
+      do k=2,levs-10
+        if(prlog(k).ge.prlog150(41).and.prlog(k-1).lt.prlog150(41))   k41=k
+        if(prlog(k).ge.prlog150(71).and.prlog(k-1).lt.prlog150(71))   k71=k
+        if(prlog(k).le.prlog150(110).and.prlog(k+1).gt.prlog150(110)) k110=k
+        if(prlog(k).ge.prlog150(100).and.prlog(k-1).lt.prlog150(100)) k100=k
+        if(prlog(k).le.prlog150(105).and.prlog(k+1).gt.prlog150(105)) k105=k
+        if(prlog(k).ge.prlog150(43).and.prlog(k-1).lt.prlog150(43))   k43=k
+        if(prlog(k).ge.prlog150(91).and.prlog(k-1).lt.prlog150(91))   k91=k
+        if(prlog(k).ge.prlog150(47).and.prlog(k-1).lt.prlog150(47))   k47=k
+        if(prlog(k).ge.prlog150(64).and.prlog(k-1).lt.prlog150(64))   k64=k
+        if(prlog(k).ge.prlog150(81).and.prlog(k-1).lt.prlog150(81))   k81=k
+        if(prlog(k).ge.prlog150(87).and.prlog(k-1).lt.prlog150(87))   k87=k
+      enddo
+    endif
 	
-          nlev_h2o=k110-k41+1
-          nlevc_h2o=levs-k71+1
-          nlev_co2=levs-k43+1
-	  nps = k71
+    nlev_h2o=k110-k41+1
+    nlevc_h2o=levs-k71+1
+    nlev_co2=levs-k43+1
+    nps = k71
 	  
-      if(levs.eq.150) then
-      
-          h2ora(k71:levs)=h2ora150
-          o3ra(k71:levs)=o3ra150
+    if(levs.eq.150) then     
+      h2ora(k71:levs)=h2ora150
+      o3ra(k71:levs)=o3ra150	  
+    else
+! needs extra-work and check               
+      npn =150 
+      np = npn-71+1
+      mpn = levs
+      mp = mpn-k71+1
+      call idea_comp150_interp(h2ora150,prlog150(71:npn), np, prlog(k71:levs), h2ora(k71:levs), mp)
+      call idea_comp150_interp(o3ra150, prlog150(71:npn), np, prlog(k71:levs), o3ra(k71:levs), mp)	  
+    endif	
+    h2ora(1:k71-1)=0. !  or constant values  h2ora(k71) > 
+    o3ra(1:k71-1)=0.  !  o3ra(k71) replace them to the global WX-profiles of H2O and O3    
 	  
-      else
-!
-! needs extra-work and check
-!      
-           
-	   npn =150 
-	   np = npn-71+1
-	   mpn = levs
-	   mp = mpn-k71+1
-          call idea_comp150_interp(h2ora150,prlog150(71:npn), np, prlog(k71:levs), h2ora(k71:levs), mp)
-          call idea_comp150_interp(o3ra150, prlog150(71:npn), np, prlog(k71:levs), o3ra(k71:levs), mp)
-	  
-      endif	
-	  h2ora(1:k71-1)=0. ! or constant values  h2ora(k71) > 
-	   o3ra(1:k71-1)=0. !  o3ra(k71) replace them to the global WX-profiles of H2O and O3    
-!	  
 ! better to use the Global H2O and O3 profiles (WX  with SABER/MLS compilation	  	  
 !          call idea_interp(o3ra150, 71,150,80, o3ra, levs)
          
-      if ( me == master ) then
-         print *, ' wam_composition_init150 - performed '
-!   integer              ::   nlev_h2o,nlevc_h2o,nlev_co2
-!   integer              ::   k41,k71,k110,k105,k100,k43
-!   integer              ::   k91,k47,k64,k81,k87
-
-        print *, ' wam_comp k41,k71,k110,k105,k100,k43	 ', &
-	        k41,k71,k110,k105,k100,k43
-	print *	
-        print *, ' wam_comp k91,k47,k64,k81,k87 ', k91,k47,k64,k81,k87
-	print *		
-	print *,' wam_comp nlev_h2o/co2', nlev_h2o,nlevc_h2o,nlev_co2
-	print *, 'wamphys-prlog', prlog(1), prlog(43), prlog(levs)
+    if ( me == master ) then
+      print *, ' wam_composition_init150 - performed '
+      print *, ' wam_comp k41,k71,k110,k105,k100,k43 ', &
+	           k41,k71,k110,k105,k100,k43
+      print *, ' wam_comp k91,k47,k64,k81,k87 ', k91,k47,k64,k81,k87
+      print *, ' wam_comp nlev_h2o/co2', nlev_h2o,nlevc_h2o,nlev_co2
+      print *, ' wamphys-prlog', prlog(1), prlog(43), prlog(levs)
 !	do k=1,levs
-!	 write(6,333) k, prlog(k), o3ra(k)*1.e6, h2ora(k)*1.e6
+!	   write(6,333) k, prlog(k), o3ra(k)*1.e6, h2ora(k)*1.e6
 !	enddo 
 	print *, 'wamphys-prlog', prlog(1), prlog(43), prlog(levs)		
 !	pause	' wam_composition_init150 '	
-      endif
+    endif
  333  format(i4, 3(2x, E10.3))     
-    end subroutine wam_composition_init150
+  end subroutine wam_composition_init150
     
 !=============================================
   subroutine wam_tracer_init(levs, me, master)
   
-  use wamphys_math_interp, only :  z65toz
-  use wamphys_setfix_tracers, only : np, ohi, ho2i
-  use physcons, only : avgd => con_avgd
-    implicit none
-    integer, intent(in)                 :: levs                   ! number of model levels
-    integer, intent(in)                 :: me, master 
-    real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o
-!
+      use wamphys_math_interp, only :  z65toz
+      use wamphys_setfix_tracers, only : np, ohi, ho2i
+      use physcons, only : avgd => con_avgd
+      implicit none
+      integer, intent(in)                 :: levs                   ! number of model levels
+      integer, intent(in)                 :: me, master 
+      real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o
+ 
 ! initialize wam_oh(levs) & wam_ho2(levs) from some-global profiles (z65)
-!      
+      
       call z65toz(np, levs,ohi, zlog, wam_oh, 0.)
       call z65toz(np, levs,ho2i,zlog, wam_ho2,0.)
-!
+ 
 ! assign set of costants employed in idea_tracer
 !     use idea_composition, only   : bz,  amo,amn2,  amo2, amo3, amh2o
 !     use idea_composition, only   : rbz, rmo, rmo2, rmn2, rmh2o,rmo3
-      bz=1.3806505e-23
+      bz  = 1.3806505e-23
       rbz = 1./bz
       
-      amo  =15.9994
-      amo2 = 2.* amo
-      amo3 = 3.* amo
-      amh2o  = 18.0154
-      amn2=28.013 
-      amno=30.0061        
+      amo   = 15.9994
+      amo2  = 2.* amo
+      amo3  = 3.* amo
+      amh2o = 18.0154
+      amn2  = 28.013 
+      amno  = 30.0061        
        
-       rkgavgd =1.e-3/avgd
-       mo=amo *rkgavgd
-       mo2=amo2 *rkgavgd
-       mn2=amn2 *rkgavgd
-       mh2o=amh2o *rkgavgd
-       mo3=amo3 *rkgavgd
+      rkgavgd = 1.e-3/avgd
 
-       rmn2  = 1./mn2
-       rmo   = 1./mo
-       rmo3  = 1./mo3
-       rmo2  = 1./mo2
-       rmh2o = 1./mh2o
+      mo    = amo *rkgavgd
+      mo2   = amo2 *rkgavgd
+      mn2   = amn2 *rkgavgd
+      mh2o  = amh2o *rkgavgd
+      mo3   = amo3 *rkgavgd
+
+      rmn2  = 1./mn2
+      rmo   = 1./mo
+      rmo3  = 1./mo3
+      rmo2  = 1./mo2
+      rmh2o = 1./mh2o
     
   end subroutine wam_tracer_init
   
 !=============================================  
   subroutine wam_ion_init(levs, me, master)
-!
+
 ! read and prepare time-invariant input ion-data
-!  
+ 
     use netcdf
     use  wamphys_set_data_ion, only : emaps, cmaps, djspectra
     use  wamphys_set_data_ion, only : en, width, ratio, te15, te11,en_maxwell,jmaxwell, width_maxwell
@@ -754,44 +726,43 @@ module  wamphys_init_module
 !
 ! read emaps/cmaps/djspectra data and prepare arrays      subroutine precomp_iondata_fixed
 !    
-       ierNC=NF90_OPEN(trim(tirosdata_file), nf90_nowrite, ncid)   
-        if (iernc /=0) write(6,*) ncid, 'ncid ', iernc, ' iernc '
+      ierNC=NF90_OPEN(trim(tirosdata_file), nf90_nowrite, ncid)   
+      if (iernc /=0) write(6,*) ncid, 'ncid ', iernc, ' iernc '
 !
-        iernc=nf90_inq_varid( ncid, 'emaps', vid )
-        iernc= nf90_get_var( ncid, vid, emaps)
-        iernc=nf90_inq_varid( ncid, 'cmaps', vid )
-        iernc= nf90_get_var( ncid, vid, cmaps)
-        iernc=nf90_inq_varid( ncid, 'djspectra', vid )
-        iernc= nf90_get_var( ncid, vid, djspectra)
+      iernc=nf90_inq_varid( ncid, 'emaps', vid )
+      iernc= nf90_get_var( ncid, vid, emaps)
+      iernc=nf90_inq_varid( ncid, 'cmaps', vid )
+      iernc= nf90_get_var( ncid, vid, cmaps)
+      iernc=nf90_inq_varid( ncid, 'djspectra', vid )
+      iernc= nf90_get_var( ncid, vid, djspectra)
 	
-       iernc=nf90_close(ncid) 
+      iernc=nf90_close(ncid) 
        
 !emaps cmaps djspectra
 ! ascii-files for 
-!
+
       close(unit=unit3)
       open(unit=unit3,file='ionprof',status='old',form='formatted', iostat=istat)
-         read (unit3,99001) emaps1
-         read (unit3,99001) cmaps1
-       close(unit=unit3)
+      read (unit3,99001) emaps1
+      read (unit3,99001) cmaps1
+      close(unit=unit3)
 99001 format (1x,6e13.6)
+
       close(unit=unit7)
       open(unit=unit7,file='tiros_spectra',status='old', form='formatted', iostat=istat)
-
-         read(unit=unit7,fmt=*) string_dum
-         read(unit=unit7,fmt=*) string_dum
-         read(unit7,fmt=*)
-         do iband=1,21
+      read(unit=unit7,fmt=*) string_dum
+      read(unit=unit7,fmt=*) string_dum
+      read(unit7,fmt=*)
+      do iband=1,21
          read(unit7,fmt=*) string_dum
          read(unit7,fmt=*)
          read(unit=unit7,fmt='(1x,5e10.4)')(djspectra1(iflux,iband),iflux=1,15)
          read(unit7,fmt=*)
-         enddo
-       close(unit=unit7)
+      enddo
+      close(unit=unit7)
        
 !emaps cmaps djspectra
 ! ascii-files for 
-!
 	
       do iband=1,21
         ratio(iband) = (iband-1)*0.05     
@@ -810,31 +781,31 @@ module  wamphys_init_module
 !
 !
 !
-       iernc=nf90_open(trim(iondata_file), nf90_nowrite, ncid)   
-       if (iernc /=0) write(6,*) ncid, 'ncid ', iernc, ' iernc '
+      iernc=nf90_open(trim(iondata_file), nf90_nowrite, ncid)   
+      if (iernc /=0) write(6,*) ncid, 'ncid ', iernc, ' iernc '
 !
-        iernc=nf90_inq_varid( ncid, 'glon', vid )
-        iernc= nf90_get_var( ncid, vid, glon)
-        iernc=nf90_inq_varid( ncid, 'glat', vid )
-        iernc= nf90_get_var( ncid, vid, glat)
-        iernc=nf90_inq_varid( ncid, 'btot', vid )
-        iernc= nf90_get_var( ncid, vid, btot)
-        iernc=nf90_inq_varid( ncid, 'cormag', vid )
-        iernc= nf90_get_var( ncid, vid, cormag)
-        iernc=nf90_inq_varid( ncid, 'dipang', vid )
-        iernc= nf90_get_var( ncid, vid, dipang)
+      iernc=nf90_inq_varid( ncid, 'glon', vid )
+      iernc= nf90_get_var( ncid, vid, glon)
+      iernc=nf90_inq_varid( ncid, 'glat', vid )
+      iernc= nf90_get_var( ncid, vid, glat)
+      iernc=nf90_inq_varid( ncid, 'btot', vid )
+      iernc= nf90_get_var( ncid, vid, btot)
+      iernc=nf90_inq_varid( ncid, 'cormag', vid )
+      iernc= nf90_get_var( ncid, vid, cormag)
+      iernc=nf90_inq_varid( ncid, 'dipang', vid )
+      iernc= nf90_get_var( ncid, vid, dipang)
 	
-       iernc=nf90_close(ncid) 
+      iernc=nf90_close(ncid) 
 
     
   end subroutine wam_ion_init
  
   subroutine wam_efield_init(efmodel, me, master)
   
-  use wam_efield_setdef_data, only : magnetic_grids, set_readCoef, prep_fk, prep_pnm,  index_quiet
-  
-  use wam_efieldw05_read_data, only : read_potential, read_schatable, read_bndy
-  use wam_efield_setdef_data, only : read_acoef_efield
+    use wam_efield_setdef_data, only : magnetic_grids, set_readCoef, prep_fk, prep_pnm, index_quiet
+    
+    use wam_efieldw05_read_data, only : read_potential, read_schatable, read_bndy
+    use wam_efield_setdef_data, only : read_acoef_efield
     implicit none  
     character(len=*)    :: efmodel
     integer, intent(in) :: me, master
@@ -843,40 +814,38 @@ module  wamphys_init_module
     
     call read_acoef_efield (efield_lflux_file, efield_hflux_file)
     
-      call index_quiet                ! set up index for f_m(mlt),f_l(UT),f_-k(d)
-      call prep_fk	              ! set up the constant factors for f_k
-      call prep_pnm	              ! set up the constant factors for P_n^m & dP/d phi  
+    call index_quiet            ! set up index for f_m(mlt),f_l(UT),f_-k(d)
+    call prep_fk	              ! set up the constant factors for f_k
+    call prep_pnm	              ! set up the constant factors for P_n^m & dP/d phi  
+    
+    call set_readcoef
       
-      
-      call set_readcoef
-!      
 ! defines      use efield_wam, only: ALAMN =>ALAMN,ALAMX=>ALAMX,ALAMR=>ALAMR,
 !     &STPD=>STPD,STP2=>STP2,CSTP=>CSTP,SSTP=>SSTP
       
-      if (trim(efmodel) == 'epot') then     
-        call read_potential(W05SC_Epot_file)
+    if (trim(efmodel) == 'epot') then     
+      call read_potential(W05SC_Epot_file)
 	if (me == master ) write(*, *)  'efield_init read_potential W05SC_Epot ', trim(efmodel)
-      else
-        call read_potential(W05SC_Bpot_file)
+    else
+      call read_potential(W05SC_Bpot_file)
 	if (me == master ) write(*, *)  'efield_init read_potential W05SC_Bpot ', trim(efmodel)
-      endif
+    endif
 
-      call read_schatable(W05SC_HAtbl_file)
-! 	if (me == master ) write(*, *)  'efield_init read(W05SC_HAtbl) '    
-      call       read_bndy(W05SC_Bndy_file)
-! 	if (me == master ) write(*, *)  'efield_init read(W05SC_Bndy) '  
+    call read_schatable(W05SC_HAtbl_file)
+!   if (me == master ) write(*, *)  'efield_init read(W05SC_HAtbl) '    
+    call       read_bndy(W05SC_Bndy_file)
+!   if (me == master ) write(*, *)  'efield_init read(W05SC_Bndy) '  
       
-   end subroutine  wam_efield_init 
+  end subroutine  wam_efield_init 
    
   subroutine wamphys_dealloc
-!
 ! deallocate sources/spectra & some diagnostics need to find where "deaalocate them"
 ! before "end" of the FV3GFS
-!
-    implicit none
+
+   implicit none
 !
 !   deallocate arrays employed in:
-!     wamphys_init
+!   wamphys_init
 !
    if (allocated (pr_idea)) deallocate (pr_idea)
    if (allocated (prlog))   deallocate (prlog)
@@ -893,19 +862,15 @@ module  wamphys_init_module
    deallocate (eff_hart, eff_hugg, eff_chap, eff_herz)
    deallocate (eff_srb, eff_src, eff_lya)
    deallocate (o2_scale_factor,  srbeff )    
-   
-   
+     
   end subroutine wamphys_dealloc
 
-
- end module wamphys_init_module
+end module wamphys_init_module
 
 
 
 ! INIT Rad-efficiences
-!
-!  
-     subroutine  heat_uv_eff(levs, eff_hart, eff_src, me, master)
+  subroutine  heat_uv_eff(levs, eff_hart, eff_src, me, master)
 !
       use wamphys_init_module, only : pr_idea
 !
@@ -925,9 +890,9 @@ module  wamphys_init_module
       data c1/-0.009682,0.13396,  0.0036/
       data c2/0.033093,-0.076863, 0.0595/
       data c3/0.017938,0.006897, -0.0228/
-!
+
 ! pr_idea in mb
-!
+
 !     DATA EFF_SRC17/5*.28,.29,.32,.38,.4,.4,.4,.39,.34,.26,.19,.17,.16/         
       do i=1,levs
         lp=log10(pr_idea(i))       
@@ -947,11 +912,9 @@ module  wamphys_init_module
           endif
        enddo
       return
-      end  subroutine heat_uv_eff  
+  end  subroutine heat_uv_eff  
       
-      subroutine get_eff_zlog( levs, zlog, effuv, effeuv,  o2_scale_factor, srbeff, me, master)
-
-      
+  subroutine get_eff_zlog( levs, zlog, effuv, effeuv,  o2_scale_factor, srbeff, me, master)    
       use machine,           only: kind_phys
       use wamphys_math_interp, only : interpol_wamz,interpol_wamz_down
             
@@ -960,9 +923,9 @@ module  wamphys_init_module
       integer, intent(in) :: me, master        
       real(kind=kind_phys) , dimension(levs),  intent(in)  ::  zlog    
       real(kind=kind_phys) , dimension(levs),  intent(out) :: effuv, effeuv,  o2_scale_factor, srbeff
-!
+
 ! fixed data
-!
+
       integer, parameter        :: nz_euv = 17
       real(kind=kind_phys), dimension(nz_euv)   :: effeuv17,effuv17, p17, z17
 ! O2 scale factor for 15 pressure level 
@@ -1016,9 +979,9 @@ module  wamphys_init_module
         .388,.384,.380,.375,.366,.350,.324,   &  
         .291,.260,.234,.214,.200,.190,.184,   &  
         .180,.176,.173,.170/	
-!
+ 
 ! local
-!
+
       integer :: k, kup, kdw
  			 
       do k=1, nz_euv
@@ -1043,9 +1006,9 @@ module  wamphys_init_module
                      o2_scale_factor , 1.0) 
 
      
-      end  subroutine  get_eff_zlog
+  end  subroutine  get_eff_zlog
              
-      subroutine wam_readno_snoewx(file, me, master)
+  subroutine wam_readno_snoewx(file, me, master)
       
        use wamphys_init_module, only : iulog, no_nz16,no_ny33,no_neofs
        use wamphys_init_module, only : no_mlat, no_zkm, no_m,no_eof
@@ -1069,7 +1032,7 @@ module  wamphys_init_module
 !----------------------------------------------------------------------
 !	... read the snoe dimensions
 !----------------------------------------------------------------------
-      iernc=nf90_inq_varid( ncid, 'EOF', vid )
+       iernc=nf90_inq_varid( ncid, 'EOF', vid )
        ierNC=nf90_inquire_variable(ncid, vid, dimids=dimidT) 
        iernc = nf90_inquire_dimension(ncid, dimidT(3), len=neofs)
        iernc = nf90_inquire_dimension(ncid, dimidT(2), len=nz)
@@ -1096,28 +1059,27 @@ module  wamphys_init_module
 !----------------------------------------------------------------------
 !	... read the snoe variables
 !----------------------------------------------------------------------
-        iernc=nf90_inq_varid( ncid, 'lat', vid )
-        iernc= nf90_get_var( ncid, vid, no_mlat)
-        iernc=nf90_inq_varid( ncid, 'z', vid )
-        iernc= nf90_get_var( ncid, vid, no_zkm)
+       iernc=nf90_inq_varid( ncid, 'lat', vid )
+       iernc= nf90_get_var( ncid, vid, no_mlat)
+       iernc=nf90_inq_varid( ncid, 'z', vid )
+       iernc= nf90_get_var( ncid, vid, no_zkm)
 
-        iernc = nf90_inq_varid( ncid, 'NO', var_id )
-        iernc = nf90_get_var( ncid, var_id, no_m )
+       iernc = nf90_inq_varid( ncid, 'NO', var_id )
+       iernc = nf90_get_var( ncid, var_id, no_m )
 
-        iernc = nf90_inq_varid( ncid, 'EOF', var_id )
-        iernc = nf90_get_var( ncid, var_id, no_eof )  !(/1,1,1/), (/ny, nz, neofs/), no_eof )
+       iernc = nf90_inq_varid( ncid, 'EOF', var_id )
+       iernc = nf90_get_var( ncid, var_id, no_eof )  !(/1,1,1/), (/ny, nz, neofs/), no_eof )
 
-        iernc=nf90_close(ncid)
-	if ( me == master ) then
-	
+       iernc=nf90_close(ncid)
+	 if ( me == master ) then	
          print *, ' solar_readno_snoewx - performed '
 !         write(*,*) ' VAYsnoe ZKM:', no_zkm(1), ': ', no_zkm(nz)
 !         write(*,*) ' VAYsnoe MLT:', no_mlat(1), ': ', no_mlat(ny)
 !         write(*,*) ' VAYsnoe NO:',  maxval(no_m), minval(no_m)	 
-        endif    
-      end subroutine wam_readno_snoewx
+       endif    
+  end subroutine wam_readno_snoewx
       
-    subroutine wamphys_idate_calendar(idate, fhour, ddd, fddd) 
+  subroutine wamphys_idate_calendar(idate, fhour, ddd, fddd) 
     
     use machine, only: kind_phys    		 
     implicit none  
@@ -1127,9 +1089,7 @@ module  wamphys_init_module
 !out    
     integer, intent(out)                :: ddd    
     real(kind=kind_phys), intent(out)  :: fddd  
-!
 !locals
-!
       real(kind=kind_phys) :: rinc(5), rjday
       integer              :: jdow, jdoy, jday
       real(4)              :: rinc4(5)
@@ -1148,8 +1108,8 @@ module  wamphys_init_module
       idat(5) = idate(1)
       rinc(1:5)    = 0.
       rinc(2) = fhour
-!    
-!      call w3kind(w3kindreal,w3kindint)
+    
+!     call w3kind(w3kindreal,w3kindint)
       w3kindreal=8
       if(w3kindreal==4) then
         rinc4 = rinc
@@ -1163,12 +1123,11 @@ module  wamphys_init_module
       jday = 0
       call w3doxdat(jdat,jdow, ddd, jday)
       fddd = float(ddd) + jdat(5) / 24.   
-end  subroutine wamphys_idate_calendar  
+  end  subroutine wamphys_idate_calendar  
            
-    subroutine wamphys_day_of_year(yr, mm, dd, ddd)
-!
+  subroutine wamphys_day_of_year(yr, mm, dd, ddd)
 ! computes day of year to get tau_limb forcing written with 1-day precision
-!    
+    
     implicit none
     integer, intent(in) :: yr, mm, dd
     integer, intent(out) :: ddd
@@ -1179,11 +1138,10 @@ end  subroutine wamphys_idate_calendar
     jddd    = iw3jdn(yr,mm,dd)
     ddd = jddd-jd1+1
     
-    end subroutine wamphys_day_of_year
- 
-		       
-    subroutine wamphys_presolar(im, solhr,slag,sdec,cdec, dayno,     &                              
-                         xlon,xlat, sinlat, coslat,xmu,utsec,sda,    &              
+  end subroutine wamphys_day_of_year
+ 		       
+  subroutine wamphys_presolar(im, solhr,slag,sdec,cdec, dayno,     &                              
+                         xlon,xlat, sinlat, coslat,xmu,utsec,sda,  &              
                          maglat,maglon,wbtot,wdipang,essa)
 !------------------------------------------------------------------------
 ! calculate solar zenith angle
@@ -1234,37 +1192,36 @@ end  subroutine wamphys_idate_calendar
         xmu(i) = ch + ss
 
       enddo
-!
+
 ! get solar declination angle
       ty = (dayno+15.5)*12./365.
       if ( ty > 12.0 ) ty = ty - 12.0
       sda = atan(0.434*sin(pi/6.0*(ty-3.17)))
-!   
-!     print*,'www8',sda,asin(sdec)
-!
-!           get maglat maglon btot from  "getmag" in idea_ion.f
-!   
+   
+!     print *,'www8',sda,asin(sdec)
+ 
+!     get maglat maglon btot from  "getmag" in idea_ion.f
 
 !      call interp2_ionfield(im, xlat, xlon, wcormag, wbtot, wdipang,  cormag, btot, dipang, glon, glat)      
 !      call spole_ion(im,xlat,xlon,utsec, sda, maglon, essa, wcmorg)
 !      do i=1,im
 !         maglat(i)= pid2-wcormag(i)*DTR
 !      enddo      
-!      
+     
       call getmag(im,utsec,xlat,xlon, sda, wbtot, wdipang, maglon, maglat, essa)
-!      write(*, *) 'sda-presolar', sda, utsec, dayno
-!
+!     write(*, *) 'sda-presolar', sda, utsec, dayno
+
 ! inside interp_ionfield
-!  
+ 
       do i=1,im  
          latpix =xlat(i)*rtd
       enddo        
           
       return
       
-      end subroutine wamphys_presolar
+  end subroutine wamphys_presolar
 !================      
-      subroutine getmag(im,utsec,rlat,rlon,sda,btot,dipang,maglon,maglat,essa) 
+  subroutine getmag(im,utsec,rlat,rlon,sda,btot,dipang,maglon,maglat,essa) 
       use machine,                 only: kind_phys
       implicit none
       real(kind=kind_phys), parameter    ::pi=3.141592653,dtr=pi/180., pid2=.5*pi       
@@ -1311,63 +1268,59 @@ end  subroutine wamphys_idate_calendar
       real(kind=kind_phys) th,th1,phi1,sinth,sinth1,costh1,sinph1,cosph1,ac1,bc1,cc1, &  
       ac2,bc2,cc2,phim,ssp,sspr,csda,as1,bs1,cs1,as2,bs2,cs2,gml, cmag
       integer i
-!
+ 
       do i=1,im
-      th=pi/2.-rlat(i)
-!
-! set pole coord. for each hemis.
-!
-      if (rlat(i).ge.0.0) then
-       th1=9.25*dtr
-       phi1=-78.0*dtr
-      else
-       th1=16.32*dtr
-       phi1=-54.0*dtr
-      end if
-!
-      sinth=sin(th)
-      sinth1=sin(th1)
-      costh1=cos(th1)
-      sinph1=sin(phi1)
-      cosph1=cos(phi1)
-!
-!     do i=1,im
-      ac1=sinth*cos(phir(i))
-      bc1=sinth*sin(phir(i))
-      cc1=cos(th)
-      ac2=ac1*costh1*cosph1+bc1*costh1*sinph1-cc1*sinth1
-      if((abs(ac2)).lt.0.001)ac2=0.001
-      bc2=-ac1*sinph1+bc1*cosph1
-      cc2=ac1*sinth1*cosph1+bc1*sinth1*sinph1+cc1*costh1
-      cmorg(i)=acos(cc2)
-      phimr(i)=atan2(bc2,ac2)
-      phim=phimr(i)/dtr
-!     ssp=360.-utsec/240.
-      ssp=180.-utsec/240.
-      sspr=ssp*dtr
-      csda=pi/2.-sda
-      as1=cos(sspr)*sin(csda)
-      bs1=sin(sspr)*sin(csda)
-      cs1=cos(csda)
-      as2=as1*costh1*cosph1+bs1*costh1*sinph1-cs1*sinth1
-      if((abs(as2)).lt.0.001)as2=0.001
-      bs2=-as1*sinph1+bs1*cosph1
-      cs2=as1*sinth1*cosph1+bs1*sinth1*sinph1+cs1*costh1
-      gml=atan2(bs2,as2)/dtr
-      essa(i)=phim-gml
+        th=pi/2.-rlat(i)
+  
+  ! set pole coord. for each hemis.
+  
+        if (rlat(i).ge.0.0) then
+         th1=9.25*dtr
+         phi1=-78.0*dtr
+        else
+         th1=16.32*dtr
+         phi1=-54.0*dtr
+        end if
+  
+        sinth=sin(th)
+        sinth1=sin(th1)
+        costh1=cos(th1)
+        sinph1=sin(phi1)
+        cosph1=cos(phi1)
+  
+  !     do i=1,im
+        ac1=sinth*cos(phir(i))
+        bc1=sinth*sin(phir(i))
+        cc1=cos(th)
+        ac2=ac1*costh1*cosph1+bc1*costh1*sinph1-cc1*sinth1
+        if((abs(ac2)).lt.0.001)ac2=0.001
+        bc2=-ac1*sinph1+bc1*cosph1
+        cc2=ac1*sinth1*cosph1+bc1*sinth1*sinph1+cc1*costh1
+        cmorg(i)=acos(cc2)
+        phimr(i)=atan2(bc2,ac2)
+        phim=phimr(i)/dtr
+  !     ssp=360.-utsec/240.
+        ssp=180.-utsec/240.
+        sspr=ssp*dtr
+        csda=pi/2.-sda
+        as1=cos(sspr)*sin(csda)
+        bs1=sin(sspr)*sin(csda)
+        cs1=cos(csda)
+        as2=as1*costh1*cosph1+bs1*costh1*sinph1-cs1*sinth1
+        if((abs(as2)).lt.0.001)as2=0.001
+        bs2=-as1*sinph1+bs1*cosph1
+        cs2=as1*sinth1*cosph1+bs1*sinth1*sinph1+cs1*costh1
+        gml=atan2(bs2,as2)/dtr
+        essa(i)=phim-gml
       enddo
       return
-      end subroutine xer_spole  
+  end subroutine xer_spole  
           
-      subroutine xer_interp_field(im,rlat,rlon,cormago,btoto,dipango)
-!
-!  VAY DANGER !!!!!!
+  subroutine xer_interp_field(im,rlat,rlon,cormago,btoto,dipango)
+! VAY DANGER !!!!!!
 ! interp works only for [20,91]  46 center + fixed ddlat=180/90? and ddlon=360/20?
-!
-!
 !      USE IDEA_ION_INPUT, only :
 !     & cormag, btot, dipang, glat, glon, nxmag,nymag
-
 
       use machine,              only   : kind_phys
       use wamphys_set_data_ion, only   :  cormag, btot, dipang, glon, glat      
@@ -1376,34 +1329,35 @@ end  subroutine wamphys_idate_calendar
       integer,intent(in)  :: im            ! number of longitude
       real(kind=kind_phys),   intent(in)  :: rlat(im)      ! latitude (rad)
       real(kind=kind_phys),   intent(in)  :: rlon(im)      ! longitude (rad)
-!
+
       real(kind=kind_phys),   intent(out) :: cormago(im),btoto(im),dipango(im)
-!
+
 ! local variable
-!      real(kind=kind_phys) cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
-!
+!     real(kind=kind_phys) cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
+
       real(kind=kind_phys) dll,dl,ddlat,ddlon,a1,a2,b1,b2,aa,bb
       integer i,iref,jref,jref1
       integer ::  jcen, ixdim 
-!
+
 ! lat lon interval
       ddlat= 3.4906585033333331E-002
       ddlon= 0.3141592653000000
       jcen =46 
        ixdim =20    
-! 
+ 
       do i=1,im
 ! get latitude index
         iref=int(rlat(i)/ddlat)+  jcen
         dl=(rlat(i)-glat(iref))/ddlat
-! print*,iref,dl
+! print *,iref,dl
+        
 ! get longitude index
         jref=int(rlon(i)/ddlon)+1
         jref1=jref+1
         if(jref1.gt.ixdim) jref1=jref1 - ixdim
         dll=(rlon(i)-glon(jref))/ddlon
-! print*,i,jref,jref1,dll
-!
+! print *,i,jref,jref1,dll
+
         a1=cormag(jref,iref)
         a2=cormag(jref1,iref)
         b1=cormag(jref,iref+1)
@@ -1411,7 +1365,7 @@ end  subroutine wamphys_idate_calendar
         aa=(1.-dll)*a1+dll*a2
         bb=(1.-dll)*b1+dll*b2
         cormago(i)=(1.-dl)*aa+dl*bb
-!
+
         a1=btot(jref,iref)
         a2=btot(jref1,iref)
         b1=btot(jref,iref+1)
@@ -1419,7 +1373,7 @@ end  subroutine wamphys_idate_calendar
         aa=(1.-dll)*a1+dll*a2
         bb=(1.-dll)*b1+dll*b2
         btoto(i)=(1.-dl)*aa+dl*bb
-!
+
         a1=dipang(jref,iref)
         a2=dipang(jref1,iref)
         b1=dipang(jref,iref+1)
@@ -1427,7 +1381,7 @@ end  subroutine wamphys_idate_calendar
         aa=(1.-dll)*a1+dll*a2
         bb=(1.-dll)*b1+dll*b2
         dipango(i)=(1.-dl)*aa+dl*bb
-!
+
       enddo
       return
-      end subroutine xer_interp_field
+  end subroutine xer_interp_field

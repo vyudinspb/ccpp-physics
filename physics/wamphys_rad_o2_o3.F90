@@ -1,11 +1,9 @@
 
-      subroutine wamrad_o2_o3(im,levs,cosz,adt,o2_n,o3_n,rho,cp,  &     
-      zg,grav,dth)
-!
 ! Apr 06 2012  Henry Juang, initial implement for nems
 ! Jan 02 2013  Jun Wang,    move o3ini out of column physics
 ! Nov 29 2016  VAY review/suggestions and SRB/SRC-out
 ! May 10 2022  Svetala Karol and CUA FV3WAM-ccpp version
+subroutine wamrad_o2_o3(im,levs,cosz,adt,o2_n,o3_n,rho,cp,zg,grav,dth)
 
       use physcons, only :    avgd => con_avgd  !, amo3=> con_amo3 
       use physcons, only :    bz => con_boltz        
@@ -13,7 +11,7 @@
       use wamphys_init_module, only : amo3, amo2, rmo3    
         
       use machine,     only : kind_phys 
-!
+
       implicit none
 ! Argument
       integer, intent(in) :: im               ! number of data points in adt (first dim)
@@ -29,19 +27,18 @@
       real(kind=kind_phys), intent(in)    :: grav(im,levs)    ! (m/s2)
       
       real(kind=kind_phys), intent(out)   :: dth(im,levs)     ! heating rate k/s
-!
-      real(kind=kind_phys) :: hc,fc,dc,hha,fha,dha,hhu,i1,i2,m,dhu,lams,laml,  &              
-                              hhz,fhz,dhzo2,dhzo3,hsrb,fsrb,dsrb,ysrb,h1,rodfac
-      real(kind=kind_phys) clmo2(levs),clmo3(levs) 
+
+      real(kind=kind_phys)  :: hc,fc,dc,hha,fha,dha,hhu,i1,i2,m,dhu,lams,laml,  &              
+                               hhz,fhz,dhzo2,dhzo3,hsrb,fsrb,dsrb,ysrb,h1,rodfac
+      real(kind=kind_phys)  :: clmo2(levs),clmo3(levs) 
       real(kind=kind_phys)  :: rdzg
       real(kind=kind_phys)  :: tg_vay
       real(kind=kind_phys)  :: fo2_vay, fo3_vay
       real(kind=kind_phys)  :: fc_dc, fha_dha
       real(kind=kind_phys)  :: hu_exp1, hu_exp2, rm, i2_i1
       integer i,k
-!
 ! very ....."dangerous" games with constants !!!!
-!
+
       fc=370.     !J/m2/s
       dc=2.85E-25 !m2
       fc_dc = fc*dc
@@ -63,11 +60,11 @@
       dsrb=2.07e-24  !m2
       ysrb=0.0152
 
-       hu_exp1 = exp(-m*laml)*dhu
-       hu_exp2 = exp(-m*lams)*dhu
-       i2_i1 = -0.02
-!
-! rewrite and compute constants in the init_solar (?)
+      hu_exp1 = exp(-m*laml)*dhu
+      hu_exp2 = exp(-m*lams)*dhu
+      i2_i1 = -0.02
+
+!   rewrite and compute constants in the init_solar (?)
 !   exp(-1.*m*laml) in loops
 !   mmr*dp => <n>dZ
       dth(:,:)=0.
@@ -81,17 +78,14 @@
           clmo2(levs)=o2_n(i,levs)*tg_vay*fo2_vay
           clmo3(levs)=o3_n(i,levs)*tg_vay*fo3_vay
           do k=levs-1,1,-1
-           rdzg =  .5*(zg(i,k+1)-zg(i,k))
-          clmo2(k)=clmo2(k+1)+(o2_n(i,k+1)+o2_n(i,k))*rdzg                                     
-          clmo3(k)=clmo3(k+1)+(o3_n(i,k+1)+o3_n(i,k))*rdzg              
-!
+            rdzg =  .5*(zg(i,k+1)-zg(i,k))
+            clmo2(k)=clmo2(k+1)+(o2_n(i,k+1)+o2_n(i,k))*rdzg                                     
+            clmo3(k)=clmo3(k+1)+(o3_n(i,k+1)+o3_n(i,k))*rdzg              
           enddo
           clmo2=clmo2*rodfac   !rad path
           clmo3=clmo3*rodfac
-!
 !very ....."dangerous" games with constants !!!!exp(-1.*m*laml)  i2/i1 etc....  
 !            can be restricted to MLT
-!
           do k=1,levs
 !
 !Chappius                                   acc-cy 2% according Strobel 1978
@@ -126,21 +120,18 @@
         endif
       enddo
       return
-      end  subroutine wamrad_o2_o3
-      
-      subroutine wamrad_o3prof(im,levs,ntrac, nto3, q, am, nair,o3_n)
-!      
+end  subroutine wamrad_o2_o3
+
 ! extend GFS-O3 in the thermosphere for WAM radiation
-!        will be replaced if O3 is a part of model chemistry
-!
+!        will be replaced if O3 is a part of model chemistry      
+subroutine wamrad_o3prof(im,levs,ntrac, nto3, q, am, nair,o3_n)     
 
       use wamphys_init_module, only : k71, o3ra, rmo3
       use machine,             only : kind_phys 
       
-
       implicit none
 ! IN/OUT
-      integer, intent(in) :: im                    ! number of data points in PE
+      integer, intent(in) :: im                                       ! number of data points in PE
 
       integer, intent(in) :: levs                                     ! number of pressure levels
       integer, intent(in) :: ntrac                                    ! number of tracer
@@ -158,18 +149,18 @@
         do k=1,k71-1
           o3_n(i,k)=q(i,k,nto3)*am(i,k)*nair(i,k)*rmo3
         enddo
-          rate=q(i,k71,nto3)/o3ra(k71)
+        rate=q(i,k71,nto3)/o3ra(k71)
         do k=k71,levs
           o3_n(i,k)=o3ra(k)*rate*am(i,k)*nair(i,k)*rmo3
         enddo
       enddo
       return
       
-      print *, ' nto3 ', nto3
-      i = 45
-      do k=1, levs
-        print*, k, o3_n(i,k), q(i,k,nto3)*am(i,k)*nair(i,k)*rmo3
-      enddo
+      ! print *, ' nto3 ', nto3
+      ! i = 45
+      ! do k=1, levs
+      !   print*, k, o3_n(i,k), q(i,k,nto3)*am(i,k)*nair(i,k)*rmo3
+      ! enddo
       pause 'wamrad_o3prof '
       return
-      end subroutine wamrad_o3prof
+end subroutine wamrad_o3prof

@@ -6,17 +6,15 @@
 ! October 2017   Rashid Akmaev, eddy mixing, corrections and clean-up
 ! May 2022       Svetlana Karol and CUA
 !-----------------------------------------------------------------------
-
-
-      subroutine wamphys_tracer_run(me, master, im,levs,ntrac,ntrac_i, nto, nto2, nto3, ntqv,   & 
-       dayno, dtp, grav,prsi,prsl, adt, q,   n1, n2, ozn, n3, nair, rho, am, am29,              &
+  subroutine wamphys_tracer_run(me, master, im,levs,ntrac,ntrac_i, nto, nto2, nto3, ntqv,   & 
+       dayno, dtp, grav,prsi,prsl, adt, q,   n1, n2, ozn, n3, nair, rho, am, am29,          &
        cospass, zg, jrates_O2, f107,f107d, go2dr, plow, phigh, xpk_low, xpk_high) 
       
-      use machine,  only             :  kind_phys 
+      use machine,  only             : kind_phys 
       use physcons, only             : avgd => con_avgd             
       use wamphys_init_module, only  : bz,amo,amn2, amo2, amo3, amh2o
       use wamphys_init_module, only  : rbz, rmo, rmo2, rmn2, rmh2o,rmo3
-      use wamphys_init_module, only  :    lowst_ipe_level => lowipe_lev150     
+      use wamphys_init_module, only  : lowst_ipe_level => lowipe_lev150     
       
 !      use module_IPE_to_WAM, only: low_ipe_level   !  wamphys_merge_ipe2wam
       
@@ -72,19 +70,18 @@
       
 !     Two WAM tracers: O and O2   indices: nto, nto2, nto3
       itr = nto
-      if (nto > nto2) itr =nto2
-      
-      do in=1,ntrac_i  
-          i2 =  itr-1+in    
-        do i=1,im
-          do k=1,levs
-            qin(i,k,in)=q(i, k, i2)   ! take two last tracers O and O2
-!           qin(i,k,1)=q(i, k, nto) 
-!	   qin(i,k,2)=q(i, k, nto2)  
+      if (nto > nto2) itr =nto2     
+        do in=1,ntrac_i  
+            i2 =  itr-1+in    
+          do i=1,im
+            do k=1,levs
+              qin(i,k,in)=q(i, k, i2)   ! take two last tracers O and O2
+  !           qin(i,k,1)=q(i, k, nto) 
+  !	        qin(i,k,2)=q(i, k, nto2)  
+            enddo
           enddo
         enddo
-      enddo
-
+  
 ! mean mass, mass and number densities
 !     here n,n1,n2 in /m3 , rho in kg/m3
       do i=1,im
@@ -97,35 +94,35 @@
                q(i,k,nto3)*rmo3+qn2*rmn2)
 
 ! total number density and mass density
-          nair(i,k)=rbz*prsl(i,k)/adt(i,k)
-          rho(i,k)=am(i,k)*nair(i,k)
+           nair(i,k)=rbz*prsl(i,k)/adt(i,k)
+           rho(i,k)=am(i,k)*nair(i,k)
 
 ! partial number densities for radiation and chemistry,
 !     make sure non-negative
-          n1(i,k)=max(qin(i,k,1)*rho(i,k)*rmo, 0.)
-          n2(i,k)=max(qin(i,k,2)*rho(i,k)*rmo2,0.)
-          n3(i,k) =max(qn2*rho(i,k)*rmn2,0.)
-	  
-          ozn(i,k)= max(q(i,k,nto3)*rho(i,k)*rmo3,0.)
+           n1(i,k)=max(qin(i,k,1)*rho(i,k)*rmo, 0.)
+           n2(i,k)=max(qin(i,k,2)*rho(i,k)*rmo2,0.)
+           n3(i,k) =max(qn2*rho(i,k)*rmn2,0.)
+ 	  
+           ozn(i,k)= max(q(i,k,nto3)*rho(i,k)*rmo3,0.)
 	  
         enddo
       enddo
       
       if (debug) then
-       print *, ' qin1 ', maxval(qin(:,:,1)), minval(qin(:,:,1))   
-       print *, ' qin2 ', maxval(qin(:,:,2)), minval(qin(:,:,2)) 
-                  
-       print *, ' nair ', maxval(nair), minval(nair)  
-       print *, ' rho ', maxval(rho), minval(rho) 
-       print *, ' amu ', maxval(am), minval(am)     
-       print *, ' rmo-s ', rmo, rmn2, rmo2, rmo3, rbz
-       print *, ' zg ', maxval(zg), minval(zg)
-       print *, ' adt ', maxval(adt), minval(adt)       
-       print *, ' grav ', maxval(grav), minval(grav)
-       print *, ' o_n ',  maxval(n1), minval(n1)          
-       print *, ' o2_n ', maxval(n2), minval(n2)
-       print *, ' n2_n ', maxval(n3), minval(n3) 
-       print *, ' o3_n ', maxval(ozn), minval(ozn)     
+         print *, ' qin1 ', maxval(qin(:,:,1)), minval(qin(:,:,1))   
+         print *, ' qin2 ', maxval(qin(:,:,2)), minval(qin(:,:,2)) 
+                    
+         print *, ' nair ', maxval(nair), minval(nair)  
+         print *, ' rho ', maxval(rho), minval(rho) 
+         print *, ' amu ', maxval(am), minval(am)     
+         print *, ' rmo-s ', rmo, rmn2, rmo2, rmo3, rbz
+         print *, ' zg ', maxval(zg), minval(zg)
+         print *, ' adt ', maxval(adt), minval(adt)       
+         print *, ' grav ', maxval(grav), minval(grav)
+         print *, ' o_n ',  maxval(n1), minval(n1)          
+         print *, ' o2_n ', maxval(n2), minval(n2)
+         print *, ' n2_n ', maxval(n3), minval(n3) 
+         print *, ' o3_n ', maxval(ozn), minval(ozn)     
       endif
 ! Eddy mixing
 
@@ -143,7 +140,6 @@
       call wamphys_dissociation(im, levs, adt, cospass, n1, n2,  ozn,  n3,  &
                dayno, zg, grav,  f107,  f107d, Jrates_O2, Jrates_O3)
 
-!
 ! Merge the  IPE back coupling WAM variable arrays into WAM.  ????   GO2DR => jrates_O2
 !
 !      IF (ipe_to_wam_coupling) THEN
@@ -158,27 +154,23 @@
 
 ! Update mmr of O and O2 due to mixing, diffusion, and chemistry
       do in=1,ntrac_i
-          i2 =  itr-1+in    
+        i2 =  itr-1+in    
         do i=1,im
           do k=1,levs
 !           q(i,k,nto) = q(i,k,nto)+dq1(i,k,1)+dq2(i,k,1)+dq3(i,k,1)
-!	   q(i,k,nto2)= q(i,k,nto2)+dq1(i,k,2)+dq2(i,k,2)+dq3(i,k,2)
-
+!	      q(i,k,nto2)= q(i,k,nto2)+dq1(i,k,2)+dq2(i,k,2)+dq3(i,k,2)
             q(i,k, i2)= q(i,k,i2) +dq1(i,k,in)+dq2(i,k,in)+dq3(i,k,in)
-
           enddo
         enddo
       enddo
-!
+
 ! Update number densities and rho (nair= p/(kT) is conserved) and mean mass
-!        
-!
       do i=1,im
          do k=1,levs
             qn2=1.-q(i,k,ntqv)-q(i,k,nto3)-q(i,k,nto)-q(i,k,nto2)
             am(i,k)=1./(q(i,k,nto)*rmo+q(i,k,nto2)*rmo2+q(i,k,ntqv)*rmh2o+      & 
                 q(i,k,nto3)*rmo3+qn2*rmn2)
-	    rho(i,k) =am(i,k)*nair(i,k)
+	      rho(i,k) =am(i,k)*nair(i,k)
             n1(i,k)=max(q(i,k,nto)*rho(i,k)*rmo,0.)
             n2(i,k)=max(q(i,k,nto2)*rho(i,k)*rmo2,0.)
             n3(i,k) =max(qn2*rho(i,k)*rmn2,0.)
@@ -186,14 +178,14 @@
          enddo
       enddo
       
-         am29 = am * 1.e3 * avgd
+      am29 = am * 1.e3 * avgd
 
       return
-      end subroutine wamphys_tracer_run
+  end subroutine wamphys_tracer_run
 
-      subroutine wam_tracer_m(me, master,im,levs,ntrac_i,grav,prsi,prsl,adt,  & 
+  subroutine wam_tracer_m(me, master,im,levs,ntrac_i,grav,prsi,prsl,adt,  & 
       dtp,qin,am,dq)
-
+!-----------------------------------------------------------------------
 ! Calculate tracer changes by mutual molecular diffusion of
 !     major thermospheric species O, O2, N2
 ! 2006 Rashid Akmaev and Fei Wu
@@ -228,11 +220,10 @@
       real(kind=kind_phys) :: partb_i(levs+1),parta(levs),hold1,dtp1,hold2
       integer k,i,kk,kk1,in
 ! change unit from g/mol to kg
-!    if ( me == master ) then
+!     if ( me == master ) then
 !	    print *, ' grav_molec_m ', maxval(grav(:,147)), minval(grav(:,147)) 
 !	    print *, ' am_molec_m ', maxval(am), minval(am) 
-!        endif
-
+!     endif
 
       mo=amo*1.e-3/avgd
       mo2=amo2*1.e-3/avgd
@@ -307,7 +298,7 @@
           a(1,2,k)=hold1*beta(1,2,k)*(hold2/mo2-.5)
           a(2,1,k)=hold1*beta(2,1,k)*(hold2/mo-.5)
           a(2,2,k)=hold1*beta(2,2,k)*(hold2/mo2-.5)
-         enddo
+        enddo
         do k=1,levs-1
           hold1=parta(k)*partb_i(k+1)
           hold2=am(i,k+1)*prsl(i,k+1)*dp1_i(k+1)
@@ -315,51 +306,51 @@
           c(1,2,k)=hold1*beta(1,2,k+1)*(hold2/mo2+.5)
           c(2,1,k)=hold1*beta(2,1,k+1)*(hold2/mo+.5)
           c(2,2,k)=hold1*beta(2,2,k+1)*(hold2/mo2+.5)
-         enddo
+        enddo
         do k=2,levs-1
           hold1=am(i,k)*prsl(i,k)*dp1_i(k+1)
           hold2=am(i,k)*prsl(i,k)*dp1_i(k)
-      b(1,1,k)=1.+parta(k)*(partb_i(k+1)*beta(1,1,k+1)*(hold1/mo-.5)    &
-                         +partb_i(k)*beta(1,1,k)*(hold2/mo+.5))
-      b(2,2,k)=1.+parta(k)*(partb_i(k+1)*beta(2,2,k+1)*(hold1/mo2-.5)   &
-                         +partb_i(k)*beta(2,2,k)*(hold2/mo2+.5))
-      b(1,2,k)=parta(k)*(partb_i(k+1)*beta(1,2,k+1)*(hold1/mo2-.5)      &
-                         +partb_i(k)*beta(1,2,k)*(hold2/mo2+.5))
-      b(2,1,k)=parta(k)*(partb_i(k+1)*beta(2,1,k+1)*(hold1/mo-.5)       &
-                         +partb_i(k)*beta(2,1,k)*(hold2/mo+.5))
+          b(1,1,k)=1.+parta(k)*(partb_i(k+1)*beta(1,1,k+1)*(hold1/mo-.5)    &
+                             +partb_i(k)*beta(1,1,k)*(hold2/mo+.5))
+          b(2,2,k)=1.+parta(k)*(partb_i(k+1)*beta(2,2,k+1)*(hold1/mo2-.5)   &
+                             +partb_i(k)*beta(2,2,k)*(hold2/mo2+.5))
+          b(1,2,k)=parta(k)*(partb_i(k+1)*beta(1,2,k+1)*(hold1/mo2-.5)      &
+                             +partb_i(k)*beta(1,2,k)*(hold2/mo2+.5))
+          b(2,1,k)=parta(k)*(partb_i(k+1)*beta(2,1,k+1)*(hold1/mo-.5)       &
+                             +partb_i(k)*beta(2,1,k)*(hold2/mo+.5))
         enddo
-          hold1=am(i,1)*prsl(i,1)*dp1_i(2)
-      b(1,1,1)=1.+parta(1)*partb_i(2)*beta(1,1,2)*(hold1/mo-.5)
-      b(2,2,1)=1.+parta(1)*partb_i(2)*beta(2,2,2)*(hold1/mo2-.5)
-      b(1,2,1)=parta(1)*partb_i(2)*beta(1,2,2)*(hold1/mo2-.5)
-      b(2,1,1)=parta(1)*partb_i(2)*beta(2,1,2)*(hold1/mo-.5)
-          hold2=am(i,levs)*prsl(i,levs)*dp1_i(levs)
-      b(1,1,levs)=1.+parta(levs)*partb_i(levs)*beta(1,1,levs)*    &      
-      (hold2/mo+.5)
-      b(2,2,levs)=1.+parta(levs)*partb_i(levs)*beta(2,2,levs)*    &      
-      (hold2/mo2+.5)
-      b(1,2,levs)=parta(levs)*partb_i(levs)*beta(1,2,levs)*       &       
-      (hold2/mo2+.5)
-      b(2,1,levs)=parta(levs)*partb_i(levs)*beta(2,1,levs)*       &       
-      (hold2/mo+.5)
-       do k=levs,1,-1
-         ggg(1,1)=b(2,2,k)-c(2,1,k)*ee(1,2,k+1)-c(2,2,k)*ee(2,2,k+1)
-         ggg(2,2)=b(1,1,k)-c(1,1,k)*ee(1,1,k+1)-c(1,2,k)*ee(2,1,k+1)
-         ggg(1,2)=-1.*b(1,2,k)+c(1,1,k)*ee(1,2,k+1)+c(1,2,k)*ee(2,2,k+1)
-         ggg(2,1)=-1.*b(2,1,k)+c(2,1,k)*ee(1,1,k+1)+c(2,2,k)*ee(2,1,k+1)
-         hold1=1./(ggg(1,1)*ggg(2,2)-ggg(1,2)*ggg(2,1))
-         ggg=ggg*hold1
-         ee(1,1,k)=ggg(1,1)*a(1,1,k)+ggg(1,2)*a(2,1,k)       
-         ee(1,2,k)=ggg(1,1)*a(1,2,k)+ggg(1,2)*a(2,2,k)       
-         ee(2,1,k)=ggg(2,1)*a(1,1,k)+ggg(2,2)*a(2,1,k)       
-         ee(2,2,k)=ggg(2,1)*a(1,2,k)+ggg(2,2)*a(2,2,k)       
-      f(1,k)=ggg(1,1)*(qin(i,k,1)+c(1,1,k)*f(1,k+1)   +             &               
-       c(1,2,k)*f(2,k+1))+ggg(1,2)*(qin(i,k,2)+c(2,1,k)*f(1,k+1) +  &       
-        c(2,2,k)*f(2,k+1))
-      
-      f(2,k)=ggg(2,1)*(qin(i,k,1)+c(1,1,k)*f(1,k+1)  +             &              
-       c(1,2,k)*f(2,k+1))+ggg(2,2)*(qin(i,k,2)+c(2,1,k)*f(1,k+1)+  &       
-        c(2,2,k)*f(2,k+1))
+        hold1=am(i,1)*prsl(i,1)*dp1_i(2)
+        b(1,1,1)=1.+parta(1)*partb_i(2)*beta(1,1,2)*(hold1/mo-.5)
+        b(2,2,1)=1.+parta(1)*partb_i(2)*beta(2,2,2)*(hold1/mo2-.5)
+        b(1,2,1)=parta(1)*partb_i(2)*beta(1,2,2)*(hold1/mo2-.5)
+        b(2,1,1)=parta(1)*partb_i(2)*beta(2,1,2)*(hold1/mo-.5)
+        hold2=am(i,levs)*prsl(i,levs)*dp1_i(levs)
+        b(1,1,levs)=1.+parta(levs)*partb_i(levs)*beta(1,1,levs)*    &      
+        (hold2/mo+.5)
+        b(2,2,levs)=1.+parta(levs)*partb_i(levs)*beta(2,2,levs)*    &      
+        (hold2/mo2+.5)
+        b(1,2,levs)=parta(levs)*partb_i(levs)*beta(1,2,levs)*       &       
+        (hold2/mo2+.5)
+        b(2,1,levs)=parta(levs)*partb_i(levs)*beta(2,1,levs)*       &       
+        (hold2/mo+.5)
+        do k=levs,1,-1
+          ggg(1,1)=b(2,2,k)-c(2,1,k)*ee(1,2,k+1)-c(2,2,k)*ee(2,2,k+1)
+          ggg(2,2)=b(1,1,k)-c(1,1,k)*ee(1,1,k+1)-c(1,2,k)*ee(2,1,k+1)
+          ggg(1,2)=-1.*b(1,2,k)+c(1,1,k)*ee(1,2,k+1)+c(1,2,k)*ee(2,2,k+1)
+          ggg(2,1)=-1.*b(2,1,k)+c(2,1,k)*ee(1,1,k+1)+c(2,2,k)*ee(2,1,k+1)
+          hold1=1./(ggg(1,1)*ggg(2,2)-ggg(1,2)*ggg(2,1))
+          ggg=ggg*hold1
+          ee(1,1,k)=ggg(1,1)*a(1,1,k)+ggg(1,2)*a(2,1,k)       
+          ee(1,2,k)=ggg(1,1)*a(1,2,k)+ggg(1,2)*a(2,2,k)       
+          ee(2,1,k)=ggg(2,1)*a(1,1,k)+ggg(2,2)*a(2,1,k)       
+          ee(2,2,k)=ggg(2,1)*a(1,2,k)+ggg(2,2)*a(2,2,k)       
+          f(1,k)=ggg(1,1)*(qin(i,k,1)+c(1,1,k)*f(1,k+1)   +             &               
+           c(1,2,k)*f(2,k+1))+ggg(1,2)*(qin(i,k,2)+c(2,1,k)*f(1,k+1) +  &       
+           c(2,2,k)*f(2,k+1))
+          
+          f(2,k)=ggg(2,1)*(qin(i,k,1)+c(1,1,k)*f(1,k+1)  +             &              
+           c(1,2,k)*f(2,k+1))+ggg(2,2)*(qin(i,k,2)+c(2,1,k)*f(1,k+1)+  &       
+           c(2,2,k)*f(2,k+1))
         enddo
         do in=1,ntrac_i
           qout(i,1,in)=f(in,1)
@@ -377,13 +368,12 @@
       enddo !i
 !      if ( me == master ) then
 !	    print *, ' dq,lev=147 ', maxval(dq(:,147,:)), minval(dq(:,147,:)) 
-
-!        endif
+!      endif
       return
       end subroutine wam_tracer_m
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc!   
-      subroutine wam_tracer_c(im,levs,ntrac_i,adt,dtp,jo2,n1,n2,    & 
+  subroutine wam_tracer_c(im,levs,ntrac_i,adt,dtp,jo2,n1,n2,    & 
              n,rho,qin,dq)
 !-----------------------------------------------------------------------
 ! calculate tracer changes caused by chemistry reaction
@@ -455,10 +445,10 @@
       enddo
 
       return
-      end subroutine wam_tracer_c
+  end subroutine wam_tracer_c
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc!   
-      subroutine wam_tracer_eddy(im,levs,ntrac_i,grav,prsi,prsl,   &
+  subroutine wam_tracer_eddy(im,levs,ntrac_i,grav,prsi,prsl,   &
           rho,dtp,qin,dayno,dq)
 
 ! Calculate major species changes by eddy mixing O, O2, and
@@ -511,12 +501,11 @@
 ! Add semiannual variation
 !          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))   ! WAM-GSM
 
-              do k=1,levs+1
-            x = alog(1e5/prsi(1,k))
+        do k=1,levs+1
+          x = alog(1e5/prsi(1,k))
 	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
-            keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5 
-           
-         enddo                    
+          keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5            
+        enddo                    
 	 		    
       else
          do k=1,levs+1
@@ -577,10 +566,10 @@
          enddo
 
       enddo
-      end subroutine wam_tracer_eddy
+  end subroutine wam_tracer_eddy
 !
 !      
-      subroutine wamphys_dissociation(im,  levs, te, cospass, o_n, o2_n, o3_n, n2_n, &
+  subroutine wamphys_dissociation(im,  levs, te, cospass, o_n, o2_n, o3_n, n2_n, &
                 dayno, zg, grav,  f107, f107d, jo2rad, jo3rad)
 !----------------------------------------------------------------------------
 ! calculete solar dissociation
@@ -594,7 +583,7 @@
       
       use machine, only    : kind_phys
       implicit none
-!
+
       integer, intent(in) :: im           !number of data piont in te
 
       integer, intent(in) :: levs         !number of press level
@@ -609,9 +598,9 @@
       real(kind=kind_phys), intent(in)    :: n2_n(im,levs)   !number density of N2
       real(kind=kind_phys), intent(in)    :: zg(im,levs)     !layer height (m)
       real(kind=kind_phys), intent(in)    :: grav(im,levs)   ! (m/s2)
-!
+
 ! VAY out dissociation_rate2d
-!
+
       real(kind=kind_phys), intent(out)   :: jo2rad(im, levs)
       real(kind=kind_phys), intent(out)   :: jo3rad(im, levs)
 !locals
@@ -626,16 +615,15 @@
       real(kind=kind_phys)    ::  jo2_wrk(levs),jo3_wrk(levs)
 
       real(kind=kind_phys) :: vay_rgas_o   !, vay_rgas_o2,vay_rgas_n2 
-!
+
       real(kind=kind_phys) :: tg_vay, rodn2
       integer :: i,k
 !nullify
       
-!
       vay_rgas_o =  1.e3*rgas/amo
-!
+
       rodn2 = amo/amn2
-!
+
       do i=1,im
 	  jo2rad(i,1:npsrad-1) =0.0 
 	  jo3rad(i,1:npsrad-1) =0.0 	       
@@ -651,21 +639,20 @@
           ho(k) =vay_rgas_o*tg_vay                  !m
           ho2(k)=.5*ho(k) 
           hn2(k)= rodn2*ho(k)  
-!          ho(k)=1.e3*rgas*t(k)/(amo*grav(i,k))     !m      
+!         ho(k)=1.e3*rgas*t(k)/(amo*grav(i,k))      !m      
         enddo
 	
 ! vay-next
-!
 !       call wamphys_sheat_jrates(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
 !           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, shsrc, shsrb, shlya,  &
-!	   jo2_wrk, jo3_wrk)
+!	      jo2_wrk, jo3_wrk)
 
-       call wamphys_jrates_shuveuv(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
-           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, sh2,                  &
-	   jo2_wrk, jo3_wrk)
+        call wamphys_jrates_shuveuv(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,         &
+           f107,f107d,cospass(i),dayno,ht,  sheat, sh1, sh2,                     &
+	     jo2_wrk, jo3_wrk)
 	   
 	  jo2rad(i,npsrad:levs) = jo2_wrk(npsrad:levs) 
-          jo3rad(i,npsrad:levs) = jo3_wrk(npsrad:levs)
+        jo3rad(i,npsrad:levs) = jo3_wrk(npsrad:levs)
 
             
       enddo        !i-hor index
@@ -673,5 +660,5 @@
 !      print *, 'wamphys_Jo2', maxval(jo3rad(1:im,npsrad:levs)), minval(jo3rad(1:im,npsrad:levs)), npsrad
 
       return
-      end subroutine wamphys_dissociation
+  end subroutine wamphys_dissociation
 

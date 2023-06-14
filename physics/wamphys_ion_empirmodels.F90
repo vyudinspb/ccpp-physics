@@ -3,7 +3,6 @@
 !r   chui_model.f90       chiu ionosphere, to return electron density.
 !
 !r   tiros_ionize_data  added the scaling of qiont with large gw and high tiros_activity_level
-!
 
 ! wamphys_const, only : pi, elch, r_2_d, dtr
 ! wamphys_const, only : pi, dtr, pid12, pid6, rydays, pid2, pid3, pid4, pid9, pid18
@@ -13,28 +12,23 @@
 ! wamphys_set_data_ion, only : ratio, rlam, ion_recomb,lognpres
 ! wamphys_set_data_ion, only : width, en, te11,te15, ionchr 
 !=================================================================
-      module wamphys_ion_empirmodels
-!
-       use  machine,              only : kind_phys
+module wamphys_ion_empirmodels
 
+       use  machine,             only : kind_phys
        use  wamphys_const,       only :  pi, pi2, pid12, pid6, rydays, &
-                                         pid2, pid3, pid4, pid9, pid18, dtr,  r_2_d 
-				  
-      
-       use wamphys_const,         only :   elch, ydays, rydays
+                                         pid2, pid3, pid4, pid9, pid18, dtr, r_2_d 				       
+       use wamphys_const,        only :   elch, ydays, rydays
        
        contains
       
 !=========================================================================
-      subroutine wam_earth_chiu_model(sda,sza,thmag,phimr,rlt,rlat,    &     
+  subroutine wam_earth_chiu_model(sda,sza,thmag,phimr,rlt,rlat,    &     
               f107, dip, nday,ht1d,eden3d,ilon,lev1,ht_dim,lon_dim)
-!
-!vay-2016, cosmetic corrections for implicit none (ty and ilon)
+! vay-2016, cosmetic corrections for implicit none (ty and ilon)
 ! jun  2022 S. Karol ccpp-version
-!
-      
+    
       implicit none
-!
+
       integer,  intent(in)   :: nday,ht_dim,lon_dim
       integer,  intent(in)   :: lev1                    ! first level of ion-re K91
 
@@ -45,12 +39,10 @@
 ! out  
       real(kind=kind_phys),     intent(out)  :: eden3d(lon_dim,ht_dim)  ! should 1d-array no neeeds for ilon-index
 
-
-
 !locals
 
       integer                :: ilon, i, n
-!
+ 
 !*** start of declarations inserted by spag
 
       real(kind=kind_phys) :: abstmg , beta , cbp , cosrlt , costmg , cosza
@@ -69,17 +61,16 @@
   
       real(kind=kind_phys) :: z(ht_dim)
   
-!  
 ! absolutely no idea what these are. imported from tucan.f ????
 ! danger
-!
+
       data alp/.5 , .5 , 1./
       data p/110. , 180. , 0./
       data a/1.36 , 2.44 , 0.66/
       data rh/10. , 34. , 0./
-!
+ 
 ! data works only during the first call
-!      
+     
       save alp, p, a, rh
       
       rho = (f107-50.)*0.01
@@ -172,39 +163,40 @@
          u(i) = s(i)*rd(i)*rl(i)*rt(i)*e(i)*flong(i)*dipf(i)
          v(i) = f(i)*pb(i) + (1.0-f(i))*u(i)
       enddo
-!
+
 ! vertica loop
-!
+
       do n = lev1 , ht_dim
          z(n) = ht1d(n)/1000.
          if ( z(n) <= p(3) ) rh(3) = 2.0*(20.0+0.1*z(n))
          if ( z(n) > p(3)  ) rh(3) = 2.0*(20.0+0.1*p(3))
-      do i = 1 , 3
-        rr(i) = (z(n)-p(i))/rh(i)
-        fz(i) = exp(alp(i)*(1.0-rr(i)-exp(-rr(i))))
-        fn(i) = a(i)*fz(i)*v(i)
+         do i = 1 , 3
+           rr(i) = (z(n)-p(i))/rh(i)
+           fz(i) = exp(alp(i)*(1.0-rr(i)-exp(-rr(i))))
+           fn(i) = a(i)*fz(i)*v(i)
+         enddo
+         eden3d(ilon,n) = (fn(1)+fn(2)+fn(3))*1.e11
       enddo
-       eden3d(ilon,n) = (fn(1)+fn(2)+fn(3))*1.e11
-      enddo
+
       do n=1,lev1-1
-            eden3d(ilon,n)=0.
+         eden3d(ilon,n)=0.
       enddo
 
       return
-      end subroutine wam_earth_chiu_model
-!
-       subroutine wam_tiros_ionize_data                               &
+  end subroutine wam_earth_chiu_model
+
+  subroutine wam_tiros_ionize_data                                &
        (pres, lev1,levs,z,emaps,cmaps,djspectra,                  &
        grav,on,o2n, n2n,tn,gm_lat,essa1,tiros_activity_level,gw,  &
        eden_aurora1d)
-!
+
 !vay-2015: pass den = rho from the top-level program take-out comput/arrays ntot & meanmass
 !          version with data/xxx/-statements.......eden_aurora1d   3-density due to aurora
-!
+
 !         output: of tiros_ionize_dat  CIRES-version 2015 with every time step in-n and data-stat
  
       implicit none
-!      
+      
       integer, intent(in) :: levs, lev1
       integer, parameter  :: jmaxwell = 6
       integer, intent(in) ::  tiros_activity_level
@@ -222,10 +214,9 @@
       real(kind=kind_phys), intent(out) :: eden_aurora1d(levs)     
      	     
       real(kind=kind_phys) :: bz, gscon, amu, e0
-!
 
       real(kind=kind_phys) ::  ntot(levs),meanmass(levs)
-!
+
       real(kind=kind_phys) ::  qiont(levs),ratio(21),rlam(21)   &
       ,den(levs),dl_lower,dl_upper,qiont_lower,qiont_upper      &
       ,mo,mo2,mn2,alpha, rno,range_en,pr,ratioz,rlamz,mh,mhe,q  & 
@@ -252,7 +243,7 @@
       11.12,1.01,0.895,0.785,0.650,0.540,0.415,0.320,0.225,           & 
       20.14,0.08,0.04,0.0/
 !
-      data ionchr/.378 , .458 , .616 , .773 , .913 , 1.088 , 1.403 ,    &
+      data ionchr/.378 , .458 , .616 , .773 , .913 , 1.088 , 1.403 ,   &
           1.718 , 2.033 , 2.349 , 2.979 , 3.610 , 4.250 , 4.780 ,      & 
           6.130 , 7.392 , 8.653 , 9.914 , 12.436 , 14.957 , 17.479/
 	  
@@ -287,10 +278,10 @@
 ! normalize with the energy influx 300ev to 20kev
 
       do 18 m=1,11
-   18 te11(iband)=te11(iband)+djspectra(m,iband)*en(m)*width(m)*1.6e-06
-   
+   18 te11(iband)=te11(iband)+djspectra(m,iband)*en(m)*width(m)*1.6e-06  
 !      print *, iband, te11(iband), te15(iband)
       enddo
+
       bz = 1.38e-23
       gscon = 8.314e3
       mo = 16.
@@ -301,18 +292,21 @@
       amu = 1.661e-27
       e0=0.035
       width_maxwell=0.050
+
       do j = 1,jmaxwell
-      en_maxwell(j) = j*0.05 - 0.025
+         en_maxwell(j) = j*0.05 - 0.025
       enddo
+
 ! initialize qiont, etc
       do i=1,levs
-      qiont(i) = 0.0
-      qion_maxwell(i) = 0.0
-      qiont_o(i) = 0.0
-      qiont_o2(i) = 0.0
-      qiont_n2(i) = 0.0
-      eden_aurora1d(i) = 0.0
+         qiont(i) = 0.0
+         qion_maxwell(i) = 0.0
+         qiont_o(i) = 0.0
+         qiont_o2(i) = 0.0
+         qiont_n2(i) = 0.0
+         eden_aurora1d(i) = 0.0
       enddo
+
 ! convert magnetic latitude from radians to degrees
       thmagd = gm_lat * r_2_d
 !     print *, 'gm_lat   thmagd  essa1', gm_lat, thmagd, essa1
@@ -326,17 +320,17 @@
       elseif ( essa1.lt.0.0 ) then
           essa1 = essa1 + 360.
       endif
-!!  **
+
       l = tiros_activity_level - 2
       if ( l.lt.1 ) l = 1
       if ( l.gt.7 ) l = 7
+
 ! define dfac to scale qiont later with large gw and tiros_activity_level
 ! added by zhuxiao.li
 
       dfac = 1.0
       if (tiros_activity_level.gt.9 .and. gw.gt.96.0)dfac = gw/96.0
-
-   
+  
       ri = essa1/18.0 + 11.
       i1 = ri                   ! i1 =int(ri) ?
       ri = ri - i1
@@ -347,15 +341,14 @@
       j1 = rj                   ! j1 =int(rj) ?
       rj = rj - j1
       j2 = j1 + 1
-!
+ 
       eflux = rj*ri*emaps(j2,i2,l) + (1.-rj)*ri*emaps(j1,i2,l)              &
               + rj*(1.-ri)*emaps(j2,i1,l) + (1.-rj)*(1.-ri)*emaps(j1,i1,l)
       eflux = 10.**(eflux)*1.e-3
-!      print *, 'eflux   ', eflux
-!
-      ch = rj*ri*cmaps(j2,i2,l) + (1.-rj)*ri*cmaps(j1,i2,l) + rj*(1.-ri) &
+
+      ch = rj*ri*cmaps(j2,i2,l) + (1.-rj)*ri*cmaps(j1,i2,l) + rj*(1.-ri)    &
            * cmaps(j2,i1,l) + (1.-rj)*(1.-ri)*cmaps(j1,i1,l)
-!      print *, 'ch   ', ch
+
 ! validation tests:
 ! to compare with figure 4 or 5 f-r and evans 1987
 ! set ch to 5 different mean energies and
@@ -367,12 +360,13 @@
 ! other code ionize_ipe_3 with the same mean energy of 2.98
 ! in this case the profiles are similar, at other other values of ch
 ! they can be quite different.
-!
-!      print *, 'set for test ch eflux', ch, eflux
-!
+
+!     print *, 'set for test ch eflux', ch, eflux
+
+
       if ( ch.lt.0.378 ) ch = 0.379
-!      if ( ch.gt.17.479 ) write (6,99001) ch
-!
+!     if ( ch.gt.17.479 ) write (6,99001) ch
+
       do 300 kk = 2 , 21
          if ( ch.le.ionchr(kk) ) then
             k = kk - 1
@@ -382,7 +376,7 @@
  400  chi = ch - ionchr(k)
       diff = ionchr(kk) - ionchr(k)
       ratio_ch = chi/diff
-!      if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
+!     if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
 
 99001 format ('  ch value outof bound in tiros',f10.6)
 ! loop through ipe height levels
@@ -396,97 +390,90 @@
       ntot(i) = on(i)+o2n(i)+n2n(i)
       meanmass(i) = (on(i)*mo+o2n(i)*mo2+n2n(i)*mn2)/ntot(i)
       den(i) = pres(i)*meanmass(i)/(gscon*tn(i))
-!
+
 ! calculate ion recombination rate
 !      lognpres/-3.425,-4.835,-5.918,-7.066,-7.784,-8.366,-9.314,-10.507/
       logpres = log(pres(i))
 
       if (logpres.ge.-4.835) rr=3.20e-13
-
-      
+     
       if (logpres.le.-10.507) rr=2.00e-14
 
-         if (logpres.gt.-10.507.and.logpres.lt.-4.835)  then    
+      if (logpres.gt.-10.507.and.logpres.lt.-4.835)  then    
           do jjj=3,8
              if(lognpres(jjj).le.logpres)then
                   jj=jjj-1
                   exit
-           endif
+             endif
           enddo
       
-
-!err      rr = ion_recomb(jj)-logpres*(ion_recomb(jjj)-ion_recomb(jj))/
+!err     rr = ion_recomb(jj)-logpres*(ion_recomb(jjj)-ion_recomb(jj))/
 !err     &(lognpres(jjj)-lognpres(jj))
 !update vay-2016/10
 !nems.x             0000000000adf0a4  tiros_ionize_data         449/450  idea_ion_empirmodels.f
 !ion_recomb(jjj =>  ion_recomb(jj)
-!
-      rr = ion_recomb(jjj)-(lognpres(jjj)-logpres)*                  &
-      (ion_recomb(jjj)-ion_recomb(jj))/(lognpres(jjj)-lognpres(jj))
+         rr = ion_recomb(jjj)-(lognpres(jjj)-logpres)*                  &
+         (ion_recomb(jjj)-ion_recomb(jj))/(lognpres(jjj)-lognpres(jj))
       
-     endif
+      endif
      
-!
-!
-
  3000 format(1x,i5,2f10.2,1p3e9.2)
 ! loop through all energy bands
 
-
       do 10 l=1,15
-!      dl(l)=rno*en(l)*exp(-en(l)/alpha)
-      dl_lower = djspectra(l,k)
-      dl_upper = djspectra(l,kk)
-      range_en=4.57e-05*en(l)**1.75
-      pr=range_en*grav(i)
-      ratioz=pres(i)/pr
+!       dl(l)=rno*en(l)*exp(-en(l)/alpha)
+        dl_lower = djspectra(l,k)
+        dl_upper = djspectra(l,kk)
+        range_en=4.57e-05*en(l)**1.75
+        pr=range_en*grav(i)
+        ratioz=pres(i)/pr
       
-      if(ratioz.gt.1.0) goto 20
+        if(ratioz.gt.1.0) goto 20
       
-      do 12 m=1,21
-      if(ratioz.gt.ratio(m)) goto 12
-      rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/(ratio(m)-ratio(m-1))
-      goto 13
+        do 12 m=1,21
+        if(ratioz.gt.ratio(m)) goto 12
+        rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/(ratio(m)-ratio(m-1))
+        goto 13
    12 continue
    13 continue
-      goto 21
+        goto 21
       
    20 rlamz=0.0
    21 continue
    
-      qiont_lower=den(i)*en(l)*rlamz*dl_lower*width(l)*1.e7/range_en/e0
-      qiont_upper=den(i)*en(l)*rlamz*dl_upper*width(l)*1.e7/range_en/e0
-      qiont(i)=qiont(i)+(ratio_ch*qiont_upper+(1.-ratio_ch)*qiont_lower)* &
-               eflux/(ratio_ch*te11(kk)+(1.-ratio_ch)*te11(k))
+        qiont_lower=den(i)*en(l)*rlamz*dl_lower*width(l)*1.e7/range_en/e0
+        qiont_upper=den(i)*en(l)*rlamz*dl_upper*width(l)*1.e7/range_en/e0
+        qiont(i)=qiont(i)+(ratio_ch*qiont_upper+(1.-ratio_ch)*qiont_lower)* &
+                 eflux/(ratio_ch*te11(kk)+(1.-ratio_ch)*te11(k))
    11 continue
    10 continue
+
 ! add 0 - 300ev as maxwellian with ch, and eflux
       alpha = ch/2.
       rno=eflux*6.24e12/2./alpha**3
       do 110 l=1,jmaxwell
-      dl(l)=rno*en_maxwell(l)*exp(-en_maxwell(l)/alpha)
-      range_en=4.57e-05*en_maxwell(l)**1.75
-      pr=range_en*grav(i)
-      ratioz=pres(i)/pr
+        dl(l)=rno*en_maxwell(l)*exp(-en_maxwell(l)/alpha)
+        range_en=4.57e-05*en_maxwell(l)**1.75
+        pr=range_en*grav(i)
+        ratioz=pres(i)/pr
       
-      if(ratioz.gt.1.0) goto 120
+        if(ratioz.gt.1.0) goto 120
       
-      do 112 m=1,21
-      if(ratioz.gt.ratio(m)) goto 112
-      rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/(ratio(m)-ratio(m-1))
-       goto 113
-  112 continue
-  
+        do 112 m=1,21
+          if(ratioz.gt.ratio(m)) goto 112
+          rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/(ratio(m)-ratio(m-1))
+          goto 113
+  112 continue 
   113 continue
   
-      goto 121
+        goto 121
       
   120 rlamz=0.0
   
   121 continue
   
-      qion_maxwell(i)=qion_maxwell(i)+den(i)*en_maxwell(l)*rlamz*dl(l)   &
-          *width_maxwell/range_en/e0
+        qion_maxwell(i)=qion_maxwell(i)+den(i)*en_maxwell(l)*rlamz*dl(l)   &
+            *width_maxwell/range_en/e0
 	  
   110 continue
       qiont(i) = qiont(i) + qion_maxwell(i)
@@ -515,35 +502,31 @@
     
 !
       return
-      end subroutine wam_tiros_ionize_data
+  end subroutine wam_tiros_ionize_data
       
 !=======================================================================================
 ! clean version with wamphys_set_data_ion
 !=======================================================================================
-      subroutine wam_tiros_ionize(lev1,levs, pres, den,        &
+  subroutine wam_tiros_ionize(lev1,levs, pres, den,        &
        z, grav,on,o2n,n2n,tn,                              &  
        gm_lat,essa1,tiros_activity_level,gw, eden_aurora1d)
-!
-! version with idea_ion_input
-!
+!version with idea_ion_input
 !oct 2016 vay: a) err-interp logpress
 !              b) range (special fort function) => range_en
 !              c) clarify if ( ch.lt.0.378 ) ch = 0.379             ! ???????? 378-379
 !              d)        if ( ch.gt.17.479 ) write (6,99001) ch     ! out of bounds ???
 !
 !              e) p-wam = constabt, suggestion rlamz(15, levs) -----constant with time
-!
+
       use wamphys_set_data_ion, only : nt_21, nt_20, nt_7, n_flx, n_bnd 
       use wamphys_set_data_ion, only : emaps, cmaps, djspectra
-!
       use wamphys_set_data_ion, only : jmaxwell     ! 6-21-15
       use wamphys_set_data_ion, only : ratio, rlam, ion_recomb,lognpres, &
                                 width, en, te11,te15, ionchr,     &
                                 width_maxwell, en_maxwell
-!
-!
+
       implicit none
-!
+
       integer, intent(in) ::  levs, lev1
       integer, intent(in) ::  tiros_activity_level
       real(kind=kind_phys) ::  essa1 
@@ -554,11 +537,9 @@
       real(kind=kind_phys) ::  gl, mlt,  gm_lat
 !out
       real(kind=kind_phys), intent(out) ::   eden_aurora1d(levs) 
-!
-!
+
 !local
-!
-!
+
       real(kind=kind_phys) ::  dl (jmaxwell)
       real(kind=kind_phys) ::  alpha
       real(kind=kind_phys) ::  qiont(levs)
@@ -576,27 +557,25 @@
       real(kind=kind_phys) :: eflux, qdmsp,  ri , rj , th , swbz , offset, thmagd
       
       real(kind=kind_phys) :: e0      
-          
-	  
-
+          	  
       integer i1 , i2 , j1 , j2 , k , kk , ld , n , nn , jj , jjj
       integer :: j, i, m, l, iband 
 ! initialize qiont, etc
 
       e0 =0.035
       do i=1,levs
-      qiont(i) = 0.0
-      qion_maxwell(i) = 0.0
-      qiont_o(i) = 0.0
-      qiont_o2(i) = 0.0
-      qiont_n2(i) = 0.0
+         qiont(i) = 0.0
+         qion_maxwell(i) = 0.0
+         qiont_o(i) = 0.0
+         qiont_o2(i) = 0.0
+         qiont_n2(i) = 0.0
 !...................................... zero output
-      eden_aurora1d(i) = 0.0
+         eden_aurora1d(i) = 0.0
       enddo
     
 ! convert magnetic latitude from radians to degrees
       thmagd = gm_lat * r_2_d
-!!!!      print *, 'gm_lat   thmagd  essa1', gm_lat, thmagd, essa1
+!     print *, 'gm_lat   thmagd  essa1', gm_lat, thmagd, essa1
       th = abs(thmagd) - 50.
       if(abs(thmagd).le.50.) goto 200
 ! calculate magnetic hour angle from noon in gregrees
@@ -607,11 +586,11 @@
       elseif ( essa1.lt.0.0 ) then
           essa1 = essa1 + 360.
       endif
-!
+
       l = tiros_activity_level - 2
-!
+
 ! wam-limits from 1 to 7
-!
+
       if ( l.lt.1 ) l = 1
       if ( l.gt.7 ) l = 7
 ! define dfac to scale qiont later with large gw and tiros_activity_level
@@ -619,13 +598,13 @@
       dfac = 1.0
       if (tiros_activity_level.gt.9 .and. gw.gt.96.0)  &
         dfac = gw/96.0
-!
+
 ! what's this vay
-!
+
       ri = essa1/18.0 + 11.
       i1 = int(ri)                   ! i1 = ri
       ri = ri - i1                   ! ri = ri -int(ri) ???? now
-!
+
       if ( i1.gt.20 ) i1 = i1 - 20
       i2 = i1 + 1
       if ( i2.gt.20 ) i2 = i2 - 20
@@ -640,12 +619,10 @@
 !
       eflux = 10.**(eflux) * 1.e-3
 
-!
-!
       ch = rj*ri*cmaps(j2,i2,l) + (1.-rj)*ri*cmaps(j1,i2,l) + rj*(1.-ri)     &
           *cmaps(j2,i1,l) + (1.-rj)*(1.-ri)*cmaps(j1,i1,l)
-!
-!      if (mpi_id == 0) print *, 'ion-ch   ', ch
+!     if (mpi_id == 0) print *, 'ion-ch   ', ch
+
 ! validation tests:
 ! to compare with figure 4 or 5 f-r and evans 1987
 ! set ch to 5 different mean energies and
@@ -662,7 +639,7 @@
 !       endif
       if ( ch.lt.0.378 ) ch = 0.379             ! ???????? 378-379
       if ( ch.gt.17.479 ) write (6,99001) ch
-!
+
       do 300 kk = 2 , 21
          if ( ch.le.ionchr(kk) ) then
             k = kk - 1
@@ -672,29 +649,26 @@
  400  chi = ch - ionchr(k)
       diff = ionchr(kk) - ionchr(k)
       ratio_ch = chi/diff
-!      if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
-!
+!     if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
+
 99001 format ('  ch value outof bound in tiros',f10.6)
 
 ! loop through ipe height levels or wam-levels
 
       do 2000 i=lev1,levs
-!
 
       if(z(i)*1.e-3 .gt. 1000.) exit   ! do we need this z-wam < 650 km
 
-
-!
 ! new z-interpolation   for rr > 0 (apparently)
-!
+
       logpres = log(pres(i))
       if (logpres.ge.-4.835)then
-      rr=3.20e-13
-      goto 450
+         rr=3.20e-13
+         goto 450
       endif
       if (logpres.le.-10.507)then
-      rr=2.00e-14
-      goto 450
+         rr=2.00e-14
+         goto 450
       endif
       do jjj=3,8
          if(lognpres(jjj).le.logpres)then
@@ -705,51 +679,46 @@
   451 continue
 
 !fix vay oct-2016
-!
+
       rr = ion_recomb(jjj)-(lognpres(jjj)-logpres)*     &
       (ion_recomb(jjj)-ion_recomb(jj))/(lognpres(jjj)-lognpres(jj))
 
-
   450 continue
 
- 
-!
 ! loop through all energy bands
       do 10 l=1,15
 !      dl(l)=rno*en(l)*exp(-en(l)/alpha)
-      dl_lower = djspectra(l,k)
-      dl_upper = djspectra(l,kk)
-
-      range_en=4.57e-05*en(l)**1.75
-      pr=range_en*grav(i)
-      ratioz=pres(i)/pr
-      if(ratioz.gt.1.0) goto 20
-      do 12 m=1,21
-      if(ratioz.gt.ratio(m)) goto 12
-      rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
-           (ratio(m)-ratio(m-1))
-      goto 13
-   12 continue
-   13 continue
-      goto 21
-   20 rlamz=0.0
-   21 continue
-! ...................... again interpolation in ratio,,,ratioz
-! similar suggestion rlamz(15, levs) -----constant with time
-!
-      qmid = den(i)*en(l)*rlamz*width(l)*1.e7/range_en/e0
-      qiont_lower= qmid*dl_lower
-      qiont_upper= qmid*dl_upper
-      qiont(i)=qiont(i)+(ratio_ch*qiont_upper+(1.-ratio_ch)*qiont_lower)    &
-         *eflux/(ratio_ch*te11(kk)+(1.-ratio_ch)*te11(k))
-   11 continue
-
-   10 continue     ! loop through all energy bands
+        dl_lower = djspectra(l,k)
+        dl_upper = djspectra(l,kk)
+ 
+        range_en=4.57e-05*en(l)**1.75
+        pr=range_en*grav(i)
+        ratioz=pres(i)/pr
+        if(ratioz.gt.1.0) goto 20
+        do 12 m=1,21
+          if(ratioz.gt.ratio(m)) goto 12
+          rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
+               (ratio(m)-ratio(m-1))
+        goto 13
+        12 continue
+        13 continue
+        goto 21
+        20 rlamz=0.0
+        21 continue
+  ! ...................... again interpolation in ratio,,,ratioz
+  ! similar suggestion rlamz(15, levs) -----constant with time
+        qmid = den(i)*en(l)*rlamz*width(l)*1.e7/range_en/e0
+        qiont_lower= qmid*dl_lower
+        qiont_upper= qmid*dl_upper
+        qiont(i)=qiont(i)+(ratio_ch*qiont_upper+(1.-ratio_ch)*qiont_lower)    &
+           *eflux/(ratio_ch*te11(kk)+(1.-ratio_ch)*te11(k))
+     11 continue
+     10 continue     ! loop through all energy bands
 
 ! add 0 - 300ev as maxwellian with ch, and eflux
 
       if (ch.le.0.) then
-!         print *, ' tiros: ch=0 ', ch
+!        print *, ' tiros: ch=0 ', ch
          ch =2.98
       endif
       alpha = .5*ch
@@ -757,32 +726,30 @@
       rno=eflux*6.24e12/2./alpha**3
 !
       do 110 l=1,jmaxwell
-      dl(l)=rno*en_maxwell(l)*exp(-en_maxwell(l)/alpha)
-      range_en=4.57e-05*en_maxwell(l)**1.75
-      pr=range_en*grav(i)
-      ratioz=pres(i)/pr
-      if(ratioz.gt.1.0) goto 120
-      do 112 m=1,21
-      if(ratioz.gt.ratio(m)) goto 112
-      rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
-           (ratio(m)-ratio(m-1))
-      goto 113
-  112 continue
-  113 continue
-      goto 121
-  120 rlamz=0.0
-  121 continue
-!......................similar rlamz_jmx(levs, 6)
-!                       
-      qion_maxwell(i)=qion_maxwell(i)       &
-       +den(i)*en_maxwell(l)*rlamz*dl(l)*width_maxwell/range_en/e0
-!
+        dl(l)=rno*en_maxwell(l)*exp(-en_maxwell(l)/alpha)
+        range_en=4.57e-05*en_maxwell(l)**1.75
+        pr=range_en*grav(i)
+        ratioz=pres(i)/pr
+        if(ratioz.gt.1.0) goto 120
+        do 112 m=1,21
+        if(ratioz.gt.ratio(m)) goto 112
+        rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
+             (ratio(m)-ratio(m-1))
+        goto 113
+        112 continue
+        113 continue
+            goto 121
+        120 rlamz=0.0
+        121 continue
+  !......................similar rlamz_jmx(levs, 6)                       
+        qion_maxwell(i)=qion_maxwell(i)       &
+         +den(i)*en_maxwell(l)*rlamz*dl(l)*width_maxwell/range_en/e0
   110 continue   !  loop for300ev as maxwellian with ch, and eflux
-!
+
       qiont(i) = qiont(i) + qion_maxwell(i)
 !  the qiont scaled by dfac with large gw and tiros_activity level
 !  added by zhuxiao
-       qiont(i) = qiont(i)*dfac
+      qiont(i) = qiont(i)*dfac
 
 !vay-2016
       if (rr.gt.0.) then 
@@ -790,9 +757,9 @@
       else
          eden_aurora1d(i)=0.
       endif
-!
+
 ! proxies for charge from neutrals ????
-!
+
       q=qiont(i)/(0.92*n2n(i)+1.5*o2n(i)+0.56*on(i))
       qiont_o(i)=(0.5*o2n(i)+0.56*on(i))*q
       qiont_o2(i)=o2n(i)*q
@@ -803,6 +770,6 @@
   200 continue 
 !
       return
-      end subroutine wam_tiros_ionize
+  end subroutine wam_tiros_ionize
 !
-      end module wamphys_ion_empirmodels
+end module wamphys_ion_empirmodels

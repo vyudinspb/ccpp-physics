@@ -14,13 +14,13 @@
 !
 !===============================================================   
   
-   subroutine wamphys_rad_merge(me, master, im,levs,xmu, prsl, hlw, swh, wtot,    & 
+  subroutine wamphys_rad_merge(me, master, im,levs,xmu, prsl, hlw, swh, wtot,    & 
               dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3)
  
      use machine ,              only : kind_phys
      use wamphys_init_module,   only : rpref
      implicit none
-!
+
       integer, intent(in) :: im  ! number of data points in hlw,dt..(first dim)
       integer, intent(in) :: me, master  
       integer, intent(in) :: levs             ! number of pressure levels
@@ -46,7 +46,7 @@
       real(kind=kind_phys) :: rad_low(im, levs), rad_wam(im, levs)
       real(kind=kind_phys) :: xk,wl,wh, ah
       integer i,k,j
-!
+
       do k=1,levs
         do i=1,im
 	
@@ -54,9 +54,8 @@
 	  
           wh = dtco2c(i,k)+dth2oc(i,k)+dtco2h(i,k)+dth2oh(i,k)+dto3(i,k)+dtrad(i,k)
           wl = hlw(i,k) + swh(i,k)*xmu(i)
-!!!!!!!!!
-!11111	                                        rad_low(i,k) = wl
-!	                                        rad_wam(i,k) = wh
+!         rad_low(i,k) = wl
+!         rad_wam(i,k) = wh
           if(xk < xb) then
              wtot(i,k) = wl
           elseif(xk >= xb .and. xk <= xt) then
@@ -83,19 +82,15 @@
 !	     print *	     
 !	  endif  
       return
-      end subroutine wamphys_rad_merge	
+  end subroutine wamphys_rad_merge	
       
       	
-      subroutine wamphys_heat_uveuv(im, levs, te, cospass, o_n,o2_n,o3_n,n2_n, rho, cp, &
-            dayno, prsl, zg, grav,am, maglat, f107, f107d, kpa, dtrad)
-!	    
-!
-!    
+  subroutine wamphys_heat_uveuv(im, levs, te, cospass, o_n,o2_n,o3_n,n2_n, rho, cp, &
+            dayno, prsl, zg, grav,am, maglat, f107, f107d, kpa, dtrad)   
 ! S. I. Karol May 2022 ccpp-version of idea_solar_heating.f
 !
 ! interface to compute heating rates after updates of O-O2 by chemistry and diffusion + NO-cooling
 !	    
-! 
 	 
       use machine, only                : kind_phys
       use wamphys_init_module, only    : amo2, amn2, amo
@@ -109,10 +104,10 @@
  
       integer, intent(in) :: levs     !number of press level
       integer, intent(in) :: dayno    ! calender day
-!
+
 !VAY-2016
       real(kind=kind_phys), intent(in)    :: f107, f107d, kpa ! solar-geo drivers
-!
+
       real(kind=kind_phys), intent(in)    :: te(im,levs)  !temperature
       real(kind=kind_phys), intent(in)    :: cospass(im)  ! cos zenith angle
       real(kind=kind_phys), intent(in)    :: maglat(im)   ! in radians for NO-snoe
@@ -140,8 +135,7 @@
       real(kind=kind_phys), dimension(levs) :: shsrc,shsrb,shlya
       real(kind=kind_phys) :: ht(levs)
       
-!out-diag      
-!   
+!out-diag         
 
       real(kind=kind_phys), dimension (im, levs)  :: dtdt_euv, dtdt_uvr, dtdt_qno        ! (K/s)     
 
@@ -181,10 +175,10 @@
 !
 ! no_new = [NO] from SNOE-empirical model
 !	
-       call wam_getno1d(levs,f107,kpa,maglat(i),dayno,alt,prr,nn,amm,no_new)	
+        call wam_getno1d(levs,f107,kpa,maglat(i),dayno,alt,prr,nn,amm,no_new)	
 !        no_diag(i,:) = no_new(:)  
 
-      call wamphys_coolno1d(levs, npsrad, t, o, o2, no_new, qno) 
+        call wamphys_coolno1d(levs, npsrad, t, o, o2, no_new, qno) 
 !--------------------  no-cooling  
   
 !-------------------- get UV-EUV heating
@@ -193,37 +187,34 @@
 !          f107,f107d, cospass(i), dayno, ht, sheat,sh1, shsrc,shsrb,shlya, jo2_rate,jo3_rate)
 	  
 	  
-       call wamphys_jrates_shuveuv(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,             &
+        call wamphys_jrates_shuveuv(levs,npsrad,o,o2,o3, n2, ho,ho2,hn2,             &
            f107,f107d,cospass(i),dayno,ht,  sheat, sh1, sh2, jo2_rate, jo3_rate)     
 	   
 	   
 !------------------- get UV-EUV heating
 
-        do k=npsrad,levs
-!    
+        do k=npsrad,levs   
           rcpro = 1./(cp(i,k)*rho(i,k))
-!	  
+	  
 ! new diag-arrays	  
-!
           dtdt_euv(i,k)=sh1(k)*rcpro
           dtdt_uvr(i,k)=sh2(k)*rcpro
-	  dtdt_qno(i,k) =qno(k)*rcpro
+	    dtdt_qno(i,k) =qno(k)*rcpro
 !net q
 !         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
           dtrad(i,k)=(sh1(k)+sh2(k)-qno(k))*rcpro
-! 
         enddo ! k
 	        
-          do k=1, npsrad-1
+        do k=1, npsrad-1
 	   dtdt_euv(i,k)= 0.
 	   dtdt_uvr(i,k)= 0.
 	   dtdt_qno(i,k) =0.
 	   dtrad(i,k)    =0.
 	  enddo
-        enddo                 !i 	  
+      enddo                 !i 	  
 	return
 	      
-      end  subroutine wamphys_heat_uveuv
+  end  subroutine wamphys_heat_uveuv
       
 !=======================================      
 !
@@ -251,11 +242,10 @@
        
       implicit none
 ! input
-!
       integer, intent(in) :: np                           ! number of pressure levels
       integer, intent(in) :: nps                          ! pressure index to start 2Pa/~75.7 km
                                                           ! now from the merging domain 8.5*7 =59.5km/52.5km
-								       !
+								       
       integer, intent(in) :: dayno                                     ! day of year 
            
       real(kind=kind_phys), intent(in)    :: o(np),o2(np),n2(np)       ! number density 1/m3
@@ -311,116 +301,113 @@
       
 ! vayudin-2015
       real(kind=kind_phys) :: vay1, vay2, vay3, vay4
-!   
+   
       real(kind=kind_phys) :: vay_fmxfmn, vay_srband_fac, vay_srb3
       real(kind=kind_phys) :: sfeps
       real(kind=kind_phys) :: temp1, sco3t, smfac
-      
-!  
+        
       integer i,j,jinv
 
 ! raa: solar 10-cm flux normalized to 1 au
 
       real(kind=kind_phys) :: f107_1au, f107d_1au
 
-        nightfac=1.e-9         ! Ratio of nightime ionisation to sec=1.
-        smfac   =1.e-4
+      nightfac=1.e-9         ! Ratio of nightime ionisation to sec=1.
+      smfac   =1.e-4
 ! RAA: reintroduce the SED factor, normalize solar flux to 1 AU
-        sfeps   = (1.0+0.0167*COS(2.0*pi*(dayno-3.)/366.0))**2
-        f107_1au = f107/sfeps
-        f107d_1au = f107d/sfeps
+      sfeps   = (1.0+0.0167*COS(2.0*pi*(dayno-3.)/366.0))**2
+      f107_1au = f107/sfeps
+      f107d_1au = f107d/sfeps
 
 ! vay-2017 fmxfmn=(F107-71.)/(220-71.) isn't right for F107~70.
-        fmxfmn=(f107_1au-65.)/165.   
-        srband_fac=0.784591675
-        vay_fmxfmn=(1.+0.11*fmxfmn)
-        vay_srband_fac=(1.+srband_fac)*.1
+      fmxfmn=(f107_1au-65.)/165.   
+      srband_fac=0.784591675
+      vay_fmxfmn=(1.+0.11*fmxfmn)
+      vay_srband_fac=(1.+srband_fac)*.1
 
 ! RAA: replace eccentric with sfeps
-        vay_srb3=vay_srband_fac * vay_fmxfmn * sfeps
-        pind=0.5*(f107_1au+f107d_1au) -80.
-!
+      vay_srb3=vay_srband_fac * vay_fmxfmn * sfeps
+      pind=0.5*(f107_1au+f107d_1au) -80.
+
       do J = 1, NWAVES  
         jinv = nwaves+1-J
-!
 ! parameterized EUV 
 ! RAA: normalize flux by SED correction factor, sfeps
-           flux(J)=dsfmin(jinv)*max(0.8, (1.0+dafac(jinv)*pind) )*sfeps
-           IF (flux(J) .LT. 0.0) flux(J) = 0.0
+        flux(J)=dsfmin(jinv)*max(0.8, (1.0+dafac(jinv)*pind) )*sfeps
+        IF (flux(J) .LT. 0.0) flux(J) = 0.0
       enddo
-!       
-          sheat(1:np)=0.
-          sh1(1:np)=0.
-          sh2(1:np)=0.
-          shsrc(:) =0.
-          shsrb(:) =0.
-          shlya(:) =0.
-          Jo2_rate(1:np)=0. 
-          Jo3_rate(1:np)=0. 
-!
+        
+      sheat(1:np)=0.
+      sh1(1:np)=0.
+      sh2(1:np)=0.
+      shsrc(:) =0.
+      shsrb(:) =0.
+      shlya(:) =0.
+      Jo2_rate(1:np)=0. 
+      Jo3_rate(1:np)=0. 
+
 ! compute slant columns in 1/cm2
-!
       call wam_slantcolumns(np, nps, R0, height, cospass,    &
           HO, HO2, HN2, O, O2, O3,N2, sco, sco2, sco3, scn2, nightfac, smfac)
     
       do i=nps,np
-!                                   Set total height in m Rad+Zmeters
-       z = R0 + height(i)
+! Set total height in m Rad+Zmeters
+        z = R0 + height(i)
 
-       jlya(i)   = 0.
-       jsrc(i)   = 0.
-       jsrb(i)   = 0.
-       jeuv(i)   = 0.
-       srband    = 0.
-       srbheat(i)= 0.
+        jlya(i)   = 0.
+        jsrc(i)   = 0.
+        jsrb(i)   = 0.
+        jeuv(i)   = 0.
+        srband    = 0.
+        srbheat(i)= 0.
 
-       pre_loc     = 0.
-       JSRC_loc    = 0.
-       JSRB_loc    = 0.
-       JLYA_loc    = 0.
-       JEUV_loc    = 0.
-       Jo3_euvloc    = 0.
-       Jo3_lyaloc    = 0.
-       Jo3_srcloc    = 0.
-       TAU=0.
-!  
+        pre_loc     = 0.
+        JSRC_loc    = 0.
+        JSRB_loc    = 0.
+        JLYA_loc    = 0.
+        JEUV_loc    = 0.
+        Jo3_euvloc    = 0.
+        Jo3_lyaloc    = 0.
+        Jo3_srcloc    = 0.
+        TAU=0.
+  
 ! calculate sec(ZA), incorporating Chapmann grazing incidence function
-!      CALL wamsub_chapman(cospass, HO(i), z, nightfac, seco, rnight_o) 
-!      CALL wamSUB_CHAPMAN(cospass, HO2(i),z, nightfac, seco2,rnight_o2)
-1      CALL wamSUB_CHAPMAN(cospass, HO(i)*.333,z,nightfac,seco3,rnight_o3)
-!      CALL wamSUB_CHAPMAN(cospass, HN2(i),z, nightfac, secn2,rnight_n2) 
+!       CALL wamsub_chapman(cospass, HO(i), z, nightfac, seco, rnight_o) 
+!       CALL wamSUB_CHAPMAN(cospass, HO2(i),z, nightfac, seco2,rnight_o2)
+1       CALL wamSUB_CHAPMAN(cospass, HO(i)*.333,z,nightfac,seco3,rnight_o3)
+!       CALL wamSUB_CHAPMAN(cospass, HN2(i),z, nightfac, secn2,rnight_n2) 
       
-      CALL idSUB_CHAPMAN(cospass, HO(i), z, nightfac, seco, rnight_o) 
-      CALL idSUB_CHAPMAN(cospass, HO2(i),z, nightfac, seco2,rnight_o2)
-      CALL idSUB_CHAPMAN(cospass, HO(i)*.333,z,nightfac,seco3,rnight_o3)
-      CALL idSUB_CHAPMAN(cospass, HN2(i),z, nightfac, secn2,rnight_n2)        
+        CALL idSUB_CHAPMAN(cospass, HO(i), z, nightfac, seco, rnight_o) 
+        CALL idSUB_CHAPMAN(cospass, HO2(i),z, nightfac, seco2,rnight_o2)
+        CALL idSUB_CHAPMAN(cospass, HO(i)*.333,z,nightfac,seco3,rnight_o3)
+        CALL idSUB_CHAPMAN(cospass, HN2(i),z, nightfac, secn2,rnight_n2)        
 
 ! For tau convert column abundance from m^-2 to cm^-2 (10^-4)
         WO= O(i) *HO(i) *SECO*1.e-4
         WO2=O2(i)*HO2(i)*SECO2*1.e-4
         WN2=N2(i)*HN2(i)*SECN2*1.e-4
         WO3 =sco3(i)
-!        WO3=O3(i)*HO(i)*.333*SECO3*1.e-4
+!       WO3=O3(i)*HO(i)*.333*SECO3*1.e-4
 !  loop over all 37 bands
-       sh1(i)=0.
-       sh2(i)=0.
-       Jo2_rate(i)=0.
-       Jo3_rate(i)=0.
-      do J = 1, NWAVES
-         TAUO =CSAO(J)*WO
-         TAUO2=CSAO2(J)*WO2
-         TAUN2=CSAN2(J)*WN2
-         TAUO3=CSAO3(J)*WO3
-         TAU=TAUO+TAUO2+TAUN2
+        sh1(i)=0.
+        sh2(i)=0.
+        Jo2_rate(i)=0.
+        Jo3_rate(i)=0.
+        do J = 1, NWAVES
+          TAUO =CSAO(J)*WO
+          TAUO2=CSAO2(J)*WO2
+          TAUN2=CSAN2(J)*WN2
+          TAUO3=CSAO3(J)*WO3
+          TAU=TAUO+TAUO2+TAUN2
 
 ! use parameters: solar_tuny = 1.e-36, min_flux =1.e-20, tau_max=200.
-      IF (tau .ge.  1.e-36 .AND. tau <= 200.) then 
-           attenuation = exp(-tau)
-      else  if (tau < 1.e-36 ) then  
-            attenuation = 1.0
-      else  
-            attenuation=0.
-      ENDIF
+          IF (tau .ge.  1.e-36 .AND. tau <= 200.) then 
+               attenuation = exp(-tau)
+          else  if (tau < 1.e-36 ) then  
+                attenuation = 1.0
+          else  
+                attenuation=0.
+          ENDIF
 
 ! RAA: Remove eccentric, flux is already normalized to SED
           local_flux=flux(J)*attenuation
@@ -433,28 +420,27 @@
 ! For SI units convert flux to m^-2 (x10^4)
 ! convert cross sections to m^2 (x10^-4)
 
-         sPAEUV=local_flux*(CSAO(J)*O(i)*rnight_o+ &                 
-          CSAO2(J)*O2(i)*rnight_o2+CSAN2(J)*N2(i)*rnight_n2)*RWPCC(J)
-	  
-         sh1(i)    =sh1(i)  + Spaeuv
-
+            sPAEUV=local_flux*(CSAO(J)*O(i)*rnight_o+ &                 
+            CSAO2(J)*O2(i)*rnight_o2+CSAN2(J)*N2(i)*rnight_n2)*RWPCC(J)
+  	  
+            sh1(i)    =sh1(i)  + Spaeuv
+  
 ! EUV JO2
-          Jeuv_loc = Jeuv_loc+local_flux*(CSDO2(J)+CSDeO2(J))
+            Jeuv_loc = Jeuv_loc+local_flux*(CSDO2(J)+CSDeO2(J))
 
 ! EUV JO3
-          Jo3_euvloc = Jo3_euvloc +local_flux*CSAO3(J)
-         ELSE
+            Jo3_euvloc = Jo3_euvloc +local_flux*CSAO3(J)
+          ELSE
 
 !  UV SRC/LYa channels 
-         sPAEUV=local_flux*CSAO2(J)*O2(i)*RWPCC(J)*rnight_o2
+            sPAEUV=local_flux*CSAO2(J)*O2(i)*RWPCC(J)*rnight_o2
 
 ! calculate JSRC, excluding JLYA
-           IF(J /= lyman_a_num) then 
+            IF(J /= lyman_a_num) then 
               JSRC_loc=JSRC_loc+local_flux*CSAO2(J)
               shsrc(i)  =shsrc(i)  +spaeuv
               Jo3_srcloc = Jo3_srcloc +local_flux*CSAO3(J)
-           ELSE                                                
-
+            ELSE                                                
 ! calculate JLYA 
               JLYA_loc=local_flux*CSAO2(J)
               shlya(i)  =  spaeuv                                   !* effuv(i) 
@@ -463,103 +449,99 @@
                   0.0865412*exp(-8.22112e-21*sco2(i)))* flux(lyman_a_num)    
 		  
               Jo3_lyaloc =2.27e-17 * pdnolya
-           ENDIF                                               ! src/lya
-         ENDIF          ! UV/EUV
+            ENDIF                                               ! src/lya
+          ENDIF          ! UV/EUV
         enddo           ! end of wavelength loop - J-index
-
 !==========================================================
 !  qtotal(k,i,lat) = qtotal(k,i,lat)+ho2src(k,i)+ho2srb(k,i) 
 !  Calculate O2 Schumunn Runge band heating  see "o2srbc.F"
 !==========================================================
-      IF (WO2 < 1.E18) THEN
-         srband=O2(i)*2.43E-25  !!1.e-19*1.e-6  Strobel-78 exp(21) 20% accuracy
-      ELSE
-         srband=O2(i)*1.e-6/(0.66*WO2+3.44E9*SQRT(WO2))
-      ENDIF
+        IF (WO2 < 1.E18) THEN
+           srband=O2(i)*2.43E-25  !!1.e-19*1.e-6  Strobel-78 exp(21) 20% accuracy
+        ELSE
+           srband=O2(i)*1.e-6/(0.66*WO2+3.44E9*SQRT(WO2))
+        ENDIF
       
-      srband =srband * vay_srb3 ! (vay_srband_fac*vay_fmxfmn*eccentric)
-      if(srband.lt.0.)   srband  = 0.
-
+        srband =srband * vay_srb3 ! (vay_srband_fac*vay_fmxfmn*eccentric)
+        if(srband.lt.0.)   srband  = 0.
 !      sum srb+src+lya heating into the total UV heat
 !=====================================================
 !      apply heat-efficiency factors & rnight_o2
 !euv
-      sh1(i)   = sh1(i)  *effeuv(i)  
+        sh1(i)   = sh1(i)  *effeuv(i)  
 !uv      
-      shsrb(i) = srband*rnight_o2     
-      shsrc(i) = shsrc(i)*effuv(i)                 
-      shlya(i) = shlya(i)*effuv(i) 
+        shsrb(i) = srband*rnight_o2     
+        shsrc(i) = shsrc(i)*effuv(i)                 
+        shlya(i) = shlya(i)*effuv(i) 
                      
-      sh2(i)   = shsrc(i) + shlya(i) +shsrb(i)     
+        sh2(i)   = shsrc(i) + shlya(i) +shsrb(i)     
 ! total
-      sheat(i) = sh1(i) +sh2(i)                   ! EUV + UV
+        sheat(i) = sh1(i) +sh2(i)                   ! EUV + UV
 
 !===============================================
 ! calculate JO2 due to SRB
-      IF (WO2.LT.1.E19) THEN
-!
-        JSRB_loc = vay_fmxfmn*1.1E-7*EXP(-1.97E-10*(WO2**0.522))*sfeps         
-      ELSE
-        JSRB_loc =vay_fmxfmn*1.45E8*(WO2**(-0.83))*sfeps
-      ENDIF
+        IF (WO2.LT.1.E19) THEN
+          JSRB_loc = vay_fmxfmn*1.1E-7*EXP(-1.97E-10*(WO2**0.522))*sfeps         
+        ELSE
+          JSRB_loc =vay_fmxfmn*1.45E8*(WO2**(-0.83))*sfeps
+        ENDIF
 
 ! sum dissociation rates, eccentric is inclued in the local_flux and SRB
  
-      JSRC(i)   = JSRC_loc
-      JSRB(i)   = JSRB_loc          
-      JLYA(i)   = JLYA_loc
-      JEUV(i)   = JEUV_loc
-!     
-      Jo2_rate(i) =O2_scale_factor(i)*rnight_o2*(JSRC_loc+JLYA_loc+JSRB_loc+JEUV_loc)
-!
+        JSRC(i)   = JSRC_loc
+        JSRB(i)   = JSRB_loc          
+        JLYA(i)   = JLYA_loc
+        JEUV(i)   = JEUV_loc
+      
+        Jo2_rate(i) =O2_scale_factor(i)*rnight_o2*(JSRC_loc+JLYA_loc+JSRB_loc+JEUV_loc)
+
 ! Jo3_harloc & Jo3_chhloc
-!         
-      sco3t = sco3(i)                        
-      if (sco3t < 1.e+5) sco3t = 1.e+5
-      temp1 = 1.0e-3*exp(-1.5577e-13*sco3t**0.6932)
-      if (sco3t < 1.6e+20) temp1 = 1.04e-2*exp(-1.0217e-6*sco3t**0.3587)
+         
+        sco3t = sco3(i)                        
+        if (sco3t < 1.e+5) sco3t = 1.e+5
+        temp1 = 1.0e-3*exp(-1.5577e-13*sco3t**0.6932)
+        if (sco3t < 1.6e+20) temp1 = 1.04e-2*exp(-1.0217e-6*sco3t**0.3587)
 
 
-      Jo3_harloc = (temp1*0.68+exp(-1.4912e-14*sco2(i)**0.5298)*    &
-          (4.053e-4  *exp(-8.1381e-16*sco3t**0.8856)+    &
-          4.7e-6    *exp(-1.5871e-14*sco3t**0.7665))*    &
-          1.085     *exp(-1.4655e-25*sco2(i)**1.0743)*0.68)*sfeps   
-!
+        Jo3_harloc = (temp1*0.68+exp(-1.4912e-14*sco2(i)**0.5298)*    &
+                     (4.053e-4  *exp(-8.1381e-16*sco3t**0.8856)+      &
+                     4.7e-6     *exp(-1.5871e-14*sco3t**0.7665))*     &
+                     1.085      *exp(-1.4655e-25*sco2(i)**1.0743)*0.68)*sfeps   
+
 ! Chappius and Huggins bands:
-!
-      Jo3_chhloc = sfeps*(4.5e-4*exp(-3.4786e-11*sco2(i)**0.3366-1.0061e-20*sco3t  **0.9719) &
-          + ( 7.5e-4 *exp(-2.7663e-19*sco3t**1.0801 ) &
-          +2.5e-4/(1.+1.5772e-18  *sco3t**0.9516))    &
-          *exp(-1.0719e-10*sco2(i)**0.3172 )  )   
-!
-      jo3_rate(i) = rnight_o3*(Jo3_EUVloc+   &
-          Jo3_SRCloc+Jo3_LYAloc+Jo3_harloc+Jo3_chhloc)
+
+        Jo3_chhloc = sfeps*(4.5e-4*exp(-3.4786e-11*sco2(i)**0.3366-1.0061e-20*sco3t  **0.9719) &
+                                                   + ( 7.5e-4 *exp(-2.7663e-19*sco3t**1.0801 ) &
+                                                   +2.5e-4/(1.+1.5772e-18  *sco3t**0.9516))    &
+                                                   *exp(-1.0719e-10*sco2(i)**0.3172 )  )   
+
+        jo3_rate(i) = rnight_o3*(Jo3_EUVloc+   &
+                      Jo3_SRCloc+Jo3_LYAloc+Jo3_harloc+Jo3_chhloc)
       enddo    ! height loop
-!
-!
+ 
       do i=1,nps-1
          sco3t =  exp(-abs(float(i-nps))*0.2) 
 ! empirical attenuation for  i < nps
 ! Jo3 (O3P+O1D) below ~50 km is ~ constant with small decrease 
-!
+
         jo2_rate(i) = jo2_rate(nps)*sco3t 
         jo3_rate(i) = jo3_rate(nps)*sco3t 	
-!     
+     
       enddo
 
       return
-      end subroutine wamphys_jrates_shuveuv
-!
+  end subroutine wamphys_jrates_shuveuv
+
 !  Chapman function and slantcolumns
-!      
-      subroutine idsub_chapman(coschi,scale_ht,ht, nfac, seco, rnight)
+     
+  subroutine idsub_chapman(coschi,scale_ht,ht, nfac, seco, rnight)
       use machine,       only : kind_phys
       use wamphys_const, only : pi, pi2, pid2, r0 => rearth, r_2_d
             
       implicit none     ! adding this .... major bugs are on compilation
-!
+
 ! corrected (pid2(90) not pi2 (360)) operational code of WAM-IPE 
-!
+
       real(kind=kind_phys), intent(in)  :: scale_ht          
       real(kind=kind_phys), intent(in)  :: ht
       real(kind=kind_phys), intent(in)  :: coschi
@@ -575,16 +557,15 @@
  
       if(chid.gt.75. .and. chid .lt. 105.) then
 
-          rad_to_z = ht/scale_ht
-          y_err = sqrt(0.5*rad_to_z) * abs(coschi)
+         rad_to_z = ht/scale_ht
+         y_err = sqrt(0.5*rad_to_z) * abs(coschi)
 
-          if (y_err.le.8.0) then
-            erfcl = (1.0606963 + 0.55643831* y_err) /      &      
-            (1.0619898 + 1.7245609* y_err + y_err *y_err)
-          else
-            erfcl = 0.56498823 / (0.06651874 + y_err)
-          endif
-
+         if (y_err.le.8.0) then
+           erfcl = (1.0606963 + 0.55643831* y_err) /      &      
+           (1.0619898 + 1.7245609* y_err + y_err *y_err)
+         else
+           erfcl = 0.56498823 / (0.06651874 + y_err)
+         endif
 
          if(chid.le.90.0)then
            seco = sqrt(pid2 * rad_to_z) * erfcl
@@ -592,21 +573,20 @@
            seco = sqrt(pid2 * rad_to_z)*( sqrt(schi)*exp(rad_to_z*(1-schi)) -.5*erfcl )
          endif
 
-      else         ! out [75-105 degrees]range  two domains [0:75] and [105:180]
-! 
-          seco = 1./coschi
+      else         ! out [75-105 degrees]range  two domains [0:75] and [105:180] 
+           seco = 1./coschi
       endif
-          rnight=1.0      
-!
+      rnight=1.0      
+
 ! for nighttime seco < 0
-!	  
-       if(seco < 0) then
-          rnight=nfac        !nightfac=1.e-9
-          seco=1.
-       endif
-      end subroutine idsub_chapman
+	  
+      if(seco < 0) then
+        rnight=nfac        !nightfac=1.e-9
+        seco=1.
+      endif
+  end subroutine idsub_chapman
       
-      subroutine wamsub_chapman(coschi,scale_ht, ht, nfac, seco, rnight)
+  subroutine wamsub_chapman(coschi,scale_ht, ht, nfac, seco, rnight)
 !=============================================================
 ! vay oct 26/2016 review and corrections for undefined "pi"
 ! may 2022 updates for FV3WAM/ccpp    kind_phys and bug: pi2 => pid2
@@ -616,7 +596,7 @@
       
       
       implicit none     ! adding this .... major bugs are on compilation
-!
+
       real(kind=kind_phys), intent(in)  :: scale_ht          
       real(kind=kind_phys), intent(in)  :: ht
       real(kind=kind_phys), intent(in)  :: coschi
@@ -630,9 +610,8 @@
 !     schi = sqrt(1. - coschi*coschi)
       schi = sin(chi)
       chid = chi*r_2_d
-!
+ 
 ! daytime
-!
       rnight=1.0 
 !      if(chid.le.75.) then 
 !          seco = 1./coschi
@@ -641,58 +620,53 @@
         
 ! calculate chapman for angles over 75-105 degrees  
 ! spherical lighting
-!     
+     
       if(chid.gt.75. .and. chid .lt. 105.) then
-          rad_to_z = ht/scale_ht
+        rad_to_z = ht/scale_ht
 ! step1:                                               approximate error function
-          y_err = sqrt(0.5*rad_to_z) * abs(coschi)      ! SS-1972 exp: [10-12]
+        y_err = sqrt(0.5*rad_to_z) * abs(coschi)      ! SS-1972 exp: [10-12]
         if (y_err.le.8.0) then
           erfcL = (1.0606963 + 0.55643831* y_err) /(1.0619898 + 1.7245609* y_err + y_err *y_err)
         else
-            erfcL = 0.56498823 / (0.06651874 + y_err)
+          erfcL = 0.56498823 / (0.06651874 + y_err)
         endif
       
 ! step2. calculate chapmann
-! for solar zenith angles 75 < theta <= 90
-        
+! for solar zenith angles 75 < theta <= 90       
         if(chid.le.90.)then
-            seco = sqrt(pid2 * rad_to_z) * erfcL
+          seco = sqrt(pid2 * rad_to_z) * erfcL
         else
-!                                          for sza > 90 (SS-72 equation 15)  pid2
-        seco = sqrt(pid2 * rad_to_z)*    &                  
+! for sza > 90 (SS-72 equation 15)  pid2
+          seco = sqrt(pid2 * rad_to_z)*    &                  
              ( sqrt(schi)*exp(rad_to_z*(1-schi)) -0.5*erfcL)
 !         write(6,*)'chapman over 90', chid,chapmann
         endif
 
-       else        ! out [75-105 degrees]range
-!                    CHAPMANN-SECO ~  sec(zenith angle)
-         seco = 1./coschi
-      
-
+      else        ! out [75-105 degrees]range
+! CHAPMANN-SECO ~  sec(zenith angle)
+        seco = 1./coschi
       endif
-!
+
 ! full-night
-!       
-       if(seco.lt.0.) then
+      
+      if(seco.lt.0.) then
        
           rnight=nfac        ! nightfac=1.e-9
           seco=1.            ! seco = should be "nightfac" seco_night =1*nightfac
 			     
-       endif
+      endif
 
 
-      end subroutine wamsub_chapman
-!
-! slant columns
-!        
-      subroutine wam_slantcolumns(levs, lev1, r0, zgi, cospass,   &
+  end subroutine wamsub_chapman
+ 
+!  ----slant columns       
+  subroutine wam_slantcolumns(levs, lev1, r0, zgi, cospass,   &
         ho, ho2, hn2, xo, xo2, xo3, xn2, sco, sco2, sco3, scn2, nightfac, smfac)
        
        use machine,     only: kind_phys
        implicit none
-!
+
 ! compute slant columns for 3-major species and ozone
-!
 
       real(kind=kind_phys),  intent(in)   :: nightfac, smfac 
       
@@ -712,9 +686,8 @@
       real(kind=kind_phys), dimension(levs)  :: vco, vco2,vco3, vcn2               ! 1/cm2
       real(kind=kind_phys) :: dzm
       integer :: i,k,j
-!
+
 ! from top 2 bottom 
-!
       k=levs
       vco(levs)  = xo(levs)*ho(levs)
       vco2(levs) = xo2(levs)*ho2(levs)
@@ -722,25 +695,24 @@
       ho3 =ho(levs)*.3333
       vco3(levs) = xo3(levs)*ho3
       
-         z = r0 +zgi(k)
-	 
-        call wamsub_chapman(cospass, ho(k), z,  nightfac,  seco, rnight_o ) 
-        call wamsub_chapman(cospass, ho2(k), z, nightfac, seco2, rnight_o2)
-        call wamsub_chapman(cospass, ho3,    z, nightfac, seco3, rnight_o3) 
-        call wamsub_chapman(cospass, hn2(k), z, nightfac, secn2, rnight_n2) 
+      z = r0 +zgi(k)
+      
+      call wamsub_chapman(cospass, ho(k), z,  nightfac,  seco, rnight_o ) 
+      call wamsub_chapman(cospass, ho2(k), z, nightfac, seco2, rnight_o2)
+      call wamsub_chapman(cospass, ho3,    z, nightfac, seco3, rnight_o3) 
+      call wamsub_chapman(cospass, hn2(k), z, nightfac, secn2, rnight_n2) 
 
-
-        sco(k)=  vco(k)*seco*smfac
-        sco2(k)= vco2(k)*seco2*smfac
-        sco3(k)= vco3(k)*seco3*smfac
-        scn2(k)= vco2(k)*seco2*smfac
+      sco(k)=  vco(k)*seco*smfac
+      sco2(k)= vco2(k)*seco2*smfac
+      sco3(k)= vco3(k)*seco3*smfac
+      scn2(k)= vco2(k)*seco2*smfac
 
       do k=levs-1, lev1, -1
-      dzm = .5*(zgi(k+1)-zgi(k))
-      vco(k)  = vco(k+1)  + (xo(k+1)+xo(k))*dzm 
-      vco2(k) = vco2(k+1) + (xo2(k+1)+xo2(k))*dzm
-      vco3(k) = vco3(k+1) + (xo3(k+1)+xo3(k))*dzm      
-      vcn2(k) = vcn2(k+1) + (xn2(k+1)+xn2(k))*dzm 
+         dzm = .5*(zgi(k+1)-zgi(k))
+         vco(k)  = vco(k+1)  + (xo(k+1)+xo(k))*dzm 
+         vco2(k) = vco2(k+1) + (xo2(k+1)+xo2(k))*dzm
+         vco3(k) = vco3(k+1) + (xo3(k+1)+xo3(k))*dzm      
+         vcn2(k) = vcn2(k+1) + (xn2(k+1)+xn2(k))*dzm 
         
          z = r0 +zgi(k)
          ho3 =ho(k)*0.3333
@@ -749,22 +721,19 @@
          call wamsub_chapman(cospass, ho3,    z, nightfac, seco3, rnight_o3)     
          call wamsub_chapman(cospass, hn2(k), z, nightfac, secn2, rnight_n2) 
          
-!
 !  transform vcol  => scol
-! 
-
-        sco(k)=  vco(k) *seco*smfac
-        sco2(k)= vco2(k)*seco2*smfac
-        sco3(k)= vco3(k)*seco3*smfac
-        scn2(k)= vcn2(k)*secn2*smfac
+         sco(k)=  vco(k) *seco*smfac
+         sco2(k)= vco2(k)*seco2*smfac
+         sco3(k)= vco3(k)*seco3*smfac
+         scn2(k)= vcn2(k)*secn2*smfac
 
       enddo
-      end subroutine wam_slantcolumns        
-!
+  end subroutine wam_slantcolumns        
+
 !=======================      
 ! NO-coooling related: wam_getno1d & wamphys_coolno1d
 !=======================      	   
-      subroutine wam_getno1d(levs,f107in,kpain,mlatrad,doy,alt,pr, nair, am, no)
+  subroutine wam_getno1d(levs,f107in,kpain,mlatrad,doy,alt,pr, nair, am, no)
 !      
 ! S. I. Karol May 2022 ccpp-version of idea_getno_snoe.f
 !
@@ -777,7 +746,7 @@
        use wamphys_init_module, only : no_ny33, no_nz16, amno       
        use  wamphys_const,      only : pi, pi2, con_nzero, d2r => dtr, r2d => r_2_d
        use machine,           only : kind_phys         
-!
+
       implicit none
 ! input
       integer, intent(in)  :: levs         !number of pressure level
@@ -793,52 +762,50 @@
       real(kind_phys),    intent(in)  :: nair(levs)      !/m3 number density
 ! out
       real(kind_phys),    intent(out) :: no(levs)     ! number density of no (/m3) 
-!
+
 ! locals
 !  we have         33, 16,7 now...
-!      real(kind_phys) :: eof(33,16,3),nom(33,16),z16(16), lat33(33)
+!     real(kind_phys) :: eof(33,16,3),nom(33,16),z16(16), lat33(33)
 
       real(kind_phys) ::  mlat          ! degrees  in snoe data
       real(kind_phys) ::  zm(no_nz16)
       real(kind_phys) ::  dz(levs)
       real(kind_phys) ::  f107, kpa
       real(kind_phys) ::  dx, dl,m1,m2,m3,theta0,dec
-!
-
+ 
       integer :: iref,kref(levs)
       integer :: i,k,il,k1,k2
       integer :: kup, kdw      ! [NO]-domain in WAM-layers
-!
-       kpa  = kpain
-       f107 = f107in
 
-       mlat = mlatrad *r2d
+      kpa  = kpain
+      f107 = f107in
+
+      mlat = mlatrad *r2d
 
 !       print *, kpa, f107, ' getno1d-vay-mlat-deg ', mlat
 
-       if(kpa .lt. 0.7)   kpa=0.7
-       if(f107.lt.70.0)   f107 = 70.0
-!
-! find interp latitude lat33 in degrees...
-!     
+      if(kpa .lt. 0.7)   kpa=0.7
+      if(f107.lt.70.0)   f107 = 70.0
+ 
+! find interp latitude lat33 in degrees...     
 ! vay-2016: mlat-bug
-        do i=1,no_ny33-1
-          if(mlat.gt.lat33(i).and.mlat.lt.lat33(i+1)) then
-            iref=i
-            dl=(mlat-lat33(i))/(lat33(i+1)-lat33(i))
-            exit
-          endif
-        enddo
+      do i=1,no_ny33-1
+        if(mlat.gt.lat33(i).and.mlat.lt.lat33(i+1)) then
+          iref=i
+          dl=(mlat-lat33(i))/(lat33(i+1)-lat33(i))
+          exit
+        endif
+      enddo
 !vay oct-2016 add abs(mlat) > 80.
-         if (mlat.le.lat33(1)) then 
-            dl = 0.
-            iref =1
-         endif
-         if (mlat.ge.lat33(no_ny33)) then 
-            dl = 1.
-            iref =no_ny33-1
-         endif
-!
+      if (mlat.le.lat33(1)) then 
+         dl = 0.
+         iref =1
+      endif
+      if (mlat.ge.lat33(no_ny33)) then 
+         dl = 1.
+         iref =no_ny33-1
+      endif
+
 !  snoe no interpolated to model grid (molecules/cm^3)
 !... eof1 - kpa
 !     m1 =  kpa * 0.689254 - 1.53366
@@ -853,89 +820,75 @@
       
       m2 = -.319782 + dec*(.0973109 + dec*(.00048981 - dec*.000103608))
       m3 =  alog10(f107) * 6.44069 - 13.9832                 !waccmx-2015 eof3  
-!   
-!
+
 !... zonal mean distrib. is sum of mean and eofs
 ! (dl)*no(i+1) + (1-dl)*no(i) interpolation to wam "mlat"
 !  wx-code     do k = 1,nlev
 !  zm(:,k) = no_mean(:,k) - m1 * eofs(:,k,1) + m2 * eofs(:,k,2) - m3 * eofs(:,k,3) 
 !              end do
     
-   do k=1,no_nz16
-     zm(k) =  &
-       dl*(nom(iref+1,k)- m1*eof(iref+1,k,1)+ m2*eof(iref+1,k,2)- m3*eof(iref+1,k,3))+ &                              
-(1.-dl)*(nom(iref,k)- m1*eof(iref,k,1)+ m2*eof(iref,k,2)- m3*eof(iref,k,3))
-       
-     if (zm(k).le. 0.0) zm(k)=con_nzero
-    enddo
-    zm = zm*1.e6          ! zm transform fom cm-3 to m-3  ok... due to data units
-!
+      do k=1,no_nz16
+        zm(k) =  &
+          dl*(nom(iref+1,k)- m1*eof(iref+1,k,1)+ m2*eof(iref+1,k,2)- m3*eof(iref+1,k,3))+ &                              
+          (1.-dl)*(nom(iref,k)- m1*eof(iref,k,1)+ m2*eof(iref,k,2)- m3*eof(iref,k,3))         
+        if (zm(k).le. 0.0) zm(k)=con_nzero
+      enddo
+      zm = zm*1.e6          ! zm transform fom cm-3 to m-3  ok... due to data units
+
 ! vertical interp, from k1 to k2-1, extend k2 to levs, keep 
 ! cons 1 to k1-1
-!
-
+ 
 !interpolate
  
-!        print *, ' getno-zmno ', maxval(zm), minval(zm)
- 
-        no(1:levs)=con_nzero
-        call  interpol_wamz( no_nz16, z16, zm, levs, alt, no, kup, kdw ) 
+!     print *, ' getno-zmno ', maxval(zm), minval(zm)
+      no(1:levs)=con_nzero
+      call  interpol_wamz( no_nz16, z16, zm, levs, alt, no, kup, kdw ) 
+!     print *, ' getno-zmnoi ', maxval(no), minval(no)
 
-!        print *, ' getno-zmnoi ', maxval(no), minval(no)
-       
-!
 !extrapolate  above kup
-!
-        do k=kup+1,levs
-           dx =log(pr(k-1))-log(pr(k))
-           no(k)=no(k-1)*nair(k)/nair(k-1)*               &                    
-              exp(dx*(1.-.5*amno*(1./am(k-1)+1./am(k))))
-        enddo
-	
-!	
-!attenuation below kdw
-!	
-        do k=kdw-1,1,-1
-!          
-           no(k)=no(kdw)*exp(-(kdw-k)*(kdw-k)*.1)
-        enddo	
-!
+      do k=kup+1,levs
+         dx =log(pr(k-1))-log(pr(k))
+         no(k)=no(k-1)*nair(k)/nair(k-1)*               &                    
+            exp(dx*(1.-.5*amno*(1./am(k-1)+1./am(k))))
+      enddo
+		
+!attenuation below kdw	
+      do k=kdw-1,1,-1          
+         no(k)=no(kdw)*exp(-(kdw-k)*(kdw-k)*.1)
+      enddo	
+
 ! extra-check for positive no
-!
-        do k=1,levs
-          no(k)=max(no(k), con_nzero)
-        enddo
+
+      do k=1,levs
+         no(k)=max(no(k), con_nzero)
+      enddo
 	
 !	return
-!	
+	
 ! below "empircal" tuning NO-ehnancement for Geo storms
-!
 ! incease [no] by a factor when kpa gt 5.0, same with ctipe, based on champ
 ! neutral density obervations ????? WAM-empirical tuning of NO-profiles kpa ????
-!                                   inconsistent with SNOE-model
-!  
-        do k=1,levs
-          if (kpa.gt.5.0.and.kpa.le.6.0) then
-            no(k) = no(k)*1.5
-          elseif (kpa.gt.6.0.and.kpa.le.7.0) then
-            no(k) = no(k)*2.5
-          elseif (kpa.gt.7.0.and.kpa.le.8.0) then
-            no(k) = no(k)*3.5
-          elseif (kpa.gt.8.0.and.kpa.le.9.0) then
-            no(k) = no(k)*4.5
-          endif
-        enddo
-!
-!
+!                                   inconsistent with SNOE-model  
+      do k=1,levs
+        if (kpa.gt.5.0.and.kpa.le.6.0) then
+          no(k) = no(k)*1.5
+        elseif (kpa.gt.6.0.and.kpa.le.7.0) then
+          no(k) = no(k)*2.5
+        elseif (kpa.gt.7.0.and.kpa.le.8.0) then
+          no(k) = no(k)*3.5
+        elseif (kpa.gt.8.0.and.kpa.le.9.0) then
+          no(k) = no(k)*4.5
+        endif
+      enddo
+
 ! check no
 !       print *, ' getno-zmnoi2 ', maxval(no), minval(no)
 !        print *, 'kup getno, iref', kup, iref, con_nzero
       return
-      end subroutine wam_getno1d    
-!           
-     subroutine wamphys_coolno1d(np,nps,t,o_n, o2_n, no_n, qno)   
-!     
-! sik may   2022 ccpp-version 
+  end subroutine wam_getno1d    
+           
+  subroutine wamphys_coolno1d(np,nps,t,o_n, o2_n, no_n, qno)       
+!sik may    2022 ccpp-version 
 !vay oct 1  2015 clean-up
 !    oct 28 2016 for new trunk
 !      use   physcons, only : bz =>  con_boltz             
@@ -967,28 +920,28 @@
       real(kind_phys) :: bz
       real(kind_phys) ::  no_deact, o1_rate, o2_rate,phot_e    
       integer i, k
-!
+
 !vay-2015/16
 !                           ! hv=phot_e  = 3.726e-13_r8   at 5.3 mkm (erg)
 !
-       o1_rate = 2.7e-11*1.e-6      !3.3-3.6(-12)
-       o2_rate = 2.4e-14*1.e-6
-       phot_e  = 3.726e-13
-       
-       a10=13.3             !  trans_prob = 13.3_r8       
-       bz=1.38e-23          ! boltzman
-       k10=2.7e-17          ! k10*[o3p] vs 2.7 in waccm  k10=3.6e-17 
-                            ! decreased because cm3/s = 10(-11)
-                            !                   m3/s    10(-17)                                       
-       hv=3.726e-20         ! in joules   1 erg is equal to 1.0e-7 joule.
-       hvbz = hv/bz                                                                                                    
-       g=1.0                                                             
-!                                                     
-       a2=5.4e-6*(1./(exp(hvbz/5800.)-1.))    
-       a3=0.5*exp(-hvbz/247.5)
-       a23 = a2+a3
-       a10=13.3     
-       a10ghv = a10*g*hv
+      o1_rate = 2.7e-11*1.e-6      !3.3-3.6(-12)
+      o2_rate = 2.4e-14*1.e-6
+      phot_e  = 3.726e-13
+      
+      a10=13.3             ! trans_prob = 13.3_r8       
+      bz=1.38e-23          ! boltzman
+      k10=2.7e-17          ! k10*[o3p] vs 2.7 in waccm  k10=3.6e-17 
+                           ! decreased because cm3/s = 10(-11)
+                           !                   m3/s    10(-17)                                       
+      hv=3.726e-20         ! in joules   1 erg is equal to 1.0e-7 joule.
+      hvbz = hv/bz                                                                                                    
+      g=1.0                                                             
+                                                     
+      a2=5.4e-6*(1./(exp(hvbz/5800.)-1.))    
+      a3=0.5*exp(-hvbz/247.5)
+      a23 = a2+a3
+      a10=13.3     
+      a10ghv = a10*g*hv
 !-------------------------------------------------
 ! k10/a10, hbvz, a10ghv, a23 => idear_solar_init
 !=================================================
@@ -1003,7 +956,7 @@
       enddo
       
       return
-!
+
 ! Calculate NO cooling (ref: Kockarts, GRL, vol. 7, pp 137-140, 1980)
 ! WACCM
 !      qnox(1:nps-1) =0.
@@ -1025,10 +978,10 @@
 !      a1*a10*hv*[no]/cp/rho = [K/sec]
 !      a1 -dimens
 ! units:     hv*[no]/cp
-!
+
       return     
                                                              
-      end  subroutine wamphys_coolno1d
+  end  subroutine wamphys_coolno1d
 !=======================================      
 !
 ! EUV/UV: sheat,sh1, sh2, jo2_rate, jo3_rate

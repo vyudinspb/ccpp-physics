@@ -1,9 +1,9 @@
 !======================================= 
-  module wamphys_setfix_tracers
+module wamphys_setfix_tracers
    use machine , only : kind_phys
 
    implicit none  
-      integer, parameter   :: np=65                          !number of pressure levels of orig
+      integer, parameter   :: np=65                          ! number of pressure levels of orig
       integer, parameter   :: nvmr=15
       integer, parameter   :: npj=17       
       real(kind=kind_phys) :: ohi(np),ho2i(np)               ! units of conc-n 1/cm3 or 1/m3
@@ -23,29 +23,30 @@
       DATA JI/.4e-8,.78e-8,1.5e-8,3.e-8,6.8e-8,.15e-6,.34e-6,.77e-6,  &  
        1.07e-6,1.35e-6,1.6e-6,1.81e-6,2.05e-6,2.23e-6,2.36e-6,2.5e-6, 2.57e-6/        
       DATA FHT/8*1.2,1.85,2.50,3.150,6*3.8/
-!
+
 !                                         see IDEA_TRACERS_INPUT
    
-  end module wamphys_setfix_tracers
-!  
- module wamphys_set_merge_rad
-!
+end module wamphys_setfix_tracers
+ 
+module wamphys_set_merge_rad
+
    use machine , only : kind_phys
    implicit none  
 ! merging scheme for heating rates
-!
+
       real(kind=kind_phys), parameter     :: xb=7.5, xt=8.5      ! for Hp = 7 km: 52.5 km < Z_logp < 59.5 km 
       real(kind=kind_phys), parameter     :: xbl= 0.99*xb        ! xbl < xb
       real(kind=kind_phys), parameter     :: rdx=1./(xt-xb)
-      real(kind=kind_phys), parameter     :: xlogps = 11.5129          ! alog(1.e5=Ps_in_Pa)
-      real(kind=kind_phys), parameter     :: prdot02 = 2.00  ! mb because pr = pr_idea in (mb)
-      integer                             :: npsrad                    ! layer where Pressure < 0.02   (2Pa)
-      
-                                                       ! nps-pressure index to start WAM-solar/phot <= 52.5 km 
+      real(kind=kind_phys), parameter     :: xlogps = 11.5129    ! alog(1.e5=Ps_in_Pa)
+      real(kind=kind_phys), parameter     :: prdot02 = 2.00      ! mb because pr = pr_idea in (mb)
+      integer                             :: npsrad              ! layer where Pressure < 0.02   (2Pa)      
+      ! nps-pressure index to start WAM-solar/phot <= 52.5 km 
  end module wamphys_set_merge_rad    
  
  module wamphys_set_data_solar
       use machine , only : kind_phys
+      implicit none  
+     
       integer,  parameter :: nwaves = 37
       integer,  parameter :: nwaves_euv = 22
       integer,  parameter :: nwaves_src =nwaves-nwaves
@@ -78,47 +79,49 @@
       
       data jj_scale_factor/ 1.0, 4.465536, 4.365480, 3.904985,  3.367959, &       
            3.202786, 2.378429, 1.636311, 1.423021, 1.452178, 1.588099,    &     
-           1.714328,  1.811639, 1.907779, 1.987971/     
+           1.714328,  1.811639, 1.907779, 1.987971/
+
       data effuv17/0.59, 0.59, 0.58, 0.57, 0.56, 0.52, 0.48, 0.43,        &
                    .4,.4,.4,.39,.34,.26,.19,.17,.16/
+
       data effeuv17/8*1.0,.75,.6,.62,.54,.49,.41,.33,.30,.30/
                          
-        data srbeff63/1.000,1.000,1.000,1.000,1.000,  &                  
-        1.000,1.000,1.000,1.000,1.000,1.000,  &                             
-        1.000,1.000,1.000,.980,.983,.982,     &                               
-        .970,.945,.913,.880,.852,.832,.820,   &                              
-        .817,.816,.810,.795,.777,.765,.764,   &  
-        .759,.730,.664,.579,.500,.446,.416,   &  
-        .400,.393,.390,.390,.391,.391,.390,   &  
-        .388,.384,.380,.375,.366,.350,.324,   &  
-        .291,.260,.234,.214,.200,.190,.184,   &  
-        .180,.176,.173,.170/
+      data srbeff63/1.000,1.000,1.000,1.000,1.000,      &                  
+                  1.000,1.000,1.000,1.000,1.000,1.000,  &                             
+                  1.000,1.000,1.000,.980,.983,.982,     &                               
+                  .970,.945,.913,.880,.852,.832,.820,   &                              
+                  .817,.816,.810,.795,.777,.765,.764,   &  
+                  .759,.730,.664,.579,.500,.446,.416,   &  
+                  .400,.393,.390,.390,.391,.391,.390,   &  
+                  .388,.384,.380,.375,.366,.350,.324,   &  
+                  .291,.260,.234,.214,.200,.190,.184,   &  
+                  .180,.176,.173,.170/
 	
-       data pres63/6.90775528,    6.57442194,   & 
-        6.24108859,  5.90775525,  5.57442191,   &                           
-        5.24108856,  4.90775522,  4.57442188,   &                           
-        4.24108853,  3.90775519,  3.57442185,   &                           
-        3.2410885,   2.90775516,  2.57442182,   &                           
-        2.24108847,  1.90775513,  1.57442179,   &                           
-        1.24108844,  0.9077551,   0.574421757,    &                          
-        0.241088414, -0.0922449296,-0.425578273,  &                       
-        -0.758911616,-1.09224496,  -1.4255783,    &                          
-        -1.75891165, -2.09224499,  -2.42557833,   & 
-        -2.75891168, -3.09224502,  -3.42557836,   & 
-        -3.75891171, -4.09224505,  -4.42557839,   & 
-        -4.75891174, -5.09224508,  -5.42557842,   & 
-        -5.75891177, -6.09224511,  -6.42557845,   & 
-        -6.75891179, -7.09224514,  -7.42557848,   & 
-        -7.75891182, -8.09224517,  -8.42557851,   & 
-        -8.75891185, -9.0922452,   -9.42557854,   & 
-        -9.75891188, -10.0922452,  -10.4255786,   & 
-        -10.7589119, -11.0922453,  -11.4255786,   & 
-        -11.7589119, -12.0922453,  -12.4255786,   & 
-        -12.758912,  -13.0922453,  -13.4255787,   & 
-        -13.758912/
+      data pres63/6.90775528,    6.57442194,                & 
+                  6.24108859,  5.90775525,  5.57442191,     &                           
+                  5.24108856,  4.90775522,  4.57442188,     &                           
+                  4.24108853,  3.90775519,  3.57442185,     &                           
+                  3.2410885,   2.90775516,  2.57442182,     &                           
+                  2.24108847,  1.90775513,  1.57442179,     &                           
+                  1.24108844,  0.9077551,   0.574421757,    &                          
+                  0.241088414, -0.0922449296,-0.425578273,  &                       
+                  -0.758911616,-1.09224496,  -1.4255783,    &                          
+                  -1.75891165, -2.09224499,  -2.42557833,   & 
+                  -2.75891168, -3.09224502,  -3.42557836,   & 
+                  -3.75891171, -4.09224505,  -4.42557839,   & 
+                  -4.75891174, -5.09224508,  -5.42557842,   & 
+                  -5.75891177, -6.09224511,  -6.42557845,   & 
+                  -6.75891179, -7.09224514,  -7.42557848,   & 
+                  -7.75891182, -8.09224517,  -8.42557851,   & 
+                  -8.75891185, -9.0922452,   -9.42557854,   & 
+                  -9.75891188, -10.0922452,  -10.4255786,   & 
+                  -10.7589119, -11.0922453,  -11.4255786,   & 
+                  -11.7589119, -12.0922453,  -12.4255786,   & 
+                  -12.758912,  -13.0922453,  -13.4255787,   & 
+                  -13.758912/
 	         
 !     TIEGCM data
-!
+
       real                    :: dsfmin(nwaves), dafac(nwaves)
       real                    :: drlmeuv(nwaves) ! wavelengths (cm)
 !                                           ! absoption cross sections (x1e18cm^2)
@@ -264,27 +267,23 @@
                 7.059e-03, 2.575e-02, 1.433e-02, 9.182e-03, &
                 1.343e-02, 6.247e-02, 2.000e-01, 3.710e-01, &
                 6.240e-01/
-		
-		
-		
+				
  end module wamphys_set_data_solar    
  
  
 !=======================================    
-  module wamphys_set_data_ion
+module wamphys_set_data_ion
    use machine , only : kind_phys
    implicit none
-!
 !=====================================================================     
 !  input data on the magnetic grid >>>  iondata_file    = 'iondata_tjr.nc'
-!
 !=====================================================================        
       integer, parameter     :: nymag = 91, jcen =(nymag-1)/2+1    ! dimension of glat
       integer, parameter     :: nxmag = 20                         ! dimension of glon
       real (kind=kind_phys)  :: glat(nymag)
       real (kind=kind_phys)  :: glon(nxmag)
       
-      real(kind=kind_phys), dimension(nxmag, nymag) ::    cormag, btot, dipang 
+      real(kind=kind_phys), dimension(nxmag, nymag) :: cormag, btot, dipang 
       real(kind=kind_phys), parameter  ::   pi = 3.1459268, pi2 = 2.*pi        
       real(kind=kind_phys), parameter  ::   ddlat= pi/(nymag-1)   !3.4906585033333331e-002
       real(kind=kind_phys), parameter  ::   ddlon= pi2/nxmag 
@@ -292,7 +291,7 @@
       
 !=====================================================================            
 ! input data  >>>  tirosdata_file    = 'tiros_tjr.nc'   
-!       
+       
       integer, parameter :: nt_21 = 21            ! tiros-21  1st dimension
       integer, parameter :: nt_20 = 20   ! tiros-20  2nd dimension
       integer, parameter :: nt_7  =  7   ! tiros-7   3rd dimension
@@ -303,17 +302,16 @@
       integer, parameter     :: n_bnd    = 21               ! tiros
       real(kind=kind_phys)   :: djspectra(n_flx, n_bnd)     ! tiros
 !=====================================================================      
-      integer, parameter     :: jmaxwell = 6
-      real(kind=kind_phys)   :: en_maxwell(jmaxwell)      
-      real(kind=kind_phys), parameter        :: width_maxwell = 0.050
-     
-      
+      integer, parameter :: jmaxwell = 6
+      real(kind=kind_phys), parameter :: width_maxwell = 0.050
+
+      real(kind=kind_phys)       :: en_maxwell(jmaxwell)               
       real(kind=kind_phys)       :: width(n_flx), en(n_flx)            ! defined by data-stat
-      real(kind=kind_phys)       :: te11(n_bnd),te15(n_bnd)            !precomp_iondata_fixed
+      real(kind=kind_phys)       :: te11(n_bnd),te15(n_bnd)            ! precomp_iondata_fixed
 !
-       real ::  ratio(21)                                              !precomp_iondata_fixed
-       real ::  ionchr(21), rlam(21)  
-       real ::  ion_recomb(8),lognpres(8)                              ! defined by data-stat
+      real ::  ratio(21)                                              !precomp_iondata_fixed
+      real ::  ionchr(21), rlam(21)  
+      real ::  ion_recomb(8),lognpres(8)                              ! defined by data-stat
 !
       data en    /.37,.6,.92,1.37,2.01,2.91,4.19,6.,8.56,12.18, &
                   17.3,24.49,36.66,54.77,81.82/
@@ -322,11 +320,11 @@
 		 
       data rlam/1.49,1.52,1.51,1.48,1.43,1.37,1.30,1.22, 1.12,1.01,0.895, &
                 0.785,0.650,0.540,0.415,0.320,0.225, 0.14,0.08,0.04,0.0/
-!
+
       data ionchr/.378 , .458 , .616 , .773 , .913 , 1.088 , 1.403 , &
              1.718 , 2.033 , 2.349 , 2.979 , 3.610 , 4.250 , 4.780 , &
              6.130 , 7.392 , 8.653 , 9.914 , 12.436 , 14.957 , 17.479/
-!
+
        
       data lognpres/-3.425,-4.835,-5.918,-7.066,-7.784,-8.366,-9.314,-10.507/
 
@@ -335,9 +333,7 @@
 
 
 end module wamphys_set_data_ion
-!
-!
-!
+ 
 module wamphys_set_data_vg150
 
 
@@ -480,164 +476,146 @@ module wamphys_set_data_vg150
 
 end module wamphys_set_data_vg150
 
-
-
-
- module wam_efieldw05_read_data
+module wam_efieldw05_read_data
  
    use machine , only : kind_phys
-   implicit none 
-   integer, parameter  :: lu =99  
+      implicit none 
+      integer, parameter  :: lu =99  
+      integer , parameter ::   iulog = 6
+      character(len=12), parameter :: model='epot'
 
-   integer,  parameter :: csize=28, d1_pot=15, d2_pot=18
-   integer             :: ab(csize), ls(csize), ms(csize)
-   integer             :: maxl_pot,maxm_pot 
-   
-   integer , parameter            ::   iulog = 6
-   character(len=12), parameter   :: model='epot'
-   
+      integer,  parameter :: csize=28, d1_pot=15, d2_pot=18
+      integer             :: ab(csize), ls(csize), ms(csize)
+      integer             :: maxl_pot,maxm_pot 
+  
 ! Data read from SCHAtable.dat
       integer :: maxk_scha,maxm_scha
-      
+
       integer,parameter      :: d1_scha=19, d2_scha=7, d3_scha=68
-      
+
       real(kind=kind_phys)   :: allnkm(d1_scha,d2_scha,d3_scha)
-      
+
       real(kind=kind_phys)   :: th0s(d3_scha) 
       real(kind=kind_phys)   :: alschfits(d2_pot,csize), schfits(d1_pot,csize), ex_pot(2)        
-! Data read from W05scBndy.dat
+      ! Data read from W05scBndy.dat
 
       integer,parameter    :: na=6, nb=7
       real(kind=kind_phys) :: bndya(na),bndyb(nb),ex_bndy(2)
-!    
-!      real(kind=kind_phys) :: rad2deg,deg2rad           ! set by SetModel_new
+           
+      !real(kind=kind_phys) :: rad2deg,deg2rad           ! set by SetModel_new
       real(kind=kind_phys) :: bndyfitr                  ! calculated by setboundary
       real(kind=kind_phys) :: esphc(csize),bsphc(csize) ! calculated by SetModel_new
       real(kind=kind_phys) :: tmat(3,3),ttmat(3,3)      ! from setboundary
-!
+       
       integer,parameter    :: mxtablesize=500 
       real(kind=kind_phys) :: plmtable(mxtablesize,csize),colattable(mxtablesize)
       real(kind=kind_phys) :: nlms(csize)
-      
+
      contains
      
      subroutine read_potential(infile)
-!
 ! Read ascii data file W05scEpot.dat or W05scBpot.dat, written by 
 !   pro write_potential (write_data.pro)
-!
-      implicit none
-!
+            implicit none
 ! Args:
-      character(len=*),intent(in) :: infile
-!
+            character(len=*),intent(in) :: infile
 ! Local:
-!
-      character(len=16) :: fname
-      integer :: i
-      integer, parameter :: iulog = 6     
-      integer :: csize_rd,d1_rd,d2_rd
-!
-      open(lu,file=trim(infile),status='old', ACCESS ='SEQUENTIAL')
-      read(lu,"(a)") fname
-      read(lu,"(28i3)") ab
-      read(lu,"(3i3)") csize_rd,d1_rd,d2_rd
-      if (csize_rd /= csize) then
-        write(iulog,"('>>> read_potential: file ',a,': incompatable csize: ', &
-          'csize_rd=',i4,' csize=',i4)") fname,csize_rd,csize
-        stop 'csize'
-      endif
-      if (d1_rd /= d1_pot) then
-        write(iulog,"('>>> read_potential: file ',a,': incompatable d1: ', &
-          'd1_rd=',i4,' d1_pot=',i4)") fname,d1_rd,d1_pot
-        stop 'd1'
-      endif
-      if (d2_rd /= d2_pot) then
-        write(iulog,"('>>> read_potential: file ',a,': incompatable d2: ', &
-          'd2_rd=',i4,' d2_pot=',i4)") fname,d2_rd,d2_pot
-        stop 'd2'
-      endif
-      do i=1,csize
-        read(lu,"(6e20.9)") alschfits(:,i)
-      enddo
-      read(lu,"(2f10.3)") ex_pot
-      read(lu,"(28i3)") ls
-      read(lu,"(2i3)") maxl_pot,maxm_pot
-      read(lu,"(28i3)") ms
+            character(len=16) :: fname
+            integer :: i
+            integer, parameter :: iulog = 6     
+            integer :: csize_rd,d1_rd,d2_rd
+      !
+            open(lu,file=trim(infile),status='old', ACCESS ='SEQUENTIAL')
+            read(lu,"(a)") fname
+            read(lu,"(28i3)") ab
+            read(lu,"(3i3)") csize_rd,d1_rd,d2_rd
+            if (csize_rd /= csize) then
+                  write(iulog,"('>>> read_potential: file ',a,': incompatable csize: ', &
+                  'csize_rd=',i4,' csize=',i4)") fname,csize_rd,csize
+                  stop 'csize'
+            endif
+            if (d1_rd /= d1_pot) then
+                  write(iulog,"('>>> read_potential: file ',a,': incompatable d1: ', &
+                  'd1_rd=',i4,' d1_pot=',i4)") fname,d1_rd,d1_pot
+                  stop 'd1'
+            endif
+            if (d2_rd /= d2_pot) then
+                  write(iulog,"('>>> read_potential: file ',a,': incompatable d2: ', &
+                  'd2_rd=',i4,' d2_pot=',i4)") fname,d2_rd,d2_pot
+                  stop 'd2'
+            endif
+            do i=1,csize
+                  read(lu,"(6e20.9)") alschfits(:,i)
+            enddo
+            read(lu,"(2f10.3)") ex_pot
+            read(lu,"(28i3)") ls
+            read(lu,"(2i3)") maxl_pot,maxm_pot
+            read(lu,"(28i3)") ms
 
-      do i=1,csize
-        read(lu,"(6e20.9)") schfits(:,i)
-      enddo
-      close(lu)
+            do i=1,csize
+                  read(lu,"(6e20.9)") schfits(:,i)
+            enddo
+            close(lu)
       end subroutine read_potential
 !-----------------------------------------------------------------------
-      subroutine read_schatable(infile)
-!
 ! Read ascii data file SCHAtable.dat, 
-!
-      implicit none
-!
+      subroutine read_schatable(infile)
+ 
+            implicit none
 ! Args:
-      character(len=*),intent(in) :: infile
-!
+            character(len=*),intent(in) :: infile
 ! Local:
-!
-      character(len=16) :: fname
-      integer :: i,j
-!
-      open(lu,file=trim(infile),status='old', ACCESS = 'SEQUENTIAL')
-      read(lu,"(a)") fname
-      read(lu,"(2i3)") maxk_scha,maxm_scha
-      do i=1,d3_scha
-        do j=1,d2_scha
-          read(lu,"(6e20.9)") allnkm(:,j,i)
-        enddo
-      enddo
-      read(lu,"(8f10.4)") th0s
+            character(len=16) :: fname
+            integer :: i,j
+ 
+            open(lu,file=trim(infile),status='old', ACCESS = 'SEQUENTIAL')
+            read(lu,"(a)") fname
+            read(lu,"(2i3)") maxk_scha,maxm_scha
+            do i=1,d3_scha
+            do j=1,d2_scha
+                  read(lu,"(6e20.9)") allnkm(:,j,i)
+            enddo
+            enddo
+            read(lu,"(8f10.4)") th0s
 
-!      print *, 'read_schatable', th0s
+!           print *, 'read_schatable', th0s
 
-      close(lu)
+            close(lu)
       end subroutine read_schatable
 !-----------------------------------------------------------------------
-      subroutine read_bndy(infile)
-!
 ! Read ascii data file W05scBndy.dat, written by pro write_bndy
-!   (write_data.pro)
-!
-      implicit none
-!
-! Args:
-      character(len=*),intent(in) :: infile
-!
-! Local:
-!
-      character(len=16) :: fname
-      integer :: rd_na,rd_nb
-      integer, parameter :: iulog = 6 
-!
-      open(lu,file=trim(infile),status='old', ACCESS = 'SEQUENTIAL')
-      read(lu,"(a)") fname
-      read(lu,"(2i3)") rd_na,rd_nb
-      if (rd_na /= na) then
-        write(iulog,"('>>> read_potential: file ',a,': incompatable na: ', &
-          'rd_na=',i4,' na=',i4)") fname,rd_na,na
-        stop 'na'
-      endif
-      if (rd_nb /= nb) then
-        write(iulog,"('>>> read_potential: file ',a,': incompatable nb: ', &
-          'rd_nb=',i4,' nb=',i4)") fname,rd_nb,nb
-        stop 'nb'
-      endif
-      read(lu,"(8e20.9)") bndya
-      read(lu,"(8e20.9)") bndyb
-      read(lu,"(8e20.9)") ex_bndy
+!   (write_data.pro)     
+      subroutine read_bndy(infile)
 
-!     print *, 'read_bndy', ex_bndy
-      close(lu)
-      
+            implicit none
+! Args:
+            character(len=*),intent(in) :: infile
+! Local:
+            character(len=16) :: fname
+            integer :: rd_na,rd_nb
+            integer, parameter :: iulog = 6 
+
+            open(lu,file=trim(infile),status='old', ACCESS = 'SEQUENTIAL')
+            read(lu,"(a)") fname
+            read(lu,"(2i3)") rd_na,rd_nb
+            if (rd_na /= na) then
+                  write(iulog,"('>>> read_potential: file ',a,': incompatable na: ', &
+                  'rd_na=',i4,' na=',i4)") fname,rd_na,na
+                  stop 'na'
+            endif
+            if (rd_nb /= nb) then
+                  write(iulog,"('>>> read_potential: file ',a,': incompatable nb: ', &
+                  'rd_nb=',i4,' nb=',i4)") fname,rd_nb,nb
+                  stop 'nb'
+            endif
+            read(lu,"(8e20.9)") bndya
+            read(lu,"(8e20.9)") bndyb
+            read(lu,"(8e20.9)") ex_bndy
+
+!           print *, 'read_bndy', ex_bndy
+            close(lu)     
       end subroutine read_bndy
-!                 
+                  
  end module wam_efieldw05_read_data
 ! 
  module wam_efield_setdef_data
@@ -697,8 +675,6 @@ end module wamphys_set_data_vg150
       real(kind=kind_phys) :: rtd, dtr, sqr2, hr2rd, dy2rd,deg2mlt, mlt2deg         
 !---------------------------------------------------------------------
       contains
-!      
-!    
 !subroutine magnetic_grids        
 !subroutine set_readcoef
 !subroutine efread_acoef 
@@ -708,7 +684,6 @@ end module wamphys_set_data_vg150
 !subroutine index_quiet
 !subroutine ff
 !subroutine prep_pnm
-
 
  subroutine magnetic_grids
       implicit none
@@ -734,12 +709,12 @@ end module wamphys_set_data_vg150
 ! Set magnetic latitude array 
 !-------------------------------------------------------------------
       do j = 0,nmlat
-        ylatm(j) = j*dlatm
-        yy = (ylatm(j) - 90.)*dtr
-	fac = cos(yy)               ! sinIm = 2*sin(lam_m)/sqrt[4-3*cos^2(lam_m)]
-	fac = 4. - 3.*fac*fac
-	fac = 2./sqrt( fac )
-	sinIm_mag(j) = fac*sin( yy )
+            ylatm(j) = j*dlatm
+            yy = (ylatm(j) - 90.)*dtr
+            fac = cos(yy)               ! sinIm = 2*sin(lam_m)/sqrt[4-3*cos^2(lam_m)]
+            fac = 4. - 3.*fac*fac
+            fac = 2./sqrt( fac )
+            sinIm_mag(j) = fac*sin( yy )
       end do 
 
 !------------------------------------------------------------------
@@ -782,9 +757,7 @@ end module wamphys_set_data_vg150
 	  exit
        end if
       end do      
-  end subroutine magnetic_grids 
-
- 
+ end subroutine magnetic_grids 
  
  subroutine set_readcoef
       implicit none
@@ -800,12 +773,10 @@ end module wamphys_set_data_vg150
       ALAMX = 90. - STPD
       ALAMR = ALAMN / r2d
       
-    end subroutine set_readcoef
+ end subroutine set_readcoef
     
 ! prep_fk, prep_pnm,  index_quiet 
-
-      subroutine prep_pnm
-      
+ subroutine prep_pnm    
 ! define array  R    real(kind=kind_phys) :: r(0:19,0:18)                     ! R_n^m  
       implicit none                
 
@@ -825,9 +796,9 @@ end module wamphys_set_data_vg150
 	end do                 
       end do 
       
-      end subroutine prep_pnm
+ end subroutine prep_pnm
       
-      subroutine ff( ph, mt, f )                                                    
+ subroutine ff( ph, mt, f )                                                    
 !-----------------------------------------------------------------------
 !Purpose: calculate F for normalized associated Legendre polynomial P_n^m
 !          Ref.: Richmond J.Atm.Ter.Phys. 1974
@@ -866,9 +837,9 @@ end module wamphys_set_data_vg150
         f(-m) = f(-mmo)*cp - sp*f(mmo)
       end do      
 
-      end subroutine ff       
+ end subroutine ff       
       
-      subroutine index_quiet
+ subroutine index_quiet
 !-----------------------------------------------------------------
 !Arrays:  kf lf nf mf jf
 !
@@ -926,9 +897,9 @@ end module wamphys_set_data_vg150
       end if							
 !     if(debug) write(*,*) ' index_quiet, imax=',imax
 
-      end subroutine index_quiet 
+ end subroutine index_quiet 
       
-      subroutine prep_fk
+ subroutine prep_fk
       
 !-------------------------------------------------------------------
 ! Purpose: set up constants factors for f_-k(day) used for empirical model
@@ -945,9 +916,9 @@ end module wamphys_set_data_vg150
       ft(3,1) = 0.						      
       ft(3,2) = 1.e0							   
 
-      end subroutine prep_fk
+ end subroutine prep_fk
       
-      subroutine pnm( ct, p )
+ subroutine pnm( ct, p )
 !----------------------------------------------------------------      
 ! Purpose: normalized associated Legendre polynomial P_n^m
 !          Ref.: Richmond J.Atm.Ter.Phys. 1974
@@ -991,9 +962,9 @@ end module wamphys_set_data_vg150
         end do
       end do
 
-      end subroutine pnm
+ end subroutine pnm
       
-     subroutine read_acoef_efield(efield_lflux_file, efield_hflux_file)
+ subroutine read_acoef_efield(efield_lflux_file, efield_hflux_file)
 !----------------------------------------------------------------     
 ! Purpose:
 !-----------------------------------------------------------------------
@@ -1087,9 +1058,9 @@ end module wamphys_set_data_vg150
 
       close(unit)
 
-  end subroutine read_acoef_efield
+ end subroutine read_acoef_efield
   
-  subroutine efread_acoef (efield_lflux_file, efield_hflux_file)
+ subroutine efread_acoef (efield_lflux_file, efield_hflux_file)
       
       character(len=*), intent(in) :: efield_lflux_file
       character(len=*), intent(in) :: efield_hflux_file
@@ -1106,7 +1077,7 @@ end module wamphys_set_data_vg150
         open(unit=unit,file=trim(locfn), status = 'old',iostat = ios)
         read(unit,*,iostat = ios) a_hf
        close(unit)       
-   end subroutine efread_acoef     
+ end subroutine efread_acoef     
             
 	                		    
 end module wam_efield_setdef_data

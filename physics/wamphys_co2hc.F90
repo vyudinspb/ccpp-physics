@@ -48,7 +48,7 @@
 !     
 !***********************************************************************
 
-      module wam_co2pro_mod
+module wam_co2pro_mod
       use machine,                only: kind_phys
 
 ! Module to keep data and procedures for preparation of CO2 vertical
@@ -132,11 +132,11 @@
        5.000E-06 /)
 
 
-      end module wam_co2pro_mod
+end module wam_co2pro_mod
 
 !***********************************************************************
 
-      module wam_co2c_mod
+module wam_co2c_mod
 
 ! Module to keep data related to CO2 cooling calculations
 
@@ -173,13 +173,11 @@
 !
       real(kind=kind_phys)        alvic(itm50)
 
-
-
-      end module wam_co2c_mod
+end module wam_co2c_mod
 
 !***********************************************************************
 
-      module wam_qnir_mod
+module wam_qnir_mod
 
 ! Module to keep data and a procedure necessary for calculation of
 !       CO2 heating in NIR after Ogibalov and Fomichev (2003)
@@ -421,11 +419,11 @@
       3.539E-02, 2.052E-02, 7.584E-03,-4.132E-03,-1.079E-02/), &         
        (/10,imnir/))
 
-      end module wam_qnir_mod
+end module wam_qnir_mod
 
 !***********************************************************************
 
-      subroutine wam_co2pro_pre(xmodel,lmodel,mumod, co2my)
+subroutine wam_co2pro_pre(xmodel,lmodel,mumod, co2my)
 
 ! Routine to prepare CO2 global mean profile optionally based on 
 !     Fomichev et al. (1998) or CRISTA data.
@@ -522,11 +520,11 @@
 	 (1.- 23.*(1./mumod(l)+1./mumod(l-1))))
       enddo
 
-      end subroutine wam_co2pro_pre
+end subroutine wam_co2pro_pre
 
 !***********************************************************************
 
-      subroutine wam_crico2_pre(xmodel,lmodel,mumod, co2my)
+subroutine wam_crico2_pre(xmodel,lmodel,mumod, co2my)
 
 ! Routine to prepare CO2 global mean profile based on CRISTA data.
 
@@ -547,7 +545,6 @@
       integer,intent(in):: lmodel
       real(kind=kind_phys),intent(in):: xmodel(lmodel),mumod(lmodel)
       real(kind=kind_phys),intent(inout):: co2my(lmodel)     
-!
 !
 ! Output profiles (in co2pro_mod)
 ! co2vic(ivic0) - CO2 on Victor initial grid
@@ -667,11 +664,11 @@
              23.*(1./mumod(l-1)+1./mumod(l))))
       enddo
 
-      end subroutine wam_crico2_pre
+end subroutine wam_crico2_pre
 
 !***********************************************************************
 
-      subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &  
+subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &  
           ro2,rn2, co2my)
 
 ! Routine to calculate CO2 cooling in 3-d on model vertical grid using 
@@ -821,7 +818,7 @@
 !
 ! idea add: make sure O is non-negative
 !
-          vico1(:,:)=max(vico1(:,:),0.)
+      vico1(:,:)=max(vico1(:,:),0.)
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Calculate heating rate for LTR/recurrence part. Convert Tin to 
@@ -939,11 +936,11 @@
          enddo
       enddo
 
-      end subroutine wam_co2cc
+end subroutine wam_co2cc
 
 !***********************************************************************
 
-      subroutine wam_co2cin(xmod,pmod,mu,gr,co2my, lmod,me,master)
+subroutine wam_co2cin(xmod,pmod,mu,gr,co2my, lmod,me,master)
 
 ! Routine to prepare matrices and other parameters for implementation
 ! of full CO2 cooling scheme by Fomichev et al. (1998) modified later 
@@ -1219,7 +1216,6 @@
 !
   100 format((/))
   101 format((1x,5E15.6))
-!
 !
 
         open(30,file='global_idea_coeff_lte.150',status = 'OLD')
@@ -1500,5 +1496,5 @@
             endif
          enddo
       endif
-      end subroutine wam_lint1_x
+end subroutine wam_lint1_x
 

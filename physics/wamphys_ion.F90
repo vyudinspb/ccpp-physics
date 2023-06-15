@@ -225,7 +225,7 @@ module wamphys_ion
          ee2(im),cosdif,sindif,sdip,cdip,btheta,bphi,elecx,                      &
          elecy,dif,dlat,dlon
 	 
-!      real(kind=kind_phys) :: ut, bz, by, ed1, ed2, 
+!     real(kind=kind_phys) :: ut, bz, by, ed1, ed2, 
       integer              :: iday
       	 
       integer  ::  k,i,n,   tiros_activity_level 
@@ -288,20 +288,20 @@ module wamphys_ion
          tiros_activity_level = tiros_activity_fix
          gw = gw_fix
       endif	 
-! 
+ 
       eden(:, :)=0.      ! or min-value
       do i = 1,im 
-!
+
          ii = i
          do k=1,levs
            ht1(k)=ht(i,k)
          enddo
-!
+
          call wam_earth_chiu_model(sda,sza(i),maglat(i),   &              
               maglon(i),rlt(i), rlat(i), f107,             &              
               dipang(i)*deg_to_rad, dayno, ht1, eden_chiu, &            
               ii,lev1, levs,im)
-!
+
 ! tiros_ionize returns ionization rates for o, o2, and n2 for a given
 ! geomagnetic latitude gl and magnetic local time mlt based on
 ! tiros/noaa statistical maps of energy influx and characteristic energy
@@ -351,8 +351,7 @@ module wamphys_ion
                  gw, eden_aurora(i,:) )                                          !don't use, eflux, ch)
    	   
          endif
-   !
-   !
+
          eden(i,:)=sqrt(eden_chiu(i,:)**2   + eden_aurora(i,:)**2)
   
       enddo

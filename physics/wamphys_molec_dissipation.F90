@@ -1,4 +1,4 @@
-      subroutine wamphys_molec_dissipation(me, master, im, levs, grav, prsi, prsl, &       
+  subroutine wamphys_molec_dissipation(me, master, im, levs, grav, prsi, prsl, &       
                  adu,adv,adt, o_n, o2_n, n2_n, dtp, cp, rho,udt,vdt,tdt)
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -18,7 +18,7 @@
 
       integer, intent(in) :: levs                               ! number of pressure levels
       real(kind=kind_phys),    intent(in) :: dtp                ! time step in second
-!
+
       real(kind=kind_phys), intent(in)    :: prsi(im,levs+1)    ! pressure
       real(kind=kind_phys), intent(in)    :: prsl(im,levs)      ! pressure
       real(kind=kind_phys), intent(in)    :: grav(im,levs)      ! (m/s2)
@@ -72,22 +72,12 @@
           tdt(i,k) = dudt(i,k,3)+dudt3(i,k)
         enddo
       enddo
-      
+            
       return
-      
-!        if (me == master) then
-!	 do k=100,levs
-!               do i=1,1
-!	         print *, ' DTDt-MC',  k, adt(i,k), dudt(i,k,3)*dtp 
-!	       enddo
-!	 enddo      	
-!	endif
-      return
-      end subroutine wamphys_molec_dissipation
-!
+  end subroutine wamphys_molec_dissipation
     
 
-      subroutine wamphys_vis_cond(im,levs,grav,prsi,prsl,up,dudt,o_n,  & 
+  subroutine wamphys_vis_cond(im,levs,grav,prsi,prsl,up,dudt,o_n,  & 
                  o2_n,n2_n,dtp,cp, rho, ahs_i, ma_i)
 !-----------------------------------------------------------------------
 !
@@ -100,9 +90,7 @@
       use wamphys_init_module, only : muo, lao, muo2, lao2, mun2, lan2, cpo, cpo2, cpn2
       implicit none
 !
-! define some constants A*T^0.69 ~ 10-12% error see Banks & Kockarts, 1973
-!
-!      
+! define some constants A*T^0.69 ~ 10-12% error see Banks & Kockarts, 1973      
 ! Argument
       integer, intent(in) :: im    ! number of data points in up,dudt(first dim)
       integer, intent(in) :: levs  ! number of pressure levels
@@ -201,7 +189,7 @@
 ! non-Pa           parta(k,1)=dtp*grav(i,k)/(prsi(i,k)-prsi(i,k+1))
 !
 
-           cp1(k) = 1.e-3
+          cp1(k) = 1.e-3
           if (cp(i,k).ne.0) cp1(k)=1./cp(i,k)
 	  
           parta(k,1)=dtp*grav(i,k)/(prsi(i,k)-prsi(i,k+1))       !*.001 for Kpa and 1 for Pa
@@ -227,7 +215,7 @@
             dc_i(k)=(cc(k)*dc_i(k+1)+up(i,k,kk))*hold1 
           enddo
           dudt(i,1,kk)=(dc_i(1)-up(i,1,kk))*dtp1
-!vay	  dudt(i,1,kk)= 0.
+!vay	    dudt(i,1,kk)= 0.
 ! recompute dc_i
           do k=2,levs
             dc_i(k)=dc_i(k)+ec_i(k)*dc_i(k-1)
@@ -242,9 +230,9 @@
        enddo
       enddo !i
       return
-      end subroutine wamphys_vis_cond
+  end subroutine wamphys_vis_cond
 
-      subroutine wamphys_eddy_heat_cond(im, levs,grav,prsi,prsl, &
+  subroutine wamphys_eddy_heat_cond(im, levs,grav,prsi,prsl, &
                 dtp, cp, rho, ahs_i, ma_i, up, dudt3)
 !-----------------------------------------------------------------------
 !
@@ -253,11 +241,9 @@
 !  Needs major revision bases on GW-physics   
 ! 
 !-----------------------------------------------------------------------
-
       use machine, only : kind_phys
       use physcons,  rgas=>con_rgas    ! amo2=>con_amo2   con_rgas   =8.314472  J/mol/K
       use wamphys_init_module, only : tkeddy0, tkeddy_semiann,tkeddy_ann
-
 
       implicit none  
 !
@@ -283,9 +269,6 @@
 !   following parameters are based on Shimazaki's paper and Rashid's code in idea_tracer.f
 !   Calculate Keddy (m**2/s) to get ktemp coefficient
 !   Keddy parameters: idea_dissipation.f, xmax in scale heights
-
-
-
 
       real (kind=kind_phys), parameter:: k0   = 28.      !   200, k0 = kmax*0.2
       real (kind=kind_phys), parameter:: dkeddy = 2.     !  (100)**(0.5)= 10, 10/8=1.25, 10/6= 1.6  about 2??
@@ -336,12 +319,11 @@
       do i=1,im
 ! prepare coeffs of the tridiagonal problem
          do k=1,levs
-
           sc_grav = grav(i,k)               !*.001
           cp1(k)  = 1.e-3
           if (cp(i,k).ne.0) cp1(k)=1./cp(i,k)
-	  mucp = cp1(k)/29.
-	  if (ma_i(i,k).ne.0) mucp = cp1(k)/ma_i(i,k)
+          mucp = cp1(k)/29.
+          if (ma_i(i,k).ne.0) mucp = cp1(k)/ma_i(i,k)
           kappa = rd1000 * mucp
 	  
           parta(k)=dtp*sc_grav/(prsi(i,k)-prsi(i,k+1))   ! delp - peredat' agam 1.e-3/factor
@@ -354,16 +336,15 @@
           prslk(k) = 1./exner(k)
 
           adtpt(k) = up(i,k,3)*exner(k)
-!
         enddo
 
 !  compute ktemp 
 
-          do k=1,levs
-
-! height in scale heights
-            x = alog(1.e5/prsi(1,k))
-
+        do k=1,levs
+  
+  ! height in scale heights
+          x = alog(1.e5/prsi(1,k))
+    
 !    based on Shimazaki's paper
 !            if(x.lt.xmax) then
 !              keddy(k)= (tkeddy0-k0)*exp(-((x-xmax)/dkeddy)**2) + 
@@ -371,50 +352,49 @@
 !            else
 !              keddy(k)= tkeddy0*exp(-((x-xmax)/dkeddy)**2)
 !            endif
-           
+          
            keddy(k)= tkeddy0*exp(-((x-xmax)/dkeddy)**2) +.5     ! Rashid's simplified symmetric fomular
            ktemp(k) = rho(i,k)*cp(i,k)*keddy(k)                 ! Tim's Thesis, P54  
-
-         enddo
+  
+        enddo
 
 ! compute ac and cc for PT 
 
-            do k=2,levs
+        do k=2,levs
 
-            ratpdt = prsi(i,k)/(prsl(i,k-1)-prsl(i,k))*hs_i(k)                     
-!
-            partbt(k)=ktemp(k)*ratpdt
-!
-            act(k)=partaT(k)*partbT(k)
-          enddo
+           ratpdt = prsi(i,k)/(prsl(i,k-1)-prsl(i,k))*hs_i(k)                     
+
+           partbt(k)=ktemp(k)*ratpdt
+
+           act(k)=partaT(k)*partbT(k)
+        enddo
      
-           do k=1,levs-1
-            ccT(k)=partaT(k)*partbT(k+1)
-          enddo
+        do k=1,levs-1
+           ccT(k)=partaT(k)*partbT(k+1)
+        enddo
 !
 !  put eddy-conduction on PT .....Temperature > 90K
 !
-          do k=levs,1,-1
-            thold1=1./(1.+act(k)+ccT(k)-ccT(k)*ecT_i(k+1))
-            ecT_i(k)=acT(k)*thold1
-!
-            dcT_i(k)=(ccT(k)*dcT_i(k+1)+adtPT(k))*thold1
-          enddo
+        do k=levs,1,-1
+          thold1=1./(1.+act(k)+ccT(k)-ccT(k)*ecT_i(k+1))
+          ecT_i(k)=acT(k)*thold1
+
+          dcT_i(k)=(ccT(k)*dcT_i(k+1)+adtPT(k))*thold1
+        enddo
 !
 ! Temp-re > 90K ??, boundary conditions
 !
-           adtPT(1)=dcT_i(1)      !    no changes at the surface due GW-eddies 
+        adtPT(1)=dcT_i(1)      !    no changes at the surface due GW-eddies 
 !     
 !  backward steps
 !
-           do k=2,levs 
+        do k=2,levs 
             dcT_i(k)=dcT_i(k)+ecT_i(k)*dcT_i(k-1)
-          enddo
+        enddo
 !  back to kinetic temp-re
-         do k=1,levs
+        do k=1,levs
            adt(k)=dcT_i(k)*prslk(k)
            dudt3(i,k) = (adt(k)-up(i,k,3))*dtp1
-
         enddo           
 
       enddo         !  i

@@ -9,9 +9,8 @@ module wamphys_math_interp
       contains
 !============================== ALL-diverse WAM-interpolation subroutines are below
 ! linear, quad, spline and special with data-grids and values
-!
 !=======================================================      
-      SUBROUTINE WAM_POLINT(XA,YA,N,X,Y,DY)
+  SUBROUTINE WAM_POLINT(XA,YA,N,X,Y,DY)
 !  Polynomial interpolation from "Numerical Recipes" in wamphys_h2oc.F90
       use machine,                only: kind_phys
       implicit none
@@ -57,8 +56,7 @@ module wamphys_math_interp
       END subroutine wam_polint
 
 !***********************************************************************
-
-      subroutine wam_lint1(x1,y1,n1,yleft,yright,x,y)
+  subroutine wam_lint1(x1,y1,n1,yleft,yright,x,y)
 ! wam_co2hc.F90
 ! A very simple linear interpolation of y1(x1) into y(x)
 ! ***x1 is assumed in ascending order***
@@ -86,12 +84,11 @@ module wamphys_math_interp
             endif
          enddo
       endif
-      end subroutine wam_lint1    
-!
+  end subroutine wam_lint1    
+
 !***********************************************************************
 
-      subroutine wam_splin1(x1,y1,x2,y2,n1,n2)
-
+  subroutine wam_splin1(x1,y1,x2,y2,n1,n2)
 ! A simple routine to interpolate y1[x1(n1)] to y2[x2(n2)] using cubic
 ! spline.
 ! Both x1 and x2 are assumed to be ordered in THE SAME, ascending or
@@ -175,11 +172,11 @@ module wamphys_math_interp
              a(l+1)*(1.+g)))
       enddo
 
-      end subroutine wam_splin1
+  end subroutine wam_splin1
 
 !***********************************************************************
 
-      subroutine wam_splin2(x1,y1,x2,y2,n1,n2,jm,km)
+  subroutine wam_splin2(x1,y1,x2,y2,n1,n2,jm,km)
 
 ! A simple routine to interpolate km arrays y1[x1(n1)], specified on
 ! the same grid x1(n1), to km arrays y2[x2(n2)] on the same grid x2(n2)
@@ -191,8 +188,6 @@ module wamphys_math_interp
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Dec 2006: Rashid Akmaev
 ! Made from splin1
-
-
 
       use machine,                only: kind_phys
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -284,23 +279,21 @@ module wamphys_math_interp
          enddo
       enddo
 
-      end subroutine wam_splin2      
+  end subroutine wam_splin2      
 !===============================================================         
-      subroutine interpol_quad(v,x,u,p)
+  subroutine interpol_quad(v,x,u,p)
 !  WEMER-2005
 ! f90 translation of IDL function interpol(v,x,u,/quadratic)
 !
         use machine , only : kind_phys
         implicit none
-!
 ! Args:
         real(kind=kind_phys),intent(in) :: v(:),x(:),u(:)
         real(kind=kind_phys),intent(out) :: p(:)
-!
 ! Local:
         integer :: nv,nx,nu,i,ix
         real(kind=kind_phys) :: x0,x1,x2
-!
+
         nv = size(v)
         nx = size(x)
         nu = size(u)
@@ -312,7 +305,7 @@ module wamphys_math_interp
         do i=1,nu
           ix = value_locate(x,u(i))
           if (ix <= 1.or.ix >= nx) then
-!       write(iulog,"('>>> interpol_quad: ix out of range: nu=',i4,' ix=',i4)") nu,ix
+!           write(iulog,"('>>> interpol_quad: ix out of range: nu=',i4,' ix=',i4)") nu,ix
             p(i) = 0.
             cycle
           endif
@@ -327,12 +320,11 @@ module wamphys_math_interp
                   v(ix+1) * (u(i)-x0) * (u(i)-x1) / ((x2-x0) * (x2-x1))
           endif 
         enddo
-!   write(iulog,"('interpol_quad: nu=',i4,' p=',/,(1pe12.4)") nu,p
+!       write(iulog,"('interpol_quad: nu=',i4,' p=',/,(1pe12.4)") nu,p
 
-      end subroutine interpol_quad
-!
-!      
-      subroutine idea_comp150_interp(ain,zin, np, zout, aout, mp)
+  end subroutine interpol_quad
+       
+  subroutine idea_comp150_interp(ain,zin, np, zout, aout, mp)
 !      
 ! call idea_comp150_interp(h2ora150,prlog150(71:npn), np, prlog(k71:levs), h2ora(k71:levs), mp)
 ! old idea_composition  
@@ -351,21 +343,21 @@ module wamphys_math_interp
       
       do k=1,mp
          kref=0
-	 zk = zout(k)
-      do i=1,np-1
-        if(zk.ge.zin(i).and.zk.le.zin(i+1)) then
-          kref=i
-          dz=(zk-zin(i))/(zin(i+1)-zin(i))
-         endif
-      enddo
+	   zk = zout(k)
+         do i=1,np-1
+           if(zk.ge.zin(i).and.zk.le.zin(i+1)) then
+             kref=i
+             dz=(zk-zin(i))/(zin(i+1)-zin(i))
+            endif
+         enddo
          if(kref.ne.0) aout(k)=dz*ain(kref+1)+(1.-dz)*ain(kref)
-	 if(zk > zin(np)) aout(k) = ain(np)
-	 if(zk < zin(1))  aout(k) = ain(1)	 
+         if(zk > zin(np)) aout(k) = ain(np)
+         if(zk < zin(1))  aout(k) = ain(1)	 
       enddo
       return
-      end subroutine idea_comp150_interp
-!       
-      subroutine z15toz(ain,levs, Z, aout,down)
+  end subroutine idea_comp150_interp
+       
+  subroutine z15toz(ain,levs, Z, aout,down)
       
       use machine , only : kind_phys      
 ! interpolate 15 pressure levels (from Tim's grid) to
@@ -380,7 +372,7 @@ module wamphys_math_interp
 !local variable
       real(kind=kind_phys) :: p15(np),z15(np),dz
       integer kref,k,i
-!
+
       do k=1,np
         p15(k)=1.0376*exp(1.-k)
         z15(k)=-log(p15(k))
@@ -392,18 +384,17 @@ module wamphys_math_interp
       do k=1,levs
         do i=1,np-1
           if(z(k).ge.z15(i).and.z(k).le.z15(i+1)) then
-          dz=(z(k)-z15(i))/(z15(i+1)-z15(i))*(ain(i+1)-ain(i))
-          aout(k)=ain(i) +dz
+             dz=(z(k)-z15(i))/(z15(i+1)-z15(i))*(ain(i+1)-ain(i))
+             aout(k)=ain(i) +dz
           endif
         enddo   
         if(z(k).lt.z15(1))  aout(k)=down           ! zero
-        if(z(k).gt.z15(15)) aout(k)=ain(15)        ! constant-value
-    
+        if(z(k).gt.z15(15)) aout(k)=ain(15)        ! constant-value    
       enddo
       return
-      end
+  end subroutine z15toz
       
-      subroutine z63toz(ain, levs, Z, aout,down)
+  subroutine z63toz(ain, levs, Z, aout,down)
 ! interpolate 63 pressure levels (from Tim's grid) to
 ! idea pressure grid Z(levs)
       use machine , only : kind_phys
@@ -419,14 +410,14 @@ module wamphys_math_interp
       real(kind=kind_phys) p63(np),z63(np),dz
       integer kref,k,i
 !
-      DATA p63/6.90775528,  6.57442194,        &
-        6.24108859,  5.90775525,  5.57442191,    &
-        5.24108856,  4.90775522,  4.57442188,    &
-        4.24108853,  3.90775519,  3.57442185,    &
-        3.2410885,   2.90775516,  2.57442182,    &
-        2.24108847,  1.90775513,  1.57442179,      &
-        1.24108844,  0.9077551,   0.574421757,     &
-        0.241088414, -0.0922449296,-0.425578273,   &
+      DATA p63/6.90775528,  6.57442194,            &
+          6.24108859,  5.90775525,  5.57442191,    &
+          5.24108856,  4.90775522,  4.57442188,    &
+          4.24108853,  3.90775519,  3.57442185,    &
+          3.2410885,   2.90775516,  2.57442182,    &
+          2.24108847,  1.90775513,  1.57442179,    &
+          1.24108844,  0.9077551,   0.574421757,   &
+          0.241088414, -0.0922449296,-0.425578273, &
         -0.758911616,-1.09224496,  -1.4255783,     &
         -1.75891165, -2.09224499,  -2.42557833,    &
         -2.75891168, -3.09224502,  -3.42557836,    &
@@ -447,18 +438,17 @@ module wamphys_math_interp
       do k=1,levs
         do i=1,np-1
           if(z(k).ge.z63(i).and.z(k).le.z63(i+1)) then
-          dz=(z(k)-z63(i))/(z63(i+1)-z63(i))*(ain(i+1)-ain(i))
-           aout(k)=dz+ain(i)
+              dz=(z(k)-z63(i))/(z63(i+1)-z63(i))*(ain(i+1)-ain(i))
+              aout(k)=dz+ain(i)
           endif
         enddo
         if(z(k).lt.z63(1))  aout(k)=down
-        if(z(k).gt.z63(63)) aout(k)=ain(63)
-      
+        if(z(k).gt.z63(63)) aout(k)=ain(63)     
       enddo
       return
-      end
+  end subroutine z63toz
       
-      subroutine interpol_wamz( nin, xin, yin, nout, xout, yout, kup, kdw )
+  subroutine interpol_wamz( nin, xin, yin, nout, xout, yout, kup, kdw )
       use machine , only : kind_phys
       implicit none
 !-----------------------------------------------------------------------
@@ -481,44 +471,42 @@ module wamphys_math_interp
       kdw = 1
       dxin  = xin(2)-xin(1)
       IF (dxin < 0) THEN               ! snoe-no
-      do j = 1,nout
-       if( xout(j) .ge. xin(1) ) then
-          yout(j) = yin(1)
-          kup = min(j, kup)
-       else   if( xout(j) .le. xin(nin) ) then 
-               yout(j) = yin(nin)
-	       kdw = max(j, kdw)
-       else
-         do i = 1, nin-1
-         if ((xout(j) >= xin(i+1)) .and. (xout(j) < xin(i)) ) &
-         yout(j) =  yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
-         end do
-       end if
-      end do
+       do j = 1,nout
+        if( xout(j) .ge. xin(1) ) then
+           yout(j) = yin(1)
+           kup = min(j, kup)
+        else if( xout(j) .le. xin(nin) ) then 
+           yout(j) = yin(nin)
+ 	    kdw = max(j, kdw)
+        else
+          do i = 1, nin-1
+             if ((xout(j) >= xin(i+1)) .and. (xout(j) < xin(i)) ) &
+             yout(j) =  yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
+          end do
+        end if
+       end do
 ! dxin < 0
       ELSE
-! dxin > 0
-     
+! dxin > 0     
        do j = 1,nout
         if( xout(j) .le. xin(1) )   then
            yout(j) = yin(1)
-	   kdw = max(j, kdw)
-        else  if( xout(j) .ge. xin(nin) ) then
+	     kdw = max(j, kdw)
+        else if( xout(j) .ge. xin(nin) ) then
             yout(j) = yin(nin)
             kup = min(j, kup)
         else
          do i = 1, nin-1
-         if ((xout(j) .gt. xin(i)) .and. (xout(j) .lt. xin(i+1) )) &
-          yout(j) = yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
-       
+            if ((xout(j) .gt. xin(i)) .and. (xout(j) .lt. xin(i+1) )) &
+             yout(j) = yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))       
          end do
         end if
-      end do
-!
+       end do
       ENDIF
-      end subroutine interpol_wamz
-!                 interpol_wamz_down(nz_63, z63, SRBEFF63, levs, zlog, SRBEFF, 1.0)      
-      subroutine interpol_wamz_down( nin,  xin, yin,      nout, xout, yout,  down )
+  end subroutine interpol_wamz
+
+!            interpol_wamz_down(nz_63, z63, SRBEFF63, levs, zlog, SRBEFF, 1.0)      
+  subroutine interpol_wamz_down( nin,  xin, yin,      nout, xout, yout,  down )
 !-----------------------------------------------------------------------
 !       ... linear interpolation in vertical
 !           does not extrapolate, but repeats edge values
@@ -547,11 +535,11 @@ module wamphys_math_interp
           yout(j) = yin(1)
           kup = min(j, kup)
        else   if( xout(j) .lt. xin(nin) ) then 
-               yout(j) = down
+          yout(j) = down
        else
          do i = 1, nin-1
-         if ((xout(j) >= xin(i+1)) .and. (xout(j) <= xin(i)) ) &
-        yout(j) =  yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
+           if ((xout(j) >= xin(i+1)) .and. (xout(j) <= xin(i)) ) &
+           yout(j) =  yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
          end do
        end if
       end do
@@ -566,21 +554,19 @@ module wamphys_math_interp
             kup = min(j, kup)
         else
          do i = 1, nin-1
-         if ((xout(j) .ge. xin(i)) .and. (xout(j) .le. xin(i+1) )) &
-         yout(j) = yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))
-       
+           if ((xout(j) .ge. xin(i)) .and. (xout(j) .le. xin(i+1) )) &
+           yout(j) = yin(i) + (yin(i+1) - yin(i)) * (xout(j) - xin(i)) / (xin(i+1) - xin(i))        
          end do
         end if
-      end do
-!
+       end do
       ENDIF
-      end subroutine interpol_wamz_down
+  end subroutine interpol_wamz_down
 
-      subroutine z65toz(np, levs, ain, prin, aout, down)
+  subroutine z65toz(np, levs, ain, prin, aout, down)
       
 ! interpolate 65 pressure levels (from Tim's grid) to
 ! idea pressure grid pr(levs)
-!
+
       use machine , only : kind_phys
       implicit none
       
@@ -595,15 +581,16 @@ module wamphys_math_interp
 
       real p65(np),z65(np),z(levs),dz
       integer kref,k,i
-!
+
       do k=1,np
         p65(k)=5.2285*exp((1.-k)*.25)
         z65(k)=-log(p65(k))
       enddo
+
       do k=1,levs
         z(k)= prin(k)  !-log(pr(k)*100.)  ! mb or Prlog in Pa
       enddo
-!
+
       do k=1,levs
         kref=0
         do i=1,np-1
@@ -621,8 +608,7 @@ module wamphys_math_interp
         endif
       enddo
       return
-      end subroutine z65toz
-
+  end subroutine z65toz
 
 !---------------------------------------------------------------------
 !***********************************************************************
@@ -642,7 +628,7 @@ module wamphys_math_interp
 
 !***********************************************************************
 
-      subroutine splin1(x1,y1,x2,y2,n1,n2)
+  subroutine splin1(x1,y1,x2,y2,n1,n2)
       use machine , only : kind_phys
 ! A simple routine to interpolate y1[x1(n1)] to y2[x2(n2)] using cubic
 ! spline.
@@ -722,10 +708,9 @@ module wamphys_math_interp
          y2(i)=y1(l)+dx*(dy(l)+one_third*dxmh*(a(l)*(2.-g)+a(l+1)*(1.+g)))     
       enddo
 
-      end subroutine splin1
+  end subroutine splin1
 !***********************************************************************
-
-      subroutine splin2(x1,y1,x2,y2,n1,n2,jm,km)
+  subroutine splin2(x1,y1,x2,y2,n1,n2,jm,km)
         use machine , only : kind_phys
 ! A simple routine to interpolate km arrays y1[x1(n1)], specified on
 ! the same grid x1(n1), to km arrays y2[x2(n2)] on the same grid x2(n2)
@@ -824,12 +809,10 @@ module wamphys_math_interp
       enddo
 
       end subroutine splin2
-!
-! special interpolation for pre-specified [20,91] data:cormag, btot, dipang, glat, glon, nxmag,nymag
-!      
-      subroutine interp2_ionfield(im, rlat,rlon,cormago,btoto,dipango,cormag, btot, dipang, glon, glat)
-!
-!  VAY DANGER !!!!!!special interpolation 
+
+! special interpolation for pre-specified [20,91] data:cormag, btot, dipang, glat, glon, nxmag,nymag     
+  subroutine interp2_ionfield(im, rlat,rlon,cormago,btoto,dipango,cormag, btot, dipang, glon, glat)
+! VAY DANGER !!!!!!special interpolation 
 ! interp works only for given [20,91]  with 
 !         j=46 center + fixed ddlat=180/90? and ddlon=360/20?
 !
@@ -847,7 +830,7 @@ module wamphys_math_interp
       real(kind=kind_phys),   intent(in)  :: cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
       
       real(kind=kind_phys),   intent(out) :: cormago(im),btoto(im),dipango(im) ! field value 
-!
+
       real(kind=kind_phys) :: dll,dl,ddlat,ddlon,a1,a2,b1,b2,aa,bb
       integer i,iref, iref1, jref,jref1
       integer ::  jcen, ixdim, jydim 
@@ -865,18 +848,14 @@ module wamphys_math_interp
 ! get latitude index
         iref=int(rlat(i)/ddlat)+  jcen
         dl=(rlat(i)-glat(iref))/ddlat
-	iref1 = iref+1
-	if(iref1.gt.jydim) iref1=iref
-! print*,iref,dl
+	  iref1 = iref+1
+	  if(iref1.gt.jydim) iref1=iref
 ! get longitude index
         jref=int(rlon(i)/ddlon)+1
         jref1=jref+1
         if(jref1.gt.ixdim) jref1=jref1 - ixdim
         dll=(rlon(i)-glon(jref))/ddlon
 !	
-!        print*,i,jref,jref1,dll, ' first ', glon(jref)*180./3.14, rlon(i)*180./3.14
-!	print*,i,iref,iref+1,dl, ' 2nd ',   glat(iref)*180./3.14, rlat(i)*180./3.14
-!
         a1=cormag(jref,iref)
         a2=cormag(jref1,iref)
         b1=cormag(jref,iref1)
@@ -904,15 +883,14 @@ module wamphys_math_interp
         bb=(1.-dll)*b1+dll*b2
 	
         dipango(i)=(1.-dl)*aa+dl*bb
-!
       enddo
       
       btoto =btoto*1.e-9
       
       return
-    end subroutine interp2_ionfield
+  end subroutine interp2_ionfield
      
-    subroutine spole_ion(im, rlat, phir,utsec, sda, phimr, essa, cmorg)
+  subroutine spole_ion(im, rlat, phir,utsec, sda, phimr, essa, cmorg)
       use machine     , only : kind_phys
       implicit none
       real(kind=kind_phys), parameter    :: pi=3.141592653,dtr=pi/180., pid2 = .5*pi
@@ -929,7 +907,7 @@ module wamphys_math_interp
       real(kind=kind_phys) :: th,th1,phi1,sinth,sinth1,costh1,sinph1,cosph1,ac1,bc1,cc1   
       real(kind=kind_phys) :: ac2,bc2,cc2,phim,ssp,sspr,csda,as1,bs1,cs1,as2,bs2,cs2,gml, cmag
       integer i
-!
+
       do i=1,im
       th=pid2-rlat(i)
 !
@@ -948,7 +926,7 @@ module wamphys_math_interp
       costh1=cos(th1)
       sinph1=sin(phi1)
       cosph1=cos(phi1)
-!
+
 !     do i=1,im
       ac1=sinth*cos(phir(i))
       bc1=sinth*sin(phir(i))
@@ -976,13 +954,13 @@ module wamphys_math_interp
       enddo
       
       return
-      end subroutine spole_ion
+  end subroutine spole_ion
            
      
 !=====================================================================      
 !      efield.f: JULDAY_WAM,  SVD + Spherical harmonics + Adjust
 !=====================================================================
-	SUBROUTINE ADJUST(ANGLE)
+  SUBROUTINE ADJUST(ANGLE)
         use machine , only : kind_phys
 !-----------------------------------------------------------------------
 !	ADJUST AN ANGLE IN DEGREES TO BE IN RANGE OF 0 TO 360.
@@ -993,13 +971,13 @@ module wamphys_math_interp
 !
         real(kind=kind_phys) ::  angle
 
-	IF(ANGLE.LT.0.)  ANGLE=ANGLE+360.
- 	IF(ANGLE.GE.360.)ANGLE=ANGLE-360.
-
+        IF(ANGLE.LT.0.)  ANGLE=ANGLE+360.
+        IF(ANGLE.GE.360.)ANGLE=ANGLE-360.
+        
 	RETURN
-	END SUBROUTINE ADJUST
+  END SUBROUTINE ADJUST
 
-      INTEGER FUNCTION JULDAY_WAM(MM,ID,IYYY)
+  INTEGER FUNCTION JULDAY_WAM(MM,ID,IYYY)
 !
 !-----------------------------------------------------------------------
 !
@@ -1037,9 +1015,9 @@ module wamphys_math_interp
         JULDAY_WAM=JULDAY_WAM+2-JA+INT(0.25*JA)
       ENDIF
       RETURN
-      END FUNCTION JULDAY_WAM
+  END FUNCTION JULDAY_WAM
       
-      subroutine svdcmp( a, m, n, mp, np, w, v )
+  subroutine svdcmp( a, m, n, mp, np, w, v )
 !------------------------------------------------------------------------- 
 ! purpose: singular value decomposition
 !
@@ -1330,7 +1308,7 @@ module wamphys_math_interp
    20 continue
       end do
       
-      end subroutine svdcmp
+  end subroutine svdcmp
 
 !-------------------------------------------------------------------------      
 ! purpose: solves a*x = b
@@ -1348,7 +1326,7 @@ module wamphys_math_interp
 ! from numerical recipes 1986 pp. 57 or can be find on web-sites
 !-------------------------------------------------------------------------      
 
-      subroutine svbksb( u, w, v, m, n, mp, np, b, x )
+  subroutine svbksb( u, w, v, m, n, mp, np, b, x )
 !------------------------------------------------------------------------- 
 !	... dummy arguments
 !------------------------------------------------------------------------- 
@@ -1390,18 +1368,17 @@ module wamphys_math_interp
         x(j) = s
       end do
 
-      end subroutine svbksb
+  end subroutine svbksb
 !
 ! Efield/Weimer Functions
 !      
-       integer function value_locate(vec,val)
+  integer function value_locate(vec,val)
 !
 ! f90 translation of IDL function value_locate
 ! Return index i into vec for which vec(i) <= val >= vec(i+1)
 ! Input vec must be monotonically increasing
 !
         implicit none
-!
 ! Args:
         real,intent(in) :: vec(:),val
 !
@@ -1422,9 +1399,9 @@ module wamphys_math_interp
           endif
         enddo
 
-      end function value_locate
+  end function value_locate
 !-----------------------------------------------------------------------
-      real function lngamma(xx)
+  real function lngamma(xx)
 !
 ! This is an f90 translation from C code copied from 
 ! www.fizyka.umk.pl/nrbook/c6-1.pdf (numerical recipes gammln)
@@ -1435,7 +1412,7 @@ module wamphys_math_interp
       real :: cof(6) = (/76.18009172947146, -86.50532032941677, 24.01409824083091, &
                         -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5/)
       integer :: j
-!
+
       y = xx
       x = xx
       tmp = x+5.5
@@ -1446,9 +1423,9 @@ module wamphys_math_interp
         ser = ser+cof(j)/y
       enddo
       lngamma = -tmp+log(2.5066282746310005*ser/x)
-      end function lngamma
+  end function lngamma
 !-----------------------------------------------------------------------
-      real function factorial(n)
+  real function factorial(n)
       implicit none
       integer,intent(in) :: n
       integer :: m
@@ -1465,6 +1442,6 @@ module wamphys_math_interp
       do m = n-1,1,-1
         factorial = factorial * float(m)
       enddo
-      end function factorial
+  end function factorial
 !-----------------------------------------------------------------------     
 end module wamphys_math_interp

@@ -8,8 +8,6 @@
 
 module wamphys_multigases
 
-! 
-
       use machine, only: kind_phys
 !      
 ! below => nonsense of CCPP * not-TODO: MAKE THIS INPUT ARGUMENTS con_rd, con_cp
@@ -47,68 +45,58 @@ module wamphys_multigases
 
       CONTAINS
       
-    subroutine wamphys_set_major_tracers (me, master, nlunit, fn_nml2, ntrac, nto1, nto2, nto3, ntqv) 
-      implicit none 
-      integer, intent(in) ::    master,  me, nlunit
-      character(len=64), intent (inout) :: fn_nml2
-      integer, intent(in) ::   ntrac, nto1, nto2, nto3, ntqv     
-      integer             ::    ntrac_nml, ntrac_wat      
-      integer             ::    i
-      integer :: ios
-      logical :: exists
-!ncnst =ntrac nwat-last-water-based  
+      subroutine wamphys_set_major_tracers (me, master, nlunit, fn_nml2, ntrac, nto1, nto2, nto3, ntqv) 
+        implicit none 
+        integer, intent(in) ::    master,  me, nlunit
+        character(len=64), intent (inout) :: fn_nml2
+        integer, intent(in) ::   ntrac, nto1, nto2, nto3, ntqv     
+        integer             ::    ntrac_nml, ntrac_wat      
+        integer             ::    i
+        integer :: ios
+        logical :: exists
+        !ncnst =ntrac nwat-last-water-based  
     
-      namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml  
-!      write(6,*) 'inmultigases  0000'
+        namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml  
 	 
-!         write(6,*)   'fn_nml2 in multigases 00000', trim(fn_nml2)      
-    inquire (file =trim (fn_nml2) , exist = exists)
-    if (.not. exists) then
-        write(6,'(3a)') 'wamphys_init: namelist file: ', trim (fn_nml2), ' does not exist'
+        inquire (file =trim (fn_nml2) , exist = exists)
+        if (.not. exists) then
+          write(6,'(3a)') 'wamphys_init: namelist file: ', trim (fn_nml2), ' does not exist'            
+    	    if (me  ==  master) print *, ' wamphys_set_major_tracers wamphys_nml error=', trim (fn_nml2)
+        endif 
         
-	if (me  ==  master) print *, ' wamphys_set_major_tracers wamphys_nml error=', trim (fn_nml2)
-!        return      
-    endif 
-    
-      if (.not. allocated(ri)) then
-        allocate( ri(0:ntrac))
-        allocate(cpi(0:ntrac))  
-        allocate(ind_wamtr(0:ntrac))   
-      endif
-      
- 
-		     
+        if (.not. allocated(ri)) then
+          allocate( ri(0:ntrac))
+          allocate(cpi(0:ntrac))  
+          allocate(ind_wamtr(0:ntrac))   
+        endif	     
 !=========================================
 ! default cpi/ri for: N2, H2O, O3, O, O2
 ! open(nlun_ion, file=trim(nml_ion), status='old' )
 !=========================================      
 ! 
-       if (me  ==  master)   write(6,*) 'inmultigases'
-	 
-!         write(6,*)   'fn_nml2 in multigases 1111', trim(fn_nml2) 
-	open (unit = nlunit, file = 'input.nml', action = 'read', status = 'old', iostat = ios)
-!        write(6,*)   'fn_nml2 in multigases', trim(fn_nml2) 
-	rewind (nlunit)
+        if (me  ==  master)   write(6,*) 'inmultigases'	 
+      	open (unit = nlunit, file = 'input.nml', action = 'read', status = 'old', iostat = ios)
+      	rewind (nlunit)
         read(nlunit, wamphys_tracer_cpi)   
         close  (nlunit)
 	
       	if ( ntrac_nml .ne. ntrac ) then
-	  write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac =/=  ntrac_nml '
-	  write(6,*)  '	ntrac_nml = ', ntrac_nml
-	  write(6,*)  '	ntrac_wam = ', ntrac  
-	  if ( me == master ) then 
-	    do i=0,ntrac_nml 
-	       if (ri(i) > 0) write(6,*)  i, ' ri =', ri(i), ' cpi= ', cpi(i)  
-	    enddo
-	  endif
-	endif
+          write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac =/=  ntrac_nml '
+          write(6,*)  '	ntrac_nml = ', ntrac_nml
+          write(6,*)  '	ntrac_wam = ', ntrac  
+          if ( me == master ) then 
+            do i=0,ntrac_nml 
+              if (ri(i) > 0) write(6,*)  i, ' ri =', ri(i), ' cpi= ', cpi(i)  
+            enddo
+          endif
+	      endif
 	
-	  if ( me == master ) then 
-	  write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac_nml/nwat ', ntrac_nml, ntrac_wat 	  
-	    do i=0,ntrac_nml 
-	       write(6,*)  i, ' ri =', ri(i), ' cpi= ', cpi(i)  
-	    enddo
-	  endif	
+        if ( me == master ) then 
+          write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac_nml/nwat ', ntrac_nml, ntrac_wat 	  
+          do i=0,ntrac_nml 
+            write(6,*)  i, ' ri =', ri(i), ' cpi= ', cpi(i)  
+          enddo
+        endif	
 	  
         ind_wamtr(ind_n2)  = 0
         ind_wamtr(ind_h2o) = ntqv
@@ -118,7 +106,7 @@ module wamphys_multigases
         ind_o2 =  ind_o1+1      
         ind_wamtr(ind_o1) = ind_o1
         ind_wamtr(ind_o2) = ind_o2
-	num_wat = ntrac_wat	  
+	      num_wat = ntrac_wat	  
       end  subroutine wamphys_set_major_tracers    
 ! --------------------------------------------------------
       subroutine multi_gases_init(ngas, nwat, ri, cpi, is_master)
@@ -144,7 +132,7 @@ module wamphys_multigases
 
       sphum = 1
       sphump1 = sphum+1
-!     
+     
       ind_gas = nwat+1
       
       do n=0,ngas

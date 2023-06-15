@@ -1,4 +1,4 @@
-      subroutine wamrad_co2(im,levs,nlev,ntrac, nto, nto2, nto3, nth2o, & 
+  subroutine wamrad_co2(im,levs,nlev,ntrac, nto, nto2, nto3, nth2o, & 
                  co2my, grav,cp,adr,adt, dtdt,cosz,dtdth)
 !
 !
@@ -33,8 +33,8 @@
       real(kind=kind_phys), intent(out)   :: dtdt(im,levs)    ! cooling rate k/s
       real(kind=kind_phys), intent(out)   :: dtdth(im,levs)    ! heating rate k/s
 !
-      real(kind=kind_phys) :: pmod(levs),q_n2(im,nlev),ma(im,nlev)      &                   
-      ,q_o(im,nlev),q_o2(im,nlev),hold(levs)
+      real(kind=kind_phys) :: pmod(levs),q_n2(im,nlev),ma(im,nlev),       &                   
+                              q_o(im,nlev),q_o2(im,nlev),hold(levs)
       integer i,k,kk
 !
 ! precalling
@@ -55,7 +55,6 @@
 	  
         enddo
       enddo
-!     print*,'www2',im,q_o(1:im1,nlev)
 ! CO2 cooling
       call wam_co2cc(im, prlog,adt,levs,prlog(k43),     &                  
                 dtdt(1,k43),nlev,ma,q_o,q_o2,q_n2, co2my(k43))
@@ -70,10 +69,10 @@
       do i=1,im
         call wam_qnirc(cosz(i),prlog(k43),co2my,hold(k43),nlev)
         do k=k43,levs
-!       dtdth(i,k)=hold(k-k43+1)
-        dtdth(i,k)=hold(k)
+!          dtdth(i,k)=hold(k-k43+1)
+           dtdth(i,k)=hold(k)
         enddo
 !vay-16        dtdth(i,1:k43-1)=0.
       enddo
       return
-      end
+  end subroutine wamrad_co2

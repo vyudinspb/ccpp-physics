@@ -71,6 +71,4 @@ module wamphys_const
   real(kind=kind_phys) , parameter ::  con_nzero = vmr_nzero*1.e19               ! 1/m3  
   real(kind=kind_phys) , parameter ::  mmr_min = 1.e-32, mmr_max=0.9999999
               
-  end module wamphys_const     
-!
-!
+end module wamphys_const     

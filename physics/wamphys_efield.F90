@@ -1,5 +1,5 @@
 
-      module  wamphys_efield
+module  wamphys_efield
       
 !--------------------------------------------------------------------- 
 ! description: calculates the electric potential for a given year,
@@ -84,7 +84,7 @@
 !========================================================================
       contains      
 
-      subroutine wamget_efield(swbt, swang, swvel, swbz, swden)
+  subroutine wamget_efield(swbt, swang, swvel, swbz, swden)
 !-----------------------------------------------------------------------
 ! Purpose: calculates the global electric potential field on the
 !          geomagnetic grid (MLT in deg) and derives the electric field 
@@ -114,9 +114,9 @@
       call DerivPotential
 !     print*,'ed2_efield',ed2(149,65),potent(149,66),potent(149,64)
 
-      end subroutine wamget_efield
+  end subroutine wamget_efield
 
-      subroutine GlobalElPotential(swbt, swang, swvel, swbz, swden)
+  subroutine GlobalElPotential(swbt, swang, swvel, swbz, swden)
 !-----------------------------------------------------------------------
 ! Purpose: calculates the global electric potential field on the
 !          geomagnetic grid (MLT in deg) 
@@ -152,14 +152,13 @@
       date = iyear + day/dy2yr
 
       do ilat = 0,nmlath                        ! Calculate only for one magn. hemisphere
-	mlat = ylatm(ilat)                      ! mag. latitude
+	  mlat = ylatm(ilat)                      ! mag. latitude
         do ilon = 0,nmlon	                ! lon. loop
           call efield_mid( mlat, ylonm(ilon), pot )
-	  pot_midlat(ilon,ilat+nmlath) = pot	! SH/NH symmetry 
-	  pot_midlat(ilon,nmlath-ilat) = pot
+	    pot_midlat(ilon,ilat+nmlath) = pot	! SH/NH symmetry 
+	    pot_midlat(ilon,nmlath-ilat) = pot
         end do
       end do
-!     print*,'www1','midlat',pot_midlat(149,66)
 
 !-----------------------------------------------------------------------
 ! hight latitude potential from Weimer model
@@ -174,14 +173,13 @@
 
           call EpotVal_new(mlat_90, ylonm(ilon)*deg2mlt, pot )
           pot = 1000.*pot
-
 !-----------------------------------------------------------------------
 ! NH/SH symmetry
 !-----------------------------------------------------------------------
-    	  pot_highlat(ilon,ilat)        = pot
-    	  pot_highlat(ilon,nmlat-ilat)  = pot
-    	  pot_highlats(ilon,ilat)       = pot
-    	  pot_highlats(ilon,nmlat-ilat) = pot
+          pot_highlat(ilon,ilat)        = pot
+          pot_highlat(ilon,nmlat-ilat)  = pot
+          pot_highlats(ilon,ilat)       = pot
+          pot_highlats(ilon,nmlat-ilat) = pot
         end do
       end do     
 !     print*,'www2','highlat',ut,by,bz,pot_highlat(0:180,68),nmlat_wei
@@ -245,11 +243,11 @@
 !       end do
 !      end do
 
-      end subroutine GlobalElPotential
+  end subroutine GlobalElPotential
 
 
                                                                            
-      subroutine adj_S_a
+  subroutine adj_S_a
 !------------------------------------------------------------------
 ! adjust S_a -> S_aM   eqn.8-11 Scherliess draft
 !------------------------------------------------------------------
@@ -289,9 +287,9 @@
 !        a_klnm(i)=f107d*(a_hf(i)-a_lf(i))/90.+2.*a_lf(i)-a_hf(i)
       end do
 
-      end subroutine adj_S_a
+  end subroutine adj_S_a
 
-      subroutine set_fkflfs( fk, fl, fs )
+  subroutine set_fkflfs( fk, fl, fs )
 !------------------------------------------------------------------
 ! Purpose:  set f_-k(day) depending on seasonal flag used for empirical model
 !     to calculate the electric potential
@@ -339,12 +337,10 @@
 !-----------------------------------------------------------------
       lon_ut = 15.*ut        ! 15.*mlt - xmlon + 69. 
       call ff( lon_ut, 2, fl )                                                 
-      if( iutav ) then  	! UT-averaging
-     
-	ang   = fl(0)
+      if( iutav ) then  	! UT-averaging    
+	  ang   = fl(0)
         fl(:) = 0.
-        fl(0) = ang
-	
+        fl(0) = ang	
       end if
 
 !-----------------------------------------------------------------
@@ -354,9 +350,9 @@
 !     fs(2) = S_a			  
       fs(2) = f107d			  
 
-      end subroutine set_fkflfs
+  end subroutine set_fkflfs
 
-      subroutine efield_mid( mlat, mlon, pot )
+  subroutine efield_mid( mlat, mlon, pot )
 !------------------------------------------------------------------
 ! Purpose: calculate the electric potential for low and 
 !      midlatitudes from an empirical model (Scherliess 1999)
@@ -407,12 +403,12 @@
         np  = nf(i)
         nn  = abs(mp)                      !   P_n^m = P_n^-m  
         x   = a_klnm(i)* fl(lf(i)) * fk(kf(i)) * fs(jf(i))
-	pot = pot + x*f(mp)*p(np,nn) 
+	  pot = pot + x*f(mp)*p(np,nn) 
       end do 
       
-      end subroutine efield_mid                                              
+  end subroutine efield_mid                                              
 
-      subroutine prep_weimer(swbt, swang, swvel, swbz, swden)
+  subroutine prep_weimer(swbt, swang, swvel, swbz, swden)
 
 !-----------------------------------------------------------------
 ! Purpose:  for Weimer model calculate IMF angle, IMF magnitude
@@ -489,19 +485,19 @@
       call SetModel_new(angle,bt,tilt,v_sw,den)
 
       if(debug) then
-       write(iulog,"(/,'efield prep_weimer:')")
-       write(iulog,"(/,'after SetModel_new:')")
-       write(iulog,*)  '  Bz   =',bz
-       write(iulog,*)  '  By   =',by
-       write(iulog,*)  '  Bt   =',bt
-       write(iulog,*)  '  angle=',angle
-       write(iulog,*)  '  VSW  =',v_sw
-       write(iulog,*)  '  tilt =',tilt
+         write(iulog,"(/,'efield prep_weimer:')")
+         write(iulog,"(/,'after SetModel_new:')")
+         write(iulog,*)  '  Bz   =',bz
+         write(iulog,*)  '  By   =',by
+         write(iulog,*)  '  Bt   =',bt
+         write(iulog,*)  '  angle=',angle
+         write(iulog,*)  '  VSW  =',v_sw
+         write(iulog,*)  '  tilt =',tilt
       end if
 
-      end subroutine prep_weimer
+  end subroutine prep_weimer
 
-      subroutine pot_latsmo( pot, idlat )  ! pots == pot_highlats
+  subroutine pot_latsmo( pot, idlat )  ! pots == pot_highlats
 !--------------------------------------------------------------------
 ! Purpose: smoothing in latitude of  potential
 !
@@ -531,13 +527,11 @@
 !------------------------------------------------------------------
       wgt = 0. 
       do id = -idlat,idlat
-	del   = abs(id)*dlatm	! delta lat_m
-	w(id) = 1./(del + 1.)
+        del   = abs(id)*dlatm	! delta lat_m
+        w(id) = 1./(del + 1.)
         wgt   = wgt + w(id)
       end do
       wgt = 1./wgt
-
-
 
       do ilat = idlat,nmlat_wei-idlat
          pot_smo(:,ilat) = matmul( pot(:,ilat-idlat:ilat+idlat),w )*wgt
@@ -548,9 +542,9 @@
          pot(:,nmlat-ilat) = pot_smo(:,ilat)
       end do
 
-      end subroutine pot_latsmo
+  end subroutine pot_latsmo
 
-      subroutine pot_latsmo2( pot, idlat ) 
+  subroutine pot_latsmo2( pot, idlat ) 
 !------------------------------------------------------------------
 ! Purpose:  smoothing in latitude of  potential
 !
@@ -580,8 +574,8 @@
 !-------------------------------------------------------------------
       wgt = 0.
       do id = -idlat,idlat
-	del   = abs(id)*dlatm	! delta lat_m
-	w(id) = 1./(del + 1.)
+	  del   = abs(id)*dlatm	! delta lat_m
+	  w(id) = 1./(del + 1.)
         wgt   = wgt + w(id)
       end do
       wgt = 1./wgt
@@ -594,9 +588,9 @@
          pot(:,ilat) = pot_smo(:,ilat)
       end do
 
-      end subroutine pot_latsmo2
+  end subroutine pot_latsmo2
 
-      subroutine pot_lonsmo( pot, idlon ) 
+  subroutine pot_lonsmo( pot, idlon ) 
 !-------------------------------------------------------------------
 ! Purpose: smoothing in longitude of potential
 !
@@ -630,24 +624,22 @@
         w(id) = 1./(del + 1.)
         wgt   = wgt + w(id)
       end do
-        wgt = 1./wgt
+      wgt = 1./wgt
 	
       do ilat = 0,nmlath
           tmp(0:nmlon)   = pot(0:nmlon,ilat)
           tmp(-idlon:-1) = pot(nmlon-idlon:nmlon-1,ilat)
           tmp(nmlon+1:nmlon+idlon) = pot(1:idlon,ilat)
           do ilon = 0,nmlon
-      pot(ilon,ilat)=dot_product(tmp(ilon-idlon:ilon+idlon),w)*wgt
-      pot(ilon,nmlat-ilat) = pot(ilon,ilat)
-!         if(ilon.eq.149.and.nmlat-ilat.eq.66) 
-!    &print*,'www9',pot(ilon,nmlat-ilat),tmp(ilon-idlon:ilon+idlon),wgt
+             pot(ilon,ilat)=dot_product(tmp(ilon-idlon:ilon+idlon),w)*wgt
+             pot(ilon,nmlat-ilat) = pot(ilon,ilat)
           end do   
       end do
 !     print*,'www8','pot_efield',pot(149,66)
       
-      end subroutine pot_lonsmo
+  end subroutine pot_lonsmo
 
-      subroutine highlat_getbnd( ihlat_bnd ) 
+  subroutine highlat_getbnd( ihlat_bnd ) 
 !------------------------------------------------------------------
 ! Purpose: calculate the height latitude bounday index ihl_bnd
 !
@@ -675,10 +667,10 @@
       ilat_sft_rvs = nmlath - ilat_sft          ! pole =0, equ=90
 
       do ilon = 0,nmlon                         ! long.
-	ihlat_bnd(ilon) = 0
+	  ihlat_bnd(ilon) = 0
         mlt  = ylonm(ilon)*deg2mlt              ! mag.local time ?
         do ilat = nmlat_wei+1,0,-1              ! lat. loop moving torwards pole
-	  mlat = 90. - ylatm(ilat)           ! mag. latitude pole = 90 equator = 0
+	    mlat = 90. - ylatm(ilat)           ! mag. latitude pole = 90 equator = 0
 	  
           call gecmp( mlat, mlt, es, ez )	! get electric field
 	  
@@ -692,9 +684,9 @@
 
 !     write(iulog,"('highlat_getbnd: ihlat_bnd=',/,(12i6))") ihlat_bnd
 
-      end subroutine highlat_getbnd
+  end subroutine highlat_getbnd
 
-      subroutine bnd_sinus( ihlat_bnd, itrans_width )  
+  subroutine bnd_sinus( ihlat_bnd, itrans_width )  
 !------------------------------------------------------------------
 ! Purpose: 
 !   1. adjust high latitude boundary (ihlat_bnd) sinusoidally
@@ -756,7 +748,7 @@
         bnd  = nmlath - ihlat_bnd(ilon) ! switch from pole=0 to pole =90
         call ff( ylonm(ilon), nmax_sin, f(-nmax_sin,ilon) )
         do i = -nmax_sin,nmax_sin
-	  i1 = i + ishf
+	    i1 = i + ishf
           rhs(i1) = rhs(i1) + f(i,ilon) * bnd
 !	  write(iulog,*) 'rhs ',ilon,i1,bnd,f(i,ilon),rhs(i+ishf)
           do j = -nmax_sin,nmax_sin 
@@ -773,23 +765,21 @@
       call svbksb( u, w, v, nmax_a, nmax_a, nmax_a, nmax_a, rhs, lsg )
 !      
       do ilon = 0,nmlon  ! long.
-!       sum = 0.
-	sum = dot_product( lsg(-nmax_sin+ishf:nmax_sin+ishf),f(-nmax_sin:nmax_sin,ilon) )
-   
-   
+!     sum = 0.
+	   sum = dot_product( lsg(-nmax_sin+ishf:nmax_sin+ishf),f(-nmax_sin:nmax_sin,ilon) )  
 !       do i = -nmax_sin,nmax_sin
 !         sum = sum + lsg(i+ishf)*f(i,ilon)  
 !       end do
-        ihlat_bnd(ilon)    = nmlath - int( sum + .5 )                                ! closest point
-        itrans_width(ilon) = &
-            int( 8. - 2.*cos( ylonm(ilon)*dtr ) + .5 )/dlatm  ! 6 to 10 deg.
+           ihlat_bnd(ilon)    = nmlath - int( sum + .5 )                                ! closest point
+           itrans_width(ilon) = &
+           int( 8. - 2.*cos( ylonm(ilon)*dtr ) + .5 )/dlatm  ! 6 to 10 deg.
       end do      
 !     write(iulog,"('bnd_sinus: ihlat_bnd=',/,(12i6))") ihlat_bnd
 !     write(iulog,"('bnd_sinus: itrans_width=',/,(12i6))") itrans_width
 
-      end subroutine bnd_sinus
+  end subroutine bnd_sinus
 
-      subroutine highlat_adjust( pot_highlats, pot_highlat, pot_midlat, ihlat_bnd )
+  subroutine highlat_adjust( pot_highlats, pot_highlat, pot_midlat, ihlat_bnd )
 !------------------------------------------------------------------
 ! Purpose: Adjust mid/low latitude electric potential and high latitude
 !          potential such that there are continous across the mid to high 
@@ -825,9 +815,9 @@
 !-------------------------------------------------------------------
       pot60  = 0.
       pot_hl = 0.
-      do ilon = 1,nmlon  ! long.           ! bnd -> eq to pole 0:90
-    	ibnd60  = nmlat - ihlat_bnd(ilon)   ! 0:180 pole to pole
-    	ibnd_hl = ihlat_bnd(ilon)         ! colatitude
+      do ilon = 1,nmlon  ! long.            ! bnd -> eq to pole 0:90
+        ibnd60  = nmlat - ihlat_bnd(ilon)   ! 0:180 pole to pole
+        ibnd_hl = ihlat_bnd(ilon)           ! colatitude
         pot60   = pot60 + pot_midlat(ilon,ibnd60)
         pot_hl  = pot_hl + pot_highlats(ilon,ibnd_hl)
       end do
@@ -849,16 +839,16 @@
       do ilat = 0,nmlat_wei      ! colatitude
         ilats = nmlat - ilat
         do ilon = 0,nmlon
-	  pot_highlat(ilon,ilat)   = pot_highlat(ilon,ilat)   - del
-	  pot_highlat(ilon,ilats)  = pot_highlat(ilon,ilats)  - del
-	  pot_highlats(ilon,ilat)  = pot_highlats(ilon,ilat)  - del
-	  pot_highlats(ilon,ilats) = pot_highlats(ilon,ilats) - del
+            pot_highlat(ilon,ilat)   = pot_highlat(ilon,ilat)   - del
+            pot_highlat(ilon,ilats)  = pot_highlat(ilon,ilats)  - del
+            pot_highlats(ilon,ilat)  = pot_highlats(ilon,ilat)  - del
+            pot_highlats(ilon,ilats) = pot_highlats(ilon,ilats) - del
         end do
       end do
 
-      end subroutine highlat_adjust
+  end subroutine highlat_adjust
 
-      subroutine interp_poten( pot_highlats, pot_highlat, pot_midlat, &
+  subroutine interp_poten( pot_highlats, pot_highlat, pot_midlat, &
         ihlat_bnd, itrans_width ) 
 !-------------------------------------------------------------------
 ! Purpose: construct a smooth global electric potential field 
@@ -907,7 +897,7 @@
 !$omp parallel do private(ilat,ilon,ibnd,tw)
       do ilon = 0,nmlon
         ibnd = ihlat_bnd(ilon)     ! high latitude boundary index
-	tw   = itrans_width(ilon)  ! width of transition zone (index)
+	  tw   = itrans_width(ilon)  ! width of transition zone (index)
 !-------------------------------------------------------------------
 ! 1. low/mid latitude: |lam| < bnd-trans_width
 !   Phi(phi,lam) = Phi_low(phi,lam)
@@ -936,22 +926,22 @@
 !    &lat_ind,j1,j2,wrk1,wrk2)
       do ilon = 0,nmlon
         ibnd = ihlat_bnd(ilon)          ! high latitude boundary index
-	tw   = itrans_width(ilon)       ! width of transition zone (index)
+	  tw   = itrans_width(ilon)       ! width of transition zone (index)
         a    = 1./(2.*tw)
-	b1   = (nmlath - ibnd + tw)*a
-	b2   = (nmlath - ibnd - tw)*a
-	hb1  = nmlath - (ibnd + tw)
-	j1   = nmlath - hb1
-	hb2  = nmlath - (ibnd - tw)
-	j2   = nmlath - hb2
+        b1   = (nmlath - ibnd + tw)*a
+        b2   = (nmlath - ibnd - tw)*a
+        hb1  = nmlath - (ibnd + tw)
+        j1   = nmlath - hb1
+        hb2  = nmlath - (ibnd - tw)
+        j2   = nmlath - hb2
         if (j2 < 0) j2 = 0              ! Tomoko's fix - j2 >= 0
-	wrk1 = pot_midlat(ilon,j1)
-	wrk2 = pot_highlats(ilon,j2)
-!        write(iulog,*) 'pot_all ',ilon,hb1,hb2,nmlath -ibnd,tw
+        wrk1 = pot_midlat(ilon,j1)
+        wrk2 = pot_highlats(ilon,j2)
+!       write(iulog,*) 'pot_all ',ilon,hb1,hb2,nmlath -ibnd,tw
         min_ilat = ibnd-tw
         if (min_ilat < 0) min_ilat = 0  ! Tomoko's fix
         do ilat = min_ilat,ibnd+tw      ! do ilat = ibnd-tw,ibnd+tw
-	  lat_ind = nmlath - ilat
+	    lat_ind = nmlath - ilat
           potent(ilon,ilat) = fac*((wrk1 + 2.*pot_midlat(ilon,ilat))*(b1 - a*lat_ind)  &
          	  + (wrk2 + 2.*pot_highlats(ilon,ilat))*(a*lat_ind - b2))
           potent(ilon,nmlat-ilat) = potent(ilon,ilat)
@@ -960,18 +950,18 @@
 ! b.  Interpolate between just calculated Potential and the high latitude
 !    potential in a 3 degree zone poleward of the boundary
 !------------------------------------------------------------------
-	do ilat = hb2+1,nmlath
-	  a = max( 3./dlatm - (ilat - hb2 - 1),0. )
-	  b = 3./dlatm - a
+	  do ilat = hb2+1,nmlath
+	    a = max( 3./dlatm - (ilat - hb2 - 1),0. )
+	    b = 3./dlatm - a
           potent(ilon,nmlath-ilat) = (a*potent(ilon,nmlath-ilat) &  
            + b*pot_highlat(ilon,nmlath-ilat))/3.*dlatm
           potent(ilon,nmlath+ilat) = potent(ilon,nmlath-ilat)
         end do
       end do      
 
-      end subroutine interp_poten
+  end subroutine interp_poten
 
-      subroutine DerivPotential
+  subroutine DerivPotential
 !-----------------------------------------------------------------
 ! Purpose: calulates the electric field [V/m] from the electric potential
 !
@@ -1036,9 +1026,9 @@
         do i = 1,nmlon-1
           ed1(i,j) = -(potent(i+1,j) - potent(i-1,j))*wrk
         end do
-	i = 0
-	ed1(i,j)  = -(potent(i+1,j) - potent(nmlon-1,j))*wrk
-	ed1(nmlon,j) = ed1(i,j)
+        i = 0
+        ed1(i,j)  = -(potent(i+1,j) - potent(nmlon-1,j))*wrk
+        ed1(nmlon,j) = ed1(i,j)
       end do
 
 !-----------------------------------------------------------------------
@@ -1067,7 +1057,7 @@
              - ed1(ip1f,nmlat-1) + ed1(ip3f,nmlat-1))
       end do
 
-      end subroutine DerivPotential
+  end subroutine DerivPotential
 
 !      end module wamphys_efield
  
@@ -1085,7 +1075,7 @@
 
 ! COORDINATE TRANSFORMATION UTILITIES
 !**********************************************************************        
-	subroutine WAM_GET_TILT(YEAR,MONTH,DAY,HOUR, get_tilt)
+  subroutine WAM_GET_TILT(YEAR,MONTH,DAY,HOUR, get_tilt)
 !
 !-----------------------------------------------------------------------
 !CC NCAR MODIFIED (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1143,24 +1133,22 @@
         real :: get_tilt
 
 
-	INTEGER :: YEAR, MONTH, DAY
-	REAL    :: HOUR
+        INTEGER :: YEAR, MONTH, DAY
+        REAL    :: HOUR
 !
 !-----------------------------Parameters------------------------------
-!
-	INTEGER GSEGEO,GEOGSE,GEOMAG,MAGGEO
-	INTEGER GSEMAG,MAGGSE,GSEGSM,GSMGSE
-	INTEGER GEOGSM,GSMGEO,GSMMAG,MAGGSM
-	INTEGER GSEGEI,GEIGSE,GEIGEO,GEOGEI
-	INTEGER GSMSM,SMGSM,GEOSM,SMGEO,MAGSM,SMMAG
-
-	PARAMETER (GSEGEO= 1,GEOGSE=-1,GEOMAG= 2,MAGGEO=-2)
-	PARAMETER (GSEMAG= 3,MAGGSE=-3,GSEGSM= 4,GSMGSE=-4)
-	PARAMETER (GEOGSM= 5,GSMGEO=-5,GSMMAG= 6,MAGGSM=-6)
-	PARAMETER (GSEGEI= 7,GEIGSE=-7,GEIGEO= 8,GEOGEI=-8)
-	PARAMETER (GSMSM = 9,SMGSM =-9,GEOSM =10,SMGEO=-10)
-	PARAMETER (MAGSM =11,SMMAG =-11)
-!
+        INTEGER GSEGEO,GEOGSE,GEOMAG,MAGGEO
+        INTEGER GSEMAG,MAGGSE,GSEGSM,GSMGSE
+        INTEGER GEOGSM,GSMGEO,GSMMAG,MAGGSM
+        INTEGER GSEGEI,GEIGSE,GEIGEO,GEOGEI
+        INTEGER GSMSM,SMGSM,GEOSM,SMGEO,MAGSM,SMMAG
+        
+        PARAMETER (GSEGEO= 1,GEOGSE=-1,GEOMAG= 2,MAGGEO=-2)
+        PARAMETER (GSEMAG= 3,MAGGSE=-3,GSEGSM= 4,GSMGSE=-4)
+        PARAMETER (GEOGSM= 5,GSMGEO=-5,GSMMAG= 6,MAGGSM=-6)
+        PARAMETER (GSEGEI= 7,GEIGSE=-7,GEIGEO= 8,GEOGEI=-8)
+        PARAMETER (GSMSM = 9,SMGSM =-9,GEOSM =10,SMGEO=-10)
+        PARAMETER (MAGSM =11,SMMAG =-11)
 !---------------------------Local variables-----------------------------
 !
         integer IDBUG
@@ -1182,10 +1170,10 @@
 !       DIPOLE=.30574
         pi=3.141592653
 !       pi=2.*ASIN(1.)
-!CC NCAR MODIFICATION (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!------ NCAR MODIFICATION (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! IDBUG=0 to prevent printing data to the screen or writing data to a file.    C
         IDBUG = 0
-!CC NCAR MODIFICATION (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!------ NCAR MODIFICATION (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 	IF(YEAR.LT.1900)THEN
 	  IYR=1900+YEAR
@@ -1197,19 +1185,18 @@
 	JD=JULDAY_WAM(MONTH,DAY,IYR)
 	
 	MJD=JD-2400001
-!       T0=(real(MJD,r8)-51544.5)/36525.0
+!     T0=(real(MJD,r8)-51544.5)/36525.0
 	T0=(float(MJD)-51544.5)/36525.0
 	GMSTD=100.4606184 +36000.770*T0 +3.87933E-4*T0*T0 +15.0410686*UT
 	CALL ADJUST(GMSTD)
 	GMSTH=GMSTD*24./360.
 	ECLIP=23.439 - 0.013*T0
-        MA=357.528 + 35999.050*T0 + 0.041066678*UT
-        CALL ADJUST(MA)
-        LAMD=280.460 + 36000.772*T0 + 0.041068642*UT
-        CALL ADJUST(LAMD)
-        SUNLON=LAMD + (1.915-0.0048*T0)*SIN(MA*pi/180.) + 0.020*SIN(2.*MA*pi/180.)
-        CALL ADJUST(SUNLON)
-! 
+      MA=357.528 + 35999.050*T0 + 0.041066678*UT
+      CALL ADJUST(MA)
+      LAMD=280.460 + 36000.772*T0 + 0.041068642*UT
+      CALL ADJUST(LAMD)
+      SUNLON=LAMD + (1.915-0.0048*T0)*SIN(MA*pi/180.) + 0.020*SIN(2.*MA*pi/180.)
+      CALL ADJUST(SUNLON) 
 
 	CX(1)= GMSTD
 	CX(2) = ECLIP
@@ -1250,7 +1237,7 @@
       DO I=1,3   
       DO J=1,3   
         AM(I,J,GSEGEO) = AM(I,1,GEIGEO)*AM(1,J,GSEGEI) + &
-          AM(I,2,GEIGEO)*AM(2,J,GSEGEI) +AM(I,3,GEIGEO)*AM(3,J,GSEGEI)
+        AM(I,2,GEIGEO)*AM(2,J,GSEGEI) +AM(I,3,GEIGEO)*AM(3,J,GSEGEI)
       ENDDO
       ENDDO
 !         
@@ -1266,8 +1253,8 @@
 !         
       DO I=1,3   
       DO J=1,3   
-       AM(I,J,GSEMAG) = AM(I,1,GEOMAG)*AM(1,J,GSEGEO) + &
-          AM(I,2,GEOMAG)*AM(2,J,GSEGEO) +AM(I,3,GEOMAG)*AM(3,J,GSEGEO)
+         AM(I,J,GSEMAG) = AM(I,1,GEOMAG)*AM(1,J,GSEGEO) + &
+         AM(I,2,GEOMAG)*AM(2,J,GSEGEO) +AM(I,3,GEOMAG)*AM(3,J,GSEGEO)
       ENDDO
       ENDDO
 !         
@@ -1304,15 +1291,15 @@
 	CT(6) = SQRT(1.-ST(6)*ST(6))      
 	CX(6) = ASIN(ST(6)*pi/180.)  
 
-        AM(1,1,GSMSM) = CT(6)
-        AM(1,2,GSMSM) = 0.
-        AM(1,3,GSMSM) = -ST(6)
-        AM(2,1,GSMSM) = 0.
-        AM(2,2,GSMSM) = 1.
-        AM(2,3,GSMSM) = 0.
-        AM(3,1,GSMSM) = ST(6)
-        AM(3,2,GSMSM) = 0.
-        AM(3,3,GSMSM) = CT(6)  
+      AM(1,1,GSMSM) = CT(6)
+      AM(1,2,GSMSM) = 0.
+      AM(1,3,GSMSM) = -ST(6)
+      AM(2,1,GSMSM) = 0.
+      AM(2,2,GSMSM) = 1.
+      AM(2,3,GSMSM) = 0.
+      AM(3,1,GSMSM) = ST(6)
+      AM(3,2,GSMSM) = 0.
+      AM(3,3,GSMSM) = CT(6)  
 !         
       DO I=1,3   
       DO J=1,3   
@@ -1355,13 +1342,11 @@
 !CC NCAR MODIFICATION (3/96) CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
       RETURN
-      END SUBROUTINE WAM_GET_TILT
+  END SUBROUTINE WAM_GET_TILT
 
 !======================================================================
 
-
-
-      INTEGER FUNCTION JULDAY_WAM(MM,ID,IYYY)
+  INTEGER FUNCTION JULDAY_WAM(MM,ID,IYYY)
 
       implicit none 
 !
@@ -1396,12 +1381,12 @@
         JULDAY_WAM=JULDAY_WAM+2-JA+INT(0.25*JA)
       ENDIF
       RETURN
-      END FUNCTION JULDAY_WAM
+  END FUNCTION JULDAY_WAM
 
 
 !================================================================================================
 
-      SUBROUTINE GECMP (AMLA,RMLT,ET,EP)
+  SUBROUTINE GECMP (AMLA,RMLT,ET,EP)
 !
 !-----------------------------------------------------------------------
 !          Get Electric field components for the Weimer electrostatic
@@ -1459,12 +1444,11 @@
    10 XMLT1 = XMLT
       AMLA1 = AMLA + STPD
       IF (AMLA1 .GT. 90.) THEN
-	AMLA1 = 180. - AMLA1
-	XMLT1 = XMLT1 + 12.
+        AMLA1 = 180. - AMLA1
+        XMLT1 = XMLT1 + 12.
       ENDIF
       call EpotVal_new(AMLA1    , XMLT1, P1 )
       call EpotVal_new(AMLA-STPD, XMLT,  P2 )
-!      print *, "GECMP ", P1, P2, AMLA1, XMLT1, AMLA-STPD, XMLT
       IF (KPOL .EQ. 1) GO TO 20
       ET = (P1 - P2) / STP2
 
@@ -1474,9 +1458,9 @@
 !          avoid a divide by zero at the pole avoid by using Art's trick
 !          where Ephi(90,lon) = Etheta(90,lon+90)
       IF (AMLA .LT. ALAMX) THEN
-	AMLA1 = MAX (ASIN(SIN(AMLA*D2R)*CSTP) , ALAMR)
-	DPHI  = ASIN (SSTP/SIN(AMLA1))*R2D
-	AMLA1 = AMLA1*R2D
+        AMLA1 = MAX (ASIN(SIN(AMLA*D2R)*CSTP) , ALAMR)
+        DPHI  = ASIN (SSTP/SIN(AMLA1))*R2D
+        AMLA1 = AMLA1*R2D
         call EpotVal_new(AMLA1, XMLT+DPHI, P1 )
         call EpotVal_new(AMLA1, XMLT-DPHI, P2 )
       ELSE
@@ -1490,11 +1474,11 @@
 
 !          Below model minimum lat, the potential is value at min lat
       IF (AMLA .LT. ALAMN) THEN
-	ET = 0.
-	EP = EP * COS(ALAMR)/COS(AMLA*D2R)
+        ET = 0.
+        EP = EP * COS(ALAMR)/COS(AMLA*D2R)
       ENDIF
 
   100 RETURN
-      END SUBROUTINE GECMP
+  END SUBROUTINE GECMP
 
-      end module wamphys_efield
+end module wamphys_efield

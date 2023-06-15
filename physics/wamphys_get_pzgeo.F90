@@ -1,4 +1,4 @@
-      subroutine wam_get_prsi(levs, im, ak5, bk5, psurf, prsi)
+subroutine wam_get_prsi(levs, im, ak5, bk5, psurf, prsi)
 !
 ! hyb2press_gc.f:          prsi(i,k)  = ak5(k)+bk5(k)*pgr(i)
 ! 
@@ -6,40 +6,33 @@
       implicit none
       integer :: levs, im, ix
       real(kind=kind_phys) :: psurf(im)  , ak5(levs+1), bk5(levs+1)    
-      real(kind=kind_phys) :: prsi(im,levs+1)
-      
+      real(kind=kind_phys) :: prsi(im,levs+1)     
       integer i, k, n
-!            print *, ' get_prsi_int ak5-bl5 '
         do i=1,im
           do k=1, levs
-          prsi(i,k) = ak5(k)*100.+bk5(k)*psurf(i)  ! ak5 in mb
+            prsi(i,k) = ak5(k)*100.+bk5(k)*psurf(i)  ! ak5 in mb
           enddo
           prsi(i,levs+1) = 0.
         enddo
-      end subroutine wam_get_prsi
+end subroutine wam_get_prsi
 
-      subroutine wamphys_get_przgeo(im,levs,ntrac,t,q, &
+subroutine wamphys_get_przgeo(im,levs,ntrac,t,q, &
                    prsi,prki,prsl,prkl,phii,phil,del)
 !
       use machine ,              only : kind_phys
-
-
       use physcons ,             only : cp => con_cp, nu => con_fvirt
       use physcons ,             only : rd => con_rd, rkap => con_rocp
       use  wamphys_multigases,   only : ri , cpi
       implicit none
 !
-      integer im, levs, ntrac
-      
-      real(kind=kind_phys) prsi(im,levs+1), prki(im,levs+1), phii(im,levs+1)
-      real(kind=kind_phys) prsl(im,levs), phil(im,levs), prkl(im,levs)
- 
-      real(kind=kind_phys) ::   del(im,levs),    t(im,levs), q(im,levs,ntrac)
-     
+      integer im, levs, ntrac      
+      real(kind=kind_phys) :: prsi(im,levs+1), prki(im,levs+1), phii(im,levs+1)
+      real(kind=kind_phys) :: prsl(im,levs), phil(im,levs), prkl(im,levs) 
+      real(kind=kind_phys) :: del(im,levs), t(im,levs), q(im,levs,ntrac)     
       real(kind=kind_phys) :: xcp(im,levs), xr(im,levs), kappa(im,levs)
-      real(kind=kind_phys) tem, dphib, dphit, dphi
-      real (kind=kind_phys), parameter :: zero=0.0, p00i=1.0e-5
-      real (kind=kind_phys), parameter :: rkapi=1.0/rkap, rkapp1=1.0+rkap
+      real(kind=kind_phys) :: tem, dphib, dphit, dphi
+      real(kind=kind_phys), parameter :: zero=0.0, p00i=1.0e-5
+      real(kind=kind_phys), parameter :: rkapi=1.0/rkap, rkapp1=1.0+rkap
       integer i, k, n
 !
       do k=1,levs
@@ -50,57 +43,53 @@
 
       call wam_get_cpr(im,levs,ntrac, q, xcp, xr)	      	    
 !
-            do k=1,levs
-              do i=1,im
-                kappa(i,k) = xr(i,k)/xcp(i,k)
-                prsl(i,k)  = (prsi(i,k) + prsi(i,k+1))*0.5
-                prkl(i,k)  = (prsl(i,k)*p00i) ** kappa(i,k)
-              enddo
-            enddo
-            do k=2,levs
-              do i=1,im
-                tem = 0.5 * (kappa(i,k) + kappa(i,k-1))
-                prki(i,k-1) = (prsi(i,k)*p00i) ** tem
-              enddo
-            enddo
-            do i=1,im
-              prki(i,1) = (prsi(i,1)*p00i) ** kappa(i,1)
-            enddo
-            k = levs + 1
-            if (prsi(1,k) .gt. 0.0) then
-              do i=1,im
-                prki(i,k) = (prsi(i,k)*p00i) ** kappa(i,levs)
-              enddo
-            endif
+      do k=1,levs
+        do i=1,im
+          kappa(i,k) = xr(i,k)/xcp(i,k)
+          prsl(i,k)  = (prsi(i,k) + prsi(i,k+1))*0.5
+          prkl(i,k)  = (prsl(i,k)*p00i) ** kappa(i,k)
+        enddo
+      enddo
+      do k=2,levs
+        do i=1,im
+          tem = 0.5 * (kappa(i,k) + kappa(i,k-1))
+          prki(i,k-1) = (prsi(i,k)*p00i) ** tem
+        enddo
+      enddo
+      do i=1,im
+        prki(i,1) = (prsi(i,1)*p00i) ** kappa(i,1)
+      enddo
+      k = levs + 1
+      if (prsi(1,k) .gt. 0.0) then
+        do i=1,im
+          prki(i,k) = (prsi(i,k)*p00i) ** kappa(i,levs)
+        enddo
+      endif
 !
-            do i=1,im
-              phii(i,1)   = 0.0           ! ignoring topography height here
-            enddo
-            do k=1,levs
-              do i=1,im
-                tem         = xr(i,k) * t(i,k)
-                dphi        = (prsi(i,k) - prsi(i,k+1)) * tem/(prsi(i,k) + prsi(i,k+1))
-                phil(i,k)   = phii(i,k) + dphi
-                phii(i,k+1) = phil(i,k) + dphi
-!     if(k == 1 .and. i == 1) print *,' xr=',xr(1,1),' t=',t(1,1)
-!    &,' prsi=',prsi(1,1),prsi(1,2),' tem=',tem,' dphi=',dphi
-              enddo
-            enddo
-         
-
+      do i=1,im
+        phii(i,1)   = 0.0           ! ignoring topography height here
+      enddo
+      do k=1,levs
+        do i=1,im
+          tem         = xr(i,k) * t(i,k)
+          dphi        = (prsi(i,k) - prsi(i,k+1)) * tem/(prsi(i,k) + prsi(i,k+1))
+          phil(i,k)   = phii(i,k) + dphi
+          phii(i,k+1) = phil(i,k) + dphi
+        enddo
+      enddo
       return
-      end  subroutine wamphys_get_przgeo
+end subroutine wamphys_get_przgeo
            
-      subroutine wam_get_cpr(im,levs,ntrac,q,xcp,xr)
+subroutine wam_get_cpr(im,levs,ntrac,q,xcp,xr)
 !
       use machine ,      only : kind_phys
-      use  wamphys_multigases, only : ri , cpi
+      use wamphys_multigases, only : ri , cpi
       implicit none
 !
-      real (kind=kind_phys), parameter :: zero=0.0
+      real(kind=kind_phys), parameter :: zero=0.0
       integer :: im,  levs, ntrac
-      real(kind=kind_phys) q(im,levs,ntrac)
-      real(kind=kind_phys) xcp(im,levs),xr(im,levs),sumq(im,levs)
+      real(kind=kind_phys) :: q(im,levs,ntrac)
+      real(kind=kind_phys) :: xcp(im,levs),xr(im,levs),sumq(im,levs)
       integer i, k, n
 !
       sumq = zero
@@ -125,9 +114,9 @@
       enddo
 !
       return
-      end subroutine wam_get_cpr
+end subroutine wam_get_cpr
       
-      subroutine wam_get_rdmulti(im, levs,ntrac,q,xr)
+subroutine wam_get_rdmulti(im, levs,ntrac,q,xr)
 !
       use machine ,            only : kind_phys
       use  wamphys_multigases, only : ri     
@@ -158,9 +147,9 @@
       enddo
 !
       return
-      end subroutine wam_get_rdmulti
+end subroutine wam_get_rdmulti
       
-      subroutine wam_get_cp(im, levs,ntrac,q, xcp)
+subroutine wam_get_cp(im, levs,ntrac,q, xcp)
 !
       use machine ,      only : kind_phys
       use  wamphys_multigases, only : cpi
@@ -191,9 +180,9 @@
       enddo
 !
       return
-      end subroutine wam_get_cp
+end subroutine wam_get_cp
       
-     subroutine get_phi_fv3wam(im, levs, xrd, gt0, del_gz, phii, phil)
+subroutine get_phi_fv3wam(im, levs, xrd, gt0, del_gz, phii, phil)
      use machine ,              only : kind_phys
      implicit none
 
@@ -206,10 +195,8 @@
      real(kind=kind_phys), dimension(:,:),     intent(out)   :: phii
      real(kind=kind_phys), dimension(:,:),     intent(out)   :: phil
  
-
      ! Local variables
      integer :: i, k
-
 
 ! SJL: Adjust the height hydrostatically in a way consistent with FV3 discretization
      do i=1,im
@@ -223,12 +210,12 @@
        enddo
      enddo
 
-   end subroutine get_phi_fv3wam
+end subroutine get_phi_fv3wam
     
- subroutine get_prs_fv3wam(im, levs, phii, prsi, tgrs, xrd, del, del_gz)
+subroutine get_prs_fv3wam(im, levs, phii, prsi, tgrs, xrd, del, del_gz)
      use physcons,       only : con_rd
      use machine ,       only : kind_phys
-          implicit none
+     implicit none
 
      ! Interface variables
      integer, intent(in) :: im, levs
@@ -240,14 +227,12 @@
      
      real(kind=kind_phys), dimension(:,:),     intent(out)   :: del
      real(kind=kind_phys), dimension(:,:),     intent(out)   :: del_gz
-     real(kind=kind_phys)   :: rdry
+     real(kind=kind_phys) :: rdry
      
-
      ! Local variables
      integer :: i, k
       
-       rdry = 1./con_rd
-
+     rdry = 1./con_rd
 
 ! SJL: Adjust the geopotential height hydrostatically in a way consistent with FV3 discretization
 ! del_gz is a temp array recording the old info before (t,q) are adjusted
@@ -259,7 +244,7 @@
        enddo
      enddo
 
-   end subroutine get_prs_fv3wam
+end subroutine get_prs_fv3wam
 !==================================================================================
 !
 ! the program define the pressure-vertical grid for the major WAM-species (O-O2-N2)
@@ -267,7 +252,7 @@
 !            exner, exner_i, kappa_i - arrays are based on Cp/R after the dycore
 !              
 !==================================================================================   
-   subroutine wamphys_zgrav(im, levs, ntrac, tgrs, qgrs,          &
+subroutine wamphys_zgrav(im, levs, ntrac, tgrs, qgrs,             &
                 prsl,  prsi, phii, phil, del, oro,                & 
                 zgeo, grav, exner, exner_i, kappa, xcp, rdel ) 
 		
@@ -279,15 +264,15 @@
      
      integer, intent(in) :: im, levs, ntrac
  
-     real(kind=kind_phys), dimension(im),       intent(in)    :: oro    
-     real(kind=kind_phys), dimension(im, levs+1),     intent(in)    :: phii
-     real(kind=kind_phys), dimension(im, levs+1),     intent(in)    :: prsi
+     real(kind=kind_phys), dimension(im),          intent(in)    :: oro    
+     real(kind=kind_phys), dimension(im, levs+1),  intent(in)    :: phii
+     real(kind=kind_phys), dimension(im, levs+1),  intent(in)    :: prsi
      real(kind=kind_phys), dimension(im,levs),     intent(in)    :: phil
      real(kind=kind_phys), dimension(im,levs),     intent(in)    :: prsl     
      real(kind=kind_phys), dimension(im,levs),     intent(in)    :: del  
         
      real(kind=kind_phys), dimension(im,levs),     intent(in)    :: tgrs
-     real(kind=kind_phys), dimension(im,levs,ntrac),   intent(in)    :: qgrs 
+     real(kind=kind_phys), dimension(im,levs,ntrac),intent(in)    :: qgrs 
      
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: zgeo 
      real(kind=kind_phys), dimension(im,levs),     intent(out)   :: grav
@@ -299,60 +284,56 @@
 !
 !local
 !                
-     integer                  :: i, k    
+     integer                  ::  i, k    
      real(kind=kind_phys)     ::  rzrad, rer, gphil, p00i
      real(kind=kind_phys)     ::  goro(im) 
      real(kind=kind_phys)     ::  xr(im, levs)    
      real(kind=kind_phys)     ::  inv_exner, tem
          
-          rer = 1./con_rerth
-	  p00i =1.e-5
-          do i = 1,im   
+     rer = 1./con_rerth
+	   p00i =1.e-5
+     do i = 1,im   
 	     goro(i) = con_g * oro(i) /(1. +oro(i)*rer)
-	  enddo   
-!
-!
-!	       
-          do k = 1,levs
-           do i = 1,im
-	   gphil = goro(i)+phil(i,k)
-	   zgeo(i,k) = gphil/(con_g - gphil*rer)	   
-	   rzrad = 1./(1.+zgeo(i,k)*rer)
-	    
+	   enddo   
+     
+     do k = 1,levs
+       do i = 1,im
+      	   gphil = goro(i)+phil(i,k)
+      	   zgeo(i,k) = gphil/(con_g - gphil*rer)	   
+      	   rzrad = 1./(1.+zgeo(i,k)*rer)	    
            grav(i,k) = con_g *rzrad *rzrad
-	   rdel(i,k) = 1./del(i,k)
-           enddo
-         enddo
+	         rdel(i,k) = 1./del(i,k)
+       enddo
+     enddo
 	 
 !exner, exner_i, kappa_i
 
-         call wam_get_cpr(im,levs, ntrac, qgrs, xcp, xr)	      	    
-!
-            do k=1,levs
-              do i=1,im
-                kappa(i,k) = xr(i,k)/xcp(i,k)
-		inv_exner =(prsl(i,k)*p00i) ** kappa(i,k)
-                exner(i,k)  = 1./inv_exner
-              enddo
-            enddo
-            do k=2,levs
-              do i=1,im
-                tem = 0.5 * (kappa(i,k) + kappa(i,k-1))
-		inv_exner =(prsi(i,k)*p00i) ** tem
-                exner_i(i,k) = 1./inv_exner
-              enddo
-            enddo
-	    k=1
-            do i=1,im
-              exner_i(i,k) = 1./((prsi(i,k)*p00i) ** kappa(i,k))
-            enddo
-            k = levs + 1
-            if (prsi(1,k) .gt. 0.0) then
-              do i=1,im
-                exner_i(i,k) = 1./((prsi(i,k)*p00i) ** kappa(i,levs))
-              enddo
-            endif
-!
-	
+     call wam_get_cpr(im,levs, ntrac, qgrs, xcp, xr)	      	    
+
+     do k=1,levs
+       do i=1,im
+          kappa(i,k) = xr(i,k)/xcp(i,k)
+		      inv_exner =(prsl(i,k)*p00i) ** kappa(i,k)
+          exner(i,k)  = 1./inv_exner
+       enddo
+     enddo
+
+     do k=2,levs
+       do i=1,im
+          tem = 0.5 * (kappa(i,k) + kappa(i,k-1))
+		      inv_exner =(prsi(i,k)*p00i) ** tem
+          exner_i(i,k) = 1./inv_exner
+       enddo
+     enddo
+	   k=1
+     do i=1,im
+       exner_i(i,k) = 1./((prsi(i,k)*p00i) ** kappa(i,k))
+     enddo
+     k = levs + 1
+     if (prsi(1,k) .gt. 0.0) then
+       do i=1,im
+         exner_i(i,k) = 1./((prsi(i,k)*p00i) ** kappa(i,levs))
+       enddo
+     endif
    end subroutine wamphys_zgrav	
    	

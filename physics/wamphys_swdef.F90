@@ -30,13 +30,13 @@ module wamphys_swdef
 !wamphys_def_ipewam_cpl
 !
 !
-     integer, parameter                   :: lowipe_lev150 = 80
-!     integer, parameter                  :: lonr = 2
-!     integer, parameter                  :: latr = 2   
+     integer, parameter                  :: lowipe_lev150 = 80
+!    integer, parameter                  :: lonr = 2
+!    integer, parameter                  :: latr = 2   
      integer, parameter                  :: levsr = 150 
      integer                             :: imx           ! horzontal dimension of current PE)               
 !
-! GSM allocation on "lonr, lats_node, k8o:nlevs"  => FV3WAM-style (im,   k8o:nlevs)
+!  GSM allocation on "lonr, lats_node, k8o:nlevs"  => FV3WAM-style (im,   k8o:nlevs)
 !  ALLOCATE(ZMT(lonr, lats_node_r_max, lowst_ipe_level:levs))     
 !     ../gsm/phys/gfs_physics_initialize_mod.f:        lowst_ipe_level = 80
 !

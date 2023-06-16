@@ -1,4 +1,4 @@
-      subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
+subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
                             grav,cp,adr, adt,dth,cosz,dtc, &
 		gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)			    
 			    
@@ -70,19 +70,19 @@
               else
                 h2ommr(k)=rate*h2ora(k1)     ! h2ora .... global Profile of H2O ???
               endif
-	     h2ommr(k)=max(h2ommr(k), mmr_min)  
+	      h2ommr(k)=max(h2ommr(k), mmr_min)  
             adrn2=1.-adr(i,k1,nto)-adr(i,k1,nto2)-adr(i,k1,nto3)-h2ommr(k)
             ggg(k)=grav(i,k1)
             mu(k)=1./(adr(i,k1,nto)/amo+adr(i,k1,nto2)/amo2+    &             
                    h2ommr(k)/amh2o+adr(i,k1,nto3)/amo3+adrn2/amn2)	    
           enddo
-         dthi(1:nlev)=0.
+          dthi(1:nlev)=0.
 ! get heating
-        call wam_h2ohdc(cosz(i), pmodi, h2ommr, ggg, mu, dthi, nlev)
+          call wam_h2ohdc(cosz(i), pmodi, h2ommr, ggg, mu, dthi, nlev)
 ! k1=k41-1+k
-        do k=k41,k110
-          dth(i,k)= dthi(k-k41+1)/cp(i,k)
-        enddo
+          do k=k41,k110
+            dth(i,k)= dthi(k-k41+1)/cp(i,k)
+          enddo
 !vay don't need          dth(i,1:k41-1)=0.
       enddo
 !
@@ -93,9 +93,9 @@
         do k=k100+1,k105-1
            dth(i,k)=dth(i,k)*(prlog(k105)-prlog(k))/dx
         enddo
-       do k=k105, levs
+        do k=k105, levs
            dth(i,k)=0.
-       enddo
+        enddo
       enddo
       
 ! cooling
@@ -105,22 +105,21 @@
       prpa(1:nlevc)=pmb(k71:levs)
       
       do i=1,im
-        rate=adr(i,k71,nth2o)/h2ora(k71)
+          rate=adr(i,k71,nth2o)/h2ora(k71)
           do k=1,nlevc
              h2ommrc(k)=rate*h2ora(k+k71-1)
              h2ommrc(k)=max(h2ommrc(k),mmr_min)
              temp(k)=adt(i,k+k71-1)
           enddo
-	  qr(1:nlevc) = 0.
-	  qv(1:nlevc) = 0.
-        call wam_h2occ(temp,pmb(k71:levs),h2ommrc,qr,qv,nlevc,     &
-	 gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71), dg1vb(k71),&
-	 dg2vb(k71), gdp(k71),xx(k71),wvmmrc(k71),coeff(k71)  )	
-	 
-	do k=k71, k105	 
-	  dtc(i,k)= qr(k+1-k71)+qv(k+1-k71) 
-	enddo	
-
+          qr(1:nlevc) = 0.
+          qv(1:nlevc) = 0.
+          call wam_h2occ(temp,pmb(k71:levs),h2ommrc,qr,qv,nlevc,     &
+          gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71), dg1vb(k71),&
+          dg2vb(k71), gdp(k71),xx(k71),wvmmrc(k71),coeff(k71)  )	
+          
+          do k=k71, k105	 
+                dtc(i,k)= qr(k+1-k71)+qv(k+1-k71) 
+          enddo	
       enddo
       return
-      end subroutine wamrad_h2o
+end subroutine wamrad_h2o

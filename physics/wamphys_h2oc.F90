@@ -15,15 +15,15 @@
 ! zxtkp_w
 ! gtoaxz_w
 ! enz2_w_w
-!wvrefm_w
+! wvrefm_w
 ! Contains
-!      module h2ocm
-!      subroutine h2ocin(p0,lx)	! hmhj modified
-!      subroutine h2occ(t,p0,wvmmr,qr,qv,lx)
+! module h2ocm
+! subroutine h2ocin(p0,lx)	! hmhj modified
+! subroutine h2occ(t,p0,wvmmr,qr,qv,lx)
 !***********************************************************************
 !***********************************************************************
 
-      module wam_h2ocm
+module wam_h2ocm
       use machine,                only: kind_phys
 ! Module to keep data for calculation of H2O IR cooling after Zhu (1994)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -31,19 +31,15 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       implicit none
 
-
       real(kind=kind_phys),parameter:: daysec=86400.,r_daysec=1./daysec
 
       integer        lh2oc,ltop1
 
-!
-      end module wam_h2ocm
+end module wam_h2ocm
 
 !***********************************************************************
-!***********************************************************************
-
-      
-      subroutine wam_h2ocin(p0,lx, me, master, &
+!***********************************************************************     
+subroutine wam_h2ocin(p0,lx, me, master, &
        gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
 
 !prpa, nlevc_h2o,  me, master
@@ -75,7 +71,6 @@
       
       real(kind=kind_phys),dimension(lx) :: tref, prev
       
-
 ! Work space
       integer:: l,lu, i, k
       real(kind=kind_phys):: workx
@@ -85,29 +80,27 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Allocate 10 module arrays
       if (lx > 1) then
-
-      lh2oc=lx+1
-      ltop1=0
-      gh2ort(:)=0.
-      gh2ovb(:)=0.
-      dg1rt(:)=0.
-      dg2rt(:)=0.
-      dg1vb(:)=0.
-      dg2vb(:)=0.
-      wvmmrc(:)=0.
-      gdp(:)=0.
-      xx(:)=0.
-      coeff(:)=0.
-      tref(:)=0.  
-      do k=1, lx
-       prev(lx+1-k) = p0(k)
-      enddo
-      
-!  gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff  
-    
+         lh2oc=lx+1
+         ltop1=0
+         gh2ort(:)=0.
+         gh2ovb(:)=0.
+         dg1rt(:)=0.
+         dg2rt(:)=0.
+         dg1vb(:)=0.
+         dg2vb(:)=0.
+         wvmmrc(:)=0.
+         gdp(:)=0.
+         xx(:)=0.
+         coeff(:)=0.
+         tref(:)=0.  
+         do k=1, lx
+             prev(lx+1-k) = p0(k)
+         enddo
+     
+!  gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff     
       else
          print *, ' wamphys_h2oc.F90  allocate A(LX) ', LX
-	 stop
+	   stop
       endif	  
 
 ! Initialize module parameters (1 integer and 9 real arrays). These 
@@ -130,18 +123,15 @@
       
 
       call wvrefm_w(prev(1:lx),wvmmrc,tref,coeff, lx,lh2oc,ltop1)
-!     print*,'www1',lx,lh2oc,ltop1
 
-      if(lh2oc > lx) then
-      
+      if(lh2oc > lx) then     
         print *, 'wamphys_h2oc.F90 attention lh2oc > lx ',  lh2oc, lx     
-        return
-	
+        return	
       endif
       
-      gdp(lh2oc)=(1.+refpre*p0(lx+1-lh2oc))*(p0(lx-lh2oc)-   &
-          p0(lx+1-lh2oc))
-      gdp(lx)=(1.+refpre*p0(1))*(p0(1)-p0(2))
+      gdp(lh2oc) = (1.+refpre*p0(lx+1-lh2oc))*(p0(lx-lh2oc)-   &
+                   p0(lx+1-lh2oc))
+      gdp(lx) = (1.+refpre*p0(1))*(p0(1)-p0(2))
       
       do l=(lh2oc+1),(lx-1)
          lu=lx+1-l
@@ -151,48 +141,38 @@
       workx=0.
       do l=lh2oc,lx
          workx=workx+delr0*wvmmrc(l)*gdp(l)
-	 if (workx == 0.) then
-	   print *, 'wamphys_h2oc.F90 workx=0', workx, L
-	   stop
-	 endif  
+         if (workx == 0.) then
+            print *, 'wamphys_h2oc.F90 workx=0', workx, L
+            stop
+         endif  
          xx(l)=1./workx
       enddo
 
       l=lx-lh2oc+1
-!
+
 !p0(l:1:-1)   reverse: prev(i) = p0(l=lx-lh2oc+1,..)
 !
-!      call g1rtxz_w(l,tref(lh2oc:lx),p0(l:1:-1),wvmmrc(lh2oc:lx),  &
+!     call g1rtxz_w(l,tref(lh2oc:lx),p0(l:1:-1),wvmmrc(lh2oc:lx),  &
 !          lmr,lmt,gamyrt(lh2oc:lx,:,:),me,master)
       call g1rtxz_w(l,tref(lh2oc:lx),prev(1:l),wvmmrc(lh2oc:lx),  &
-          lmr,lmt,gamyrt(lh2oc:lx,:,:),me,master)	  
-!hmhj$     lmr,lmt,gamyrt(lh2oc:,:,:),dir)
+                    lmr,lmt,gamyrt(lh2oc:lx,:,:),me,master)	  
+!hmhj$              lmr,lmt,gamyrt(lh2oc:,:,:),dir)
       call g1vbxz_w(l,tref(lh2oc:lx),prev(1:l),wvmmrc(lh2oc:lx),  &
-          lmr,lmt,gamyvb(lh2oc:lx,:,:),me,master)
-!hmhj$     lmr,lmt,gamyvb(lh2oc:,:,:),dir)
+                    lmr,lmt,gamyvb(lh2oc:lx,:,:),me,master)
+!hmhj$              lmr,lmt,gamyvb(lh2oc:,:,:),dir)
       call gtoaxz_w(l,lmr,gamyrt(lh2oc:,:,:),gamyvb(lh2oc:,:,:),  &
-          dg1rt(lh2oc:),dg2rt(lh2oc:),dg1vb(lh2oc:),dg2vb(lh2oc:))
+           dg1rt(lh2oc:),dg2rt(lh2oc:),dg1vb(lh2oc:),dg2vb(lh2oc:))
 
       do l=lh2oc,lx
          gh2ort(l)=gamyrt(l,2,1)
          gh2ovb(l)=gamyvb(l,2,1)
       enddo
-!      if (me == master ) then
-      
-!7776  format(i3, 8(1x, e10.3))       
-!        do k=lh2oc, lx
-!        print *, k, p0(k), gdp(k), gh2ort(k), gh2ovb(k),dg1rt(k),dg2rt(k),dg1vb(k), dg2vb(k)  
-!        enddo
-! lh2oc = 47 ....lx =79
-!       endif	
-!       print * , 'STOP in wam_h2ocin'
-!       stop
-      end subroutine wam_h2ocin
+end subroutine wam_h2ocin
 
 !***********************************************************************
 !***********************************************************************
 
-      subroutine wam_h2occ(t,p0,wvmmr,qr,qv,lx, &
+subroutine wam_h2occ(t,p0,wvmmr,qr,qv,lx, &
          gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
 ! Subroutine to calculate H2O IR cooling rates after Zhu (1994).  Made
 ! using his code, substantially rewritten.
@@ -227,11 +207,6 @@
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       qr(1:lx)=0.
       qv(1:lx)=0.
-      
-      
-
- 
- 
  
       if(lh2oc > lx) return
 
@@ -239,7 +214,7 @@
 ! up            47-79  lh2oc,lx   rrmmr*r_daysec = 1./3.e-6/86400.
       yy=0.
       lw=lx+1
-!      print *, 'lh2oc in wam_h2occ, lx', lh2oc  ,lx    
+         
       do l=lh2oc,lx
          lu=lx+1 - l
          yy=yy+(wvmmr(lu)-wvmmrc(l))*gdp(l)
@@ -255,17 +230,12 @@
          gr2=gh2ort(l)+wk1*(dg1rt(l)+dg2rt(l)*wk1)
          gv2=gh2ovb(l)+wk1*(dg1vb(l)+dg2vb(l)*wk1)
          qr(lu)=-wk2*thr*gr2
-         qv(lu)=-wk2*thv*gv2*phiv/(phiv+gv2)
-!	 print *, lu, l, qv(lu), qr(lu), 'qv-qu'
-!	 print *, l, gh2ort(l),dg1rt(l),dg2rt(l)  
-!	 print *, l, gh2ovb(l),dg1vb(l),dg2vb(l)  
-!	 print *	 
+         qv(lu)=-wk2*thv*gv2*phiv/(phiv+gv2)	 
       enddo
 
 ! Extrapolate cooling rates linearly to zero a scale height above lh2oc
       if(ltop1 > 0) then
-         lw=lx+1-lh2oc
-	 
+         lw=lx+1-lh2oc	 
          do L=1,ltop1
             lu=lw+L
             qr(lu)=qr(lw)*(1.-coeff(l))
@@ -274,7 +244,7 @@
          enddo
       endif
 
-      end subroutine wam_h2occ
+end subroutine wam_h2occ
       
 !***********************************************************************
 !***********************************************************************
@@ -290,18 +260,18 @@
 !***********************************************************************
 
 
-   REAL  FUNCTION blac_w(V,T)
+REAL  FUNCTION blac_w(V,T)
 !  Planck blac_wk-body function J/m/s at the wavenumber v and
 !  temperature T.  B = [2hv**3*c**2]/[exp(hcv/kT)-1] with
 !  h=6.6262E-34 Js, c=2.998E8 m/s, k=1.381E-23 J/K, v~6.75E4 m^-1.
 !  f1=2hc*c=1.19109E-16 Jm*m/s, f2=hc/k=0.0143847 mK.
       blac_w=1.19109E-16*V**3/(EXP(0.0143847*V/T)-1.0)
 
-      END function blac_w
+END function blac_w
 
 !***********************************************************************
 
-      REAL FUNCTION enz2_w(Z)
+REAL FUNCTION enz2_w(Z)
 !
 !  Calcualte exponential integral from polynomial and rational 
 !  approximation E2(z)=[exp(-z)-zE1(z)]=exp(-z)[1-exp(z)zE1(z)]
@@ -311,35 +281,33 @@
            enz2_w=1.0
            RETURN
         ENDIF
-      ENZ=-ALOG(Z)-0.57721566+Z*(0.99999193-Z*(0.24991055   &
-         -Z*(0.05519968-Z*(0.00976004E0-Z*0.00107857))))
-      enz2_w=EXP(-Z)-Z*ENZ
-      RETURN
+        ENZ=-ALOG(Z)-0.57721566+Z*(0.99999193-Z*(0.24991055   &
+           -Z*(0.05519968-Z*(0.00976004E0-Z*0.00107857))))
+        enz2_w=EXP(-Z)-Z*ENZ
+        RETURN
       ENDIF
+
       IF(Z.GE.80.0) THEN
-      enz2_w=0.0
-      RETURN
+        enz2_w=0.0
+        RETURN
       ENDIF
+
       ENZ=(0.2677737343+Z*(8.6347608925+Z*(18.0590169730+Z*    &
        (8.5733287401+Z))))/(3.9584969228+Z*(21.0996530827+Z*   & 
        (25.6329561486+Z*(9.5733223454+Z))))
       enz2_w=EXP(-Z)*(1.0-ENZ)
 
-      END function enz2_w
+END function enz2_w
 
 !***********************************************************************
 
-      subroutine g1rtxz_w(kus,tus0,pus,rus0,lmr,lmt,gamav,    &             
+subroutine g1rtxz_w(kus,tus0,pus,rus0,lmr,lmt,gamav,    &             
        me,mpi_ior)
-
-
 ! Sept, 2007: made by Rashid Akmaev from Xun Zhu's code for H2O cooling
 !
       use machine,                only: kind_phys
       implicit none
-      
-      
-    
+   
       integer,intent(in):: kus,lmr,lmt, me,mpi_ior
       real(kind=kind_phys),intent(in):: pus(kus),TUS0(KUS),RUS0(KUS)
 !hmhj character(len=*),intent(in) :: dirin
@@ -357,15 +325,15 @@
 
       real(kind=kind_phys) :: TUS(KUS),RUS(KUS)
 
-      real(kind=kind_phys) :: VNQ(NQ),VNQS(NQUS),STRB(KUS,NQUS),GAMSP(KUS,NQUS)  &
-      ,QB1(KUS,NQUS),QB2(KUS,NQUS),QBT(KUS,NQUS)                   & 
-      ,QAL1(KUS,LMR,LMT),QAL2(KUS,LMR,LMT),QALT(KUS,LMR,LMT)
+      real(kind=kind_phys) :: VNQ(NQ),VNQS(NQUS),STRB(KUS,NQUS),GAMSP(KUS,NQUS),   &
+                              QB1(KUS,NQUS),QB2(KUS,NQUS),QBT(KUS,NQUS),           & 
+                              QAL1(KUS,LMR,LMT),QAL2(KUS,LMR,LMT),QALT(KUS,LMR,LMT)
 
       real(kind=kind_phys) :: WK1(KUS),WK2(KUS),WK3(KUS),WK4(KUS)
       real(kind=kind_phys) :: DDV, V00 , FACT2 , DELTR , SUMX1, FACX1
       integer :: N1, K2, ICON, K1, K, M , KFSM1 
       integer :: LLR, LLT, N
-      real(kind=kind_phys) blac_w, enz2_w     
+      real(kind=kind_phys) :: blac_w, enz2_w     
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       DDV=25.0E2             ! unit of bandwidth: m^-1
       V00=50.0E2             ! [nu]0 for H2O in m^-1
@@ -389,12 +357,6 @@
    7    CONTINUE
         CLOSE(UNIT=71)
 
-!      endif
-!
-!      print *,'bf mpi_bcast, km=',km,'MPI_IOR=',MPI_IOR,mpi_comm,  &
-!        size(gg),mpi_real4
-
-      
 
       DO 9 M=1,MM4
         TEM4(M)=150.0+FLOAT(M-1)*25.0     !  7 reference temperatures
@@ -456,35 +418,35 @@
   
  500  CONTINUE
 
-      END subroutine g1rtxz_w
+END subroutine g1rtxz_w
 
 !***********************************************************************
 
-      subroutine g1vbxz_w(kus,tus0,pus,rus0,lmr,lmt,gamav,    &             
+subroutine g1vbxz_w(kus,tus0,pus,rus0,lmr,lmt,gamav,    &             
         me,mpi_ior)
 
 ! Sept, 2007: made by Rashid Akmaev from Xun Zhu's code for H2O cooling
 !
-       use machine,                only: kind_phys
-       implicit none
-       
-       integer,intent(in):: me,mpi_ior
-       integer,intent(in):: kus,lmr,lmt
-       real(kind=kind_phys),intent(in):: pus(kus),TUS0(KUS),RUS0(KUS)
+      use machine,                only: kind_phys
+      implicit none
+      
+      integer,intent(in):: me,mpi_ior
+      integer,intent(in):: kus,lmr,lmt
+      real(kind=kind_phys),intent(in):: pus(kus),TUS0(KUS),RUS0(KUS)
 
-       real(kind=kind_phys),intent(out):: gamav(kus,lmr,lmt)
+      real(kind=kind_phys),intent(out):: gamav(kus,lmr,lmt)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Internal parameters and work space
-       integer, PARAMETER :: NQUS=14,KFS=20,KM=30,MM4=7,NQ=14
+      integer, PARAMETER :: NQUS=14,KFS=20,KM=30,MM4=7,NQ=14
 
       real(kind=kind_phys) :: PRE(KFS),TEM4(MM4),GG(KM),WW(KM),XK2(KFS,NQ,KM,MM4)
       real(kind=kind_phys) :: T77(MM4),XKUS(KUS,NQ,KM,MM4)
 
-      real(kind=kind_phys) ::  TUS(KUS),RUS(KUS)
+      real(kind=kind_phys) :: TUS(KUS),RUS(KUS)
 
-      real(kind=kind_phys) :: VNQ(NQ),VNQS(NQUS),STRB(KUS,NQUS),GAMSP(KUS,NQUS)    &
-       ,QB1(KUS,NQUS),QB2(KUS,NQUS),QBT(KUS,NQUS)                    &
-       ,QAL1(KUS,LMR,LMT),QAL2(KUS,LMR,LMT),QALT(KUS,LMR,LMT)
+      real(kind=kind_phys) :: VNQ(NQ),VNQS(NQUS),STRB(KUS,NQUS),GAMSP(KUS,NQUS),    &
+                              QB1(KUS,NQUS),QB2(KUS,NQUS),QBT(KUS,NQUS),            &
+                              QAL1(KUS,LMR,LMT),QAL2(KUS,LMR,LMT),QALT(KUS,LMR,LMT)
 
       real(kind=kind_phys) ::  WK1(KUS),WK2(KUS),WK3(KUS),WK4(KUS)
       real(kind=kind_phys) ::  DDV, V00, FACT2, DELTR, SUMX1
@@ -577,11 +539,11 @@
   
  500  CONTINUE
 
-      END subroutine g1vbxz_w
+END subroutine g1vbxz_w
 
 !***********************************************************************
 
-      subroutine gtoaxz_w(kus,lmr,gamrt,gamvb,c1rt,c2rt,c1vb,c2vb)
+subroutine gtoaxz_w(kus,lmr,gamrt,gamvb,c1rt,c2rt,c1vb,c2vb)
 
 ! Sept, 2007: made by Rashid Akmaev from Xun Zhu's code for H2O cooling
       use machine,                only: kind_phys
@@ -594,63 +556,61 @@
       integer:: k
       
       DO K=1,KUS
-      C1RT(K)=(GAMRT(K,3)-GAMRT(K,1))/2.0
-      C1VB(K)=(GAMVB(K,3)-GAMVB(K,1))/2.0
-      C2RT(K)=(GAMRT(K,3)+GAMRT(K,1)-2.0*GAMRT(K,2))/2.0
-      C2VB(K)=(GAMVB(K,3)+GAMVB(K,1)-2.0*GAMVB(K,2))/2.0
+         C1RT(K)=(GAMRT(K,3)-GAMRT(K,1))/2.0
+         C1VB(K)=(GAMVB(K,3)-GAMVB(K,1))/2.0
+         C2RT(K)=(GAMRT(K,3)+GAMRT(K,1)-2.0*GAMRT(K,2))/2.0
+         C2VB(K)=(GAMVB(K,3)+GAMVB(K,1)-2.0*GAMVB(K,2))/2.0
       enddo
 
-      end subroutine gtoaxz_w
+end subroutine gtoaxz_w
 
 !***********************************************************************
 
-      SUBROUTINE interk_w(kus,kfs,km,mm4,nq,pre,xk2,pus,xkus)
+SUBROUTINE interk_w(kus,kfs,km,mm4,nq,pre,xk2,pus,xkus)
       use machine,                only: kind_phys
       use wamphys_math_interp,    only: wam_polint
       implicit none
-      integer,intent(in):: kus,kfs,km,mm4,nq
-      real(kind=kind_phys),intent(in):: pre(kfs),xk2(kfs,nq,km,mm4),pus(kus)
-      real(kind=kind_phys),intent(out):: xkus(kus,nq,km,mm4)
+      integer,intent(in) :: kus,kfs,km,mm4,nq
+      real(kind=kind_phys),intent(in)  :: pre(kfs),xk2(kfs,nq,km,mm4),pus(kus)
+      real(kind=kind_phys),intent(out) :: xkus(kus,nq,km,mm4)
       
-      integer:: i,k,kref,k2,m,n1
-      real(kind=kind_phys):: dy,yk,xx,WR1(2),WR2(2)
+      integer :: i,k,kref,k2,m,n1
+      real(kind=kind_phys) :: dy,yk,xx,WR1(2),WR2(2)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       DO 60 K2=1,KUS
-
-      DO 10 K=1,KFS
-      KREF=K
-      IF(PUS(K2).LT.PRE(K)) GO TO 12
-  10  CONTINUE
-  12  CONTINUE
+        DO 10 K=1,KFS
+          KREF=K
+          IF(PUS(K2).LT.PRE(K)) GO TO 12
+    10  CONTINUE
+    12  CONTINUE
 
       IF(KREF.EQ.1) KREF=2
       WR1(1)=ALOG(PRE(KREF-1))
       WR1(2)=ALOG(PRE(KREF))
 
-      DO 50 N1=1,NQ
-      DO 50 M=1,MM4
-      DO 50 I=1,KM
-      WR2(1)=ALOG(XK2(KREF-1,N1,I,M))
-      WR2(2)=ALOG(XK2(KREF,N1,I,M))
-      XX=ALOG(PUS(K2))
-      CALL WAM_POLINT(WR1,WR2,2,XX,YK,DY)
-      XKUS(K2,N1,I,M)=EXP(YK)
-  50  CONTINUE
+        DO 50 N1=1,NQ
+        DO 50 M=1,MM4
+        DO 50 I=1,KM
+          WR2(1)=ALOG(XK2(KREF-1,N1,I,M))
+          WR2(2)=ALOG(XK2(KREF,N1,I,M))
+          XX=ALOG(PUS(K2))
+          CALL WAM_POLINT(WR1,WR2,2,XX,YK,DY)
+          XKUS(K2,N1,I,M)=EXP(YK)
+    50  CONTINUE
 
   60  CONTINUE
 
-      END subroutine interk_w
+END subroutine interk_w
 
 !***********************************************************************
       
-      SUBROUTINE qsingl_w(Q1,Q2,RX,PRE,TEM,STR,GAMS,KM,   &
+SUBROUTINE qsingl_w(Q1,Q2,RX,PRE,TEM,STR,GAMS,KM,   &
          WI,GI,IM,N,VM,DVM,ITOP,mm4,nq,t77,xkus)
 	 
        use machine,                only: kind_phys   	 
        implicit none
-  
-           
+            
 ! Cooling rate by a single line
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       real(kind=kind_phys) :: t77(mm4),xkus(km,nq,im,mm4)
@@ -664,75 +624,80 @@
 !
       integer, PARAMETER :: KMAX=150
       integer :: km, mm4, nq, im, n
-      real(kind=kind_phys) :: Q1(KM),Q2(KM),RX(KM),PRE(KM),TEM(KM),GAMS(KM)   &
-       ,STR(KM),WI(IM),GI(IM),GAM1(KMAX,KMAX),BJX(KMAX),H00(KMAX)
+      real(kind=kind_phys) :: Q1(KM),Q2(KM),RX(KM),PRE(KM),TEM(KM),GAMS(KM),   &
+                              STR(KM),WI(IM),GI(IM),GAM1(KMAX,KMAX),BJX(KMAX), &
+                              H00(KMAX)
       real(kind=kind_phys) ::  vm, dvm
       real(kind=kind_phys) ::  blac_w, enz2_w, zxtkp_w
       real(kind=kind_phys) :: pi, GRAV1, b250, delu, fac1, fac2, dp1
       integer :: KMM, M, I, K, J, IJ1, IJ2, L, ITOP
+
       KMM=KM-1
       PI=3.14159265
       GRAV1=9.8             ! gravitational constant in m s**(-2)
       B250=blac_w(VM,250.0)
+
       DO 20 K=1,KM
-      STR(K)=0.0
-      DO 15 I=1,IM
-      STR(K)=STR(K)+WI(I)*zxtkp_w(TEM(K),K,I,N,km,im,mm4,nq,t77,xkus)
-  15  CONTINUE
-      BJX(K)=blac_w(VM,TEM(K))/B250
-      H00(K)=2.0*PI*86400.0*RX(K)*(STR(K)*DVM)*B250/1004.0
+        STR(K)=0.0
+        DO 15 I=1,IM
+          STR(K)=STR(K)+WI(I)*zxtkp_w(TEM(K),K,I,N,km,im,mm4,nq,t77,xkus)
+    15  CONTINUE
+        BJX(K)=blac_w(VM,TEM(K))/B250
+        H00(K)=2.0*PI*86400.0*RX(K)*(STR(K)*DVM)*B250/1004.0
   20  CONTINUE
+
       DO 150 I=1,KM
       DO 150 J=1,KM
-      GAM1(I,J)=0.0
-      if(j.ne.1) go to 150
-      IJ1=MIN0(I,J)
-      IJ2=MAX0(I,J)-1
-      DO 120 L=1,IM
-      IF(I.EQ.J) GO TO 50
-      DELU=0.0
-      DO 40 M=IJ1,IJ2
-      FAC1=(zxtkp_w(TEM(M),M,L,N,km,im,mm4,nq,t77,xkus)+   &
-             zxtkp_w(TEM(M+1),M+1,L,N,km,im,mm4,nq,t77,xkus))/2.0
-      FAC2=(RX(M)+RX(M+1))/2.0
-      DP1=ABS(PRE(M)-PRE(M+1))
-      DELU=DELU+FAC1*FAC2*DP1
-  40  CONTINUE
-      DELU=DELU/GRAV1
-      GO TO 100
-  50  CONTINUE
-      IF(I.EQ.1) DP1=ABS(PRE(1)-PRE(2))
-      IF(I.EQ.KM) DP1=ABS(PRE(KM)-PRE(KM-1))
-      IF(I.NE.1.AND.I.NE.KM) DP1=ABS(PRE(I+1)-PRE(I-1))/2.0
-      DP1=DP1*0.5
-      DELU=zxtkp_w(TEM(I),I,L,N,km,im,mm4,nq,t77,xkus)*RX(I)*DP1/GRAV1
- 100  CONTINUE
-      GAM1(I,J)=GAM1(I,J)+     &
-          WI(L)*zxtkp_w(TEM(I),I,L,N,km,im,mm4,nq,t77,xkus)*enz2_w(DELU)
- 120  CONTINUE
-      GAM1(I,J)=GAM1(I,J)/STR(I)
+        GAM1(I,J)=0.0
+        if(j.ne.1) go to 150
+        IJ1=MIN0(I,J)
+        IJ2=MAX0(I,J)-1
+        DO 120 L=1,IM
+        IF(I.EQ.J) GO TO 50
+        DELU=0.0
+        DO 40 M=IJ1,IJ2
+          FAC1=(zxtkp_w(TEM(M),M,L,N,km,im,mm4,nq,t77,xkus)+   &
+                 zxtkp_w(TEM(M+1),M+1,L,N,km,im,mm4,nq,t77,xkus))/2.0
+          FAC2=(RX(M)+RX(M+1))/2.0
+          DP1=ABS(PRE(M)-PRE(M+1))
+          DELU=DELU+FAC1*FAC2*DP1
+    40  CONTINUE
+        DELU=DELU/GRAV1
+        GO TO 100
+    50  CONTINUE
+        IF(I.EQ.1) DP1=ABS(PRE(1)-PRE(2))
+        IF(I.EQ.KM) DP1=ABS(PRE(KM)-PRE(KM-1))
+        IF(I.NE.1.AND.I.NE.KM) DP1=ABS(PRE(I+1)-PRE(I-1))/2.0
+        DP1=DP1*0.5
+        DELU=zxtkp_w(TEM(I),I,L,N,km,im,mm4,nq,t77,xkus)*RX(I)*DP1/GRAV1
+   100  CONTINUE
+        GAM1(I,J)=GAM1(I,J)+     &
+            WI(L)*zxtkp_w(TEM(I),I,L,N,km,im,mm4,nq,t77,xkus)*enz2_w(DELU)
+   120  CONTINUE
+        GAM1(I,J)=GAM1(I,J)/STR(I)
  150  CONTINUE
  
       DO 200 K=1,KM
-      IF(ITOP.EQ.0) GAMS(K)=GAM1(K,KM)
-      IF(ITOP.EQ.1) GAMS(K)=GAM1(K,1)
-      Q1(K)=-H00(K)*BJX(K)*GAMS(K)
+        IF(ITOP.EQ.0) GAMS(K)=GAM1(K,KM)
+        IF(ITOP.EQ.1) GAMS(K)=GAM1(K,1)
+        Q1(K)=-H00(K)*BJX(K)*GAMS(K)
  200  CONTINUE
+
       DO 400 K=1,KM
-      Q2(K)=0.0
-      DO 350 L=2,KM
-      FAC1=(BJX(L)+BJX(L-1)-2.0*BJX(K))/2.0
-      FAC2=FAC1*ABS(GAM1(K,L)-GAM1(K,L-1))
-      Q2(K)=Q2(K)+FAC2
- 350  CONTINUE
-      Q2(K)=Q2(K)*H00(K)
+        Q2(K)=0.0
+        DO 350 L=2,KM
+          FAC1=(BJX(L)+BJX(L-1)-2.0*BJX(K))/2.0
+          FAC2=FAC1*ABS(GAM1(K,L)-GAM1(K,L-1))
+          Q2(K)=Q2(K)+FAC2
+   350  CONTINUE
+        Q2(K)=Q2(K)*H00(K)
  400  CONTINUE
 
-      END
+END SUBROUTINE qsingl_w
 
 !***********************************************************************
 
-      subroutine wvrefm_w(pmy,wvmy,tmy,coeff,lmy,lh2o,llin)
+subroutine wvrefm_w(pmy,wvmy,tmy,coeff,lmy,lh2o,llin)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Nov 12, 2008: Calculation of lh2o corrected to avoid lh2o=0
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -892,11 +857,11 @@
          enddo
       endif
 
-      END subroutine wvrefm_w
+END subroutine wvrefm_w
 
 !***********************************************************************
 
-      real FUNCTION zxtkp_w(T,K,I,N,kus,km,mm4,nq,t77,xkus)
+real FUNCTION zxtkp_w(T,K,I,N,kus,km,mm4,nq,t77,xkus)
       use machine,                only: kind_phys 
       use wamphys_math_interp, only : wam_polint     
       implicit none
@@ -916,17 +881,17 @@
       JJB=JJ1+1
 
       DO 10 JJ=JJA,JJB
-      JJ3=JJ-JJA+1
-      WR1(JJ3)=T77(JJ)
+        JJ3=JJ-JJA+1
+        WR1(JJ3)=T77(JJ)
   10  WR2(JJ3)=ALOG(XKUS(K,N,I,JJ))
 
       CALL WAM_POLINT(WR1,WR2,3,XT,Y,DY)
       zxtkp_w=EXP(Y)
 
-      END function zxtkp_w
+END function zxtkp_w
 
 !***********************************************************************
-      subroutine wam_h2ohdc(ctheta,p0,mmr,grav,mu,h2ohr,lx)
+subroutine wam_h2ohdc(ctheta,p0,mmr,grav,mu,h2ohr,lx)
       
 ! Subroutine to calculate H2O near-IR heating rates after C.D. Walshaw,
 ! see Fomichev and Shved (1988).
@@ -1092,6 +1057,6 @@
          enddo
       endif
 
-      end subroutine wam_h2ohdc
+end subroutine wam_h2ohdc
 
 

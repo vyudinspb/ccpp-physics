@@ -13,14 +13,9 @@ contains
 !> \section arg_table_wamphys_post_run Argument Table
 !! \htmlinclude wamphys_post_run.html
 !!
-!     subroutine wamphys_post_run ( im, levs, do_wamphys_diag, dtf,                &
-!         dudt_wamph,  dvdt_wamph,  dtdt_wamph,  do1dt_wamph,  do2dt_wamph,   &
-!         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,    &	 
-!	 dtdt, dudt, dvdt, errmsg, errflg)
-
-     subroutine wamphys_post_run ( im, levs, do_wamphys_diag, dtf,           &
-         dudt_wamph,  dvdt_wamph,  dtdt_wamph,  do1dt_wamph,  do2dt_wamph,   &
-         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,  &
+     subroutine wamphys_post_run ( im, levs, do_wamphys_diag, dtf,            &
+         dudt_wamph,  dvdt_wamph,  dtdt_wamph,  do1dt_wamph,  do2dt_wamph,    &
+         dudt_iwamph, dvdt_iwamph, dtdt_iwamph, do1dt_iwamph, do2dt_iwamph,   &
          dudt_wammd,dvdt_wammd,dtdt_wammd,                                    &   !Add more diag vars wchen
          dudt_wamion,dvdt_wamion,dtdt_wamion,                                 &
          dtdt_wamrad,                                                         &	 	 
@@ -32,7 +27,6 @@ contains
          index_of_process_wammd,index_of_process_wamrad,                      &
          index_of_process_wamion,ntoz,nto1,nto2,                              & 	 !Add more diag vars wchen
 	       dtdt, dudt, dvdt,dqdt, errmsg, errflg)
-
 
 
         use machine,                only: kind_phys
@@ -51,12 +45,14 @@ contains
         integer, intent(in) :: index_of_process_wamphys
         integer, intent(in) :: index_of_process_wammd,index_of_process_wamrad,index_of_process_wamion
         integer, intent(in) :: ntoz,nto1,nto2
-        real(kind=kind_phys), intent(in),    dimension(:,:) ::dudt_wammd,dvdt_wammd,dtdt_wammd
-        real(kind=kind_phys), intent(in),    dimension(:,:) ::dudt_wamion,dvdt_wamion,dtdt_wamion
-        real(kind=kind_phys), intent(in),    dimension(:,:) ::dtdt_wamrad
-        real(kind=kind_phys), intent(inout),    dimension(:,:) ::du3dt_wammd,dv3dt_wammd,dt3dt_wammd
-        real(kind=kind_phys), intent(inout),    dimension(:,:) ::du3dt_wamion,dv3dt_wamion,dt3dt_wamion
-        real(kind=kind_phys), intent(inout),    dimension(:,:) ::dt3dt_wamrad
+
+        real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_wammd,dvdt_wammd,dtdt_wammd
+        real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_wamion,dvdt_wamion,dtdt_wamion
+        real(kind=kind_phys), intent(in),    dimension(:,:) :: dtdt_wamrad
+
+        real(kind=kind_phys), intent(inout),    dimension(:,:) :: du3dt_wammd,dv3dt_wammd,dt3dt_wammd
+        real(kind=kind_phys), intent(inout),    dimension(:,:) :: du3dt_wamion,dv3dt_wamion,dt3dt_wamion
+        real(kind=kind_phys), intent(inout),    dimension(:,:) :: dt3dt_wamrad
 
         real(kind=kind_phys), intent(in),    dimension(:,:) :: dtdt_iwamph, dvdt_iwamph
         real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_iwamph
@@ -70,6 +66,7 @@ contains
         real(kind=kind_phys), intent(inout), dimension(:,:,:)  :: dqdt
         character(len=*),        intent(out) :: errmsg
         integer,                 intent(out) :: errflg
+        
 	      integer :: idtend         !Add more diag vars wchen
 
 

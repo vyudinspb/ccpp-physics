@@ -10,7 +10,7 @@
 !      REAL, parameter :: dx=1.0, rdx=1.0/dx
 !      REAL, DIMENSION(:, :, :), POINTER :: ZMT, MMT, JHR, SHR, O2DR
 !======================================
-      module wamphys_module_IPE_to_WAM
+module wamphys_module_IPE_to_WAM
       
       use machine,                 only: kind_phys
       IMPLICIT none
@@ -18,9 +18,9 @@
       real(kind=kind_phys), parameter   :: dx =0.25,  rdx = 1./dx
       integer                           :: low_ipe_level
       
-      end module wamphys_module_IPE_to_WAM
+end module wamphys_module_IPE_to_WAM
       
-      SUBROUTINE wamphys_par_for_ipemerge(gzmt,im, levs, lowst_ipe_level, prsl, plow, phigh, &
+SUBROUTINE wamphys_par_for_ipemerge(gzmt,im, levs, lowst_ipe_level, prsl, plow, phigh, &
                                           xpk_low, xpk_high)
 	   
        use machine,                 only: kind_phys
@@ -37,9 +37,6 @@
 	
         real(kind=kind_phys)   :: alowipe
         INTEGER                :: i, k
-        
-      
-	
 
 ! Dtermine the number of the lowest level in IPE coupling arrays.
 ! Pre-set up the default values in the IPE arrays are 1E-50.
@@ -64,7 +61,6 @@
 ! note also that log-pressures are < 0
 !-------------------------------------------------------------------------
           xpk_high(i) = xpk_low(i) - dx
-
 !
           do k = low_ipe_level, levs
              if (prsl(i,k) < exp(xpk_high(i))) then
@@ -73,10 +69,10 @@
              endif
           enddo
 1003      CONTINUE
-          enddo
-        END SUBROUTINE wamphys_par_for_ipemerge
+        enddo
+END SUBROUTINE wamphys_par_for_ipemerge
 
-      SUBROUTINE wamphys_merge_ipe2wam(array_ipe, array_wam,        &
+SUBROUTINE wamphys_merge_ipe2wam(array_ipe, array_wam,               &
            im, levs, lev_low, prsl, plow, phigh, xpk_low, xpk_high)
 
 ! This subroutine is to take care the merging calcualtions
@@ -114,4 +110,4 @@
 	
       enddo
 
-      END SUBROUTINE wamphys_merge_ipe2wam
+END SUBROUTINE wamphys_merge_ipe2wam

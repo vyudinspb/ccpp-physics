@@ -16,7 +16,7 @@ module  wamphys_init_module
     use  wamphys_set_data_solar, only : csao, csao2, csan2, csao3, csio, csio2, csin2, csdo2, csdeo2 
 
  
-    use wamphys_swdef
+!    use wamphys_swdef   ! will use in future
 
     implicit none
     logical              :: module_is_initialized

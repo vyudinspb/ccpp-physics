@@ -1,7 +1,7 @@
 [ccpp-table-properties]
   name = wamphys_post
   type = scheme
-  dependencies = machine.F
+  dependencies = ../hooks/machine.F
 
 ########################################################################
 [ccpp-arg-table]

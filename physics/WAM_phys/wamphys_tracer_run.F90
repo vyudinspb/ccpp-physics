@@ -14,7 +14,9 @@
       use physcons, only             : avgd => con_avgd             
       use wamphys_init_module, only  : bz,amo,amn2, amo2, amo3, amh2o
       use wamphys_init_module, only  : rbz, rmo, rmo2, rmn2, rmh2o,rmo3
-      use wamphys_init_module, only  : lowst_ipe_level => lowipe_lev150     
+!     The following will be in the future but pay attention that the
+!     lowst_ipe_level was not defined in the ini module
+!      use wamphys_init_module, only  : lowst_ipe_level => lowipe_lev150 
       
 !      use module_IPE_to_WAM, only: low_ipe_level   !  wamphys_merge_ipe2wam
       

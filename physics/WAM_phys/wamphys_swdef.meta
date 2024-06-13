@@ -1,7 +1,7 @@
 [ccpp-table-properties]
   name = wamphys_swdef
   type = module
-  dependencies = machine.F
+  dependencies = ../hooks/machine.F
   
 [ccpp-arg-table]
   name  = wamphys_swdef

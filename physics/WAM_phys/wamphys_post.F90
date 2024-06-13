@@ -4,12 +4,6 @@ module wamphys_post
 
 contains
 
-!>\defgroup ugwpv1_gsldrag_post ugwpv1_gsldrag Scheme Post
-!! @{
-
-      subroutine wamphys_post_init ()
-      end subroutine wamphys_post_init
-
 !> \section arg_table_wamphys_post_run Argument Table
 !! \htmlinclude wamphys_post_run.html
 !!
@@ -169,8 +163,6 @@ contains
 !=====================================================================
       end subroutine wamphys_post_run      
 
-      subroutine wamphys_post_finalize ()
-      end subroutine wamphys_post_finalize
 
 !! @}
 end module wamphys_post

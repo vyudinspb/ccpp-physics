@@ -231,7 +231,7 @@ contains
     if ( do_ugwp_v1 ) then
        fn_nml2d ='input.nml'
        call cires_ugwpv1_init (me, master, nlunit, logunit, jdat, con_pi,      &
-                               con_rerth, fn_nml2d, lonr, latr, &
+                               con_rerth, fn_nml2d,  input_nml_file,lonr, latr, &
                                levs, ak, bk, con_p0, dtp, errmsg, errflg)
     if (me == master) then
        print *,  ' ccpp: ugwpv1_gsldrag_init   '

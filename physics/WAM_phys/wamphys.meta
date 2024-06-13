@@ -1,7 +1,7 @@
 [ccpp-table-properties]
   name = wamphys
   type = scheme
-  dependencies = machine.F,physcons.F90,wamphys_extra_constants.F90,wamphys_multigases.F90 
+  dependencies = ../hooks/machine.F,../hooks/physcons.F90,wamphys_extra_constants.F90,wamphys_multigases.F90 
   dependencies = wamphys_math_interp.F90,wamphys_setdata.F90,wamphys_get_pzgeo.F90
   dependencies = wamphys_co2hc.F90,wamphys_h2oc.F90,wamphys_init_module.F90
   dependencies = wamphys_merge_ipe2wam.F90,wamphys_co2.F90,wamphys_h2o.F90

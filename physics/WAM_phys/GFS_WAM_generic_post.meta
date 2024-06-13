@@ -2,7 +2,7 @@
 [ccpp-table-properties]
   name = GFS_WAM_generic_post
   type = scheme
-  dependencies = machine.F
+  dependencies = ../hooks/machine.F
 
 ########################################################################
 [ccpp-arg-table]

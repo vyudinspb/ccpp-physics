@@ -1,0 +1,142 @@
+[ccpp-table-properties]
+  name = wamphys_swdef
+  type = module
+  dependencies = machine.F
+  
+[ccpp-arg-table]
+  name  = wamphys_swdef
+  type  = module
+[swio_file]
+  standard_name = sw_parameter_swio
+  units = 1
+  type = character
+  dimensions = ()
+[sw_ntd]
+  standard_name = time_dimension_of_sw_parameters_data_size
+  units = count
+  type = integer
+  dimensions = (1)
+[sw_f107]
+  standard_name = previous_day_10_7cm_solar_flux_10_e22
+  units = W m-2
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_f107d]
+  standard_name = average_of_the_previous_41_days_10_7cm_solar_flux_10_e22
+  units = W m-2
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_kp]
+  standard_name = planetary_3_hour_geomagnetic_activity_index_quasi_log_scale
+  units = count
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_kpa]
+  standard_name = average_of_the_previous_8_planetary_3_hour_geomagnetic_activity_indices
+  units = count 
+  type = real
+  kind = kind_phys 
+  dimensions = (sw_ntd)
+[sw_nhp]
+  standard_name = northern_hemispheric_auroral_power
+  units = GW
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_nhpi]
+  standard_name = northern_hemispheric_auroral_power_index
+  units = count
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_shp]
+  standard_name = southern_hemispheric_auroral_power
+  units = GW
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_shpi]
+  standard_name = southern_hemispheric_auroral_power_index
+  units = count
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_den]
+  standard_name = solar_wind_density
+  units = cm-3
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_ang]
+  standard_name = solar_wind_interplanetary_magnetic_field_angle_arctan_BzBy
+  units = degree
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_bz]
+  standard_name = northward_solar_wind_interplanetary_magnetic_field
+  units = nT
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_bt]
+  standard_name = total_solar_wind_interplanetary_magnetic_field
+  units = nT
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_vel]
+  standard_name = Earthward_solar_wind_velocity
+  units = km s-1
+  type = real 
+  dimensions = (sw_ntd)
+[sw_ap]
+  standard_name = planetary_3_hour_geomagnetic_activity_index_linear_scale
+  units = count
+  type = real 
+  dimensions = (sw_ntd)
+[sw_apa]
+  standard_name = average_of_the_previous_8_planetary_3_hour_geomagnetic_activity_indices_linear_scale
+  units = count
+  type = real 
+  dimensions = (sw_ntd)
+[sw_time]
+  standard_name = TIME_AXIS_of_SW_parameters_real_format_Yr4MoD2Hr2Mi2
+  units = time
+  type = real 
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[sw_days_since]
+  standard_name = TIME_AXIS_of_SW_parameters_real_format_seconds_since_start_day
+  units = seconds
+  type = real
+  kind = kind_phys
+  dimensions = (sw_ntd)
+[lowipe_lev150]
+  standard_name = fixed_level_for_ipe_wam_merge_lowipe_lev150_80
+  units = count
+  type = integer
+  dimensions = (1)
+[lonr]
+  standard_name = number_of_WAM_longitudes_of_Cube_sphere_grid
+  units = count
+  type = integer
+  dimensions = (1)
+[latr]
+  standard_name = number_of_WAM_latitudes_of_Cube_sphere_grid
+  units = count
+  type = integer
+  dimensions = (1)
+[levsr]
+  standard_name = number_of_the_WAM_vertical_mid_layer_levels
+  units = count
+  type = integer
+  dimensions = (1)
+[imx]
+  standard_name = number_of_horizontal_grid_points
+  units = count 
+  type = integer
+  dimensions = (1) 

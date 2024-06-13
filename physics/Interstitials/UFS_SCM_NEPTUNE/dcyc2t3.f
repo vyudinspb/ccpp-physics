@@ -172,7 +172,7 @@
      &       sfcdsw,sfcnsw,sfcdlw,swh,swhc,hlw,hlwc,                    &
      &       sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu,                   &
      &       sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd,                   &
-     &       im, levs, deltim, fhswr,                                   &
+     &       im, levs, deltim, fhswr,do_wamphys,                        &
      &       dry, icy, wet, damp_LW_fluxadj, lfnc_k, lfnc_p0,           &
      &       use_LW_jacobian, sfculw, use_med_flux, sfculw_med,         &
      &       fluxlwUP_jac, t_lay, p_lay, p_lev, flux2D_lwUP,            &
@@ -209,6 +209,7 @@
       logical, intent(in) :: use_LW_jacobian, damp_LW_fluxadj,          &
      &     pert_radtend, use_med_flux
       logical, intent(in) :: do_sppt,ca_global
+      logical, intent(in) :: do_wamphys
       real(kind=kind_phys),   intent(in) :: solhr, slag, cdec, sdec,    &
      &     deltim, fhswr, lfnc_k, lfnc_p0
 
@@ -378,6 +379,7 @@
         adjvisbmd(i) = sfcvisbmd(i) * xmu(i)
         adjvisdfd(i) = sfcvisdfd(i) * xmu(i)
       enddo
+      if(do_wamphys) return
 
       ! Adjust the LW and SW heating-rates.
       ! For LW, optionally scale using the Jacobian of the upward LW flux. *RRTMGP ONLY*
@@ -428,11 +430,13 @@
             enddo
          enddo
       else
+        if(.not.do_wamphys) then
          do k = 1, levs
             do i = 1, im
                dtdt(i,k)  = dtdt(i,k)  + swh(i,k)*xmu(i)  + hlw(i,k)
             enddo
          enddo
+        endif
       endif
 
       if (do_sppt .or. ca_global) then

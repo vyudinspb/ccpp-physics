@@ -7,6 +7,13 @@
 [ccpp-arg-table]
   name = dcyc2t3_run
   type = scheme
+[do_wamphys]
+  standard_name = flag_for_wamphys
+  long_name = flag to activate version 1 of wamphys
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
 [solhr]
   standard_name = forecast_utc_hour
   long_name = time in hours after 00z at the current timestep

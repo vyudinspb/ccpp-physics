@@ -101,13 +101,13 @@ contains
                                          do_ugwp_v1_orog_only,do_ugwp_v1_w_gsldrag
 
     character(len=*), intent (in)  :: fn_nml2
-    !character(len=*), parameter   :: fn_nml='input.nml'
+    !character(len=*), parameter   :: fn_nml2d='input.nml'
 
     integer :: ios
     logical :: exists
     real    :: dxsg
     integer :: k
-
+    character(len=64)             :: fn_nml2d
     character(len=*), intent(out) :: errmsg
     integer,          intent(out) :: errflg
 
@@ -229,12 +229,10 @@ contains
     rcpdt  = rcpd/dtp
 
     if ( do_ugwp_v1 ) then
+       fn_nml2d ='input.nml'
        call cires_ugwpv1_init (me, master, nlunit, logunit, jdat, con_pi,      &
-                               con_rerth, fn_nml2, input_nml_file, lonr, latr, &
+                               con_rerth, fn_nml2d, lonr, latr, &
                                levs, ak, bk, con_p0, dtp, errmsg, errflg)
-       if (errflg/=0) return
-    end if
-
     if (me == master) then
        print *,  ' ccpp: ugwpv1_gsldrag_init   '
 
@@ -244,9 +242,9 @@ contains
        print *,  ' ccpp do_gsl_drag_tofd  flag ',     do_gsl_drag_tofd
 
        print *, ' ccpp: ugwpv1_gsldrag_init  '
-    endif
-
-
+    endif			       
+       if (errflg/=0) return
+    end if
 
     is_initialized = .true.
 
@@ -381,13 +379,6 @@ contains
     real(kind=kind_phys),    intent(in), dimension(:)       :: varss,oc1ss,dx
     real(kind=kind_phys),    intent(in), dimension(:,:)     :: oa4ss,ol4ss
 
-!=====
-!ccpp-style passing constants, I prefer to take them out from the "call-subr" list
-!=====
-!    real(kind=kind_phys),    intent(in) :: con_g, con_omega, con_pi, con_cp, con_rd, &
-!                                           con_rv, con_rerth, con_fvirt
-! grids
-
     real(kind=kind_phys),    intent(in), dimension(:)     :: xlat, xlat_d, sinlat, coslat, area
 
 ! State vars + PBL/slmsk +rain
@@ -450,13 +441,9 @@ contains
     real(kind=kind_phys), dimension(im, levs) :: Pdvdt, Pdudt
     real(kind=kind_phys), dimension(im, levs) :: Pdtdt, Pkdis
 !------------
-!
-! from ugwp_driver_v0.f -> cires_ugwp_initialize.F90 -> module ugwp_wmsdis_init
-!  now in the namelist of cires_ugwp "knob_ugwp_tauamp" controls tamp_mpa
-!
 !        tamp_mpa =knob_ugwp_tauamp                         !amplitude for GEOS-5/MERRA-2
 !------------
-!    real(kind=kind_phys), parameter :: tamp_mpa_v0=30.e-3  ! large flux to help "GFS-ensembles" in July 2019
+!    real(kind=kind_phys), parameter :: tamp_mpa_v0=30.e-3  ! ~10 times larger GW-flux to help "GFS-ensembles" in July 2019
 
 ! switches that activate impact of OGWs and NGWs
 
@@ -496,6 +483,7 @@ contains
 !===============================================================
 ! ORO-diag
 
+       
        if (do_ugwp_v1 .or. ldiag_ugwp) then
          dudt_ogw(:,:)= 0.; dvdt_ogw(:,:)=0.; dudt_obl(:,:)=0.; dvdt_obl(:,:)=0.
          dudt_oss(:,:)= 0.; dvdt_oss(:,:)=0.; dudt_ofd(:,:)=0.; dvdt_ofd(:,:)=0.
@@ -503,7 +491,7 @@ contains
          du_osscol(:)=0. ; dv_osscol(:)=0. ;du_ofdcol(:)=0.  ; dv_ofdcol(:)=0.
          dudt_ngw(:,:)=0.; dvdt_ngw(:,:)=0.; dtdt_ngw(:,:)=0.; kdis_ngw(:,:)=0.
        else
-         dudt_ogw(:,:)  = 0.
+         dudt_ogw(:,:)  = 0.; dvdt_ogw(:,:)=0.
        end if
 
        dusfcg (:)  = 0.  ;  dvsfcg(:) =0.
@@ -516,9 +504,10 @@ contains
 
       tau_ogw(:)=0. ; tau_ngw(:)=0. ;  tau_oss(:)=0.
 
-! launch layers
+! launch/diag layers for OGWs, LLWB, MoBL, and NGWs
 
       zlwb(:)= 0.  ; zogw(:)=0. ;  zobl(:)=0. ;  zngw(:)=0.
+      
 !===============================================================
 !  diag tendencies due to all-SSO schemes (ORO-physics)
 !  ogw + obl + oss + ofd ..... no explicit "lee wave trapping"
@@ -612,7 +601,7 @@ contains
                       du_ogwcol, dv_ogwcol, du_oblcol, dv_oblcol,         &
                       du_ofdcol, dv_ofdcol, errmsg,errflg           )
 !
-! orogw_v1: dusfcg = du_ogwcol + du_oblcol  + du_ofdcol                           only 3 terms
+! orogw_v1: dusfcg = du_ogwcol + du_oblcol  + du_ofdcol          only 3 terms w/o ;oss' small-scale orography
 !
 !
 !          if (kdt <= 2 .and. me == master) then
@@ -658,7 +647,7 @@ contains
 ! 2020 updates of MERRA/GEOS tau_ngw for the C96-QBO FV3GFS-127L runs
 !==================================================================
 
-       call  slat_geos5_2020(im, tamp_mpa, xlat_d, tau_ngw)
+       call  slat_geos5_2020(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
 
        y4 = jdat(1); month = jdat(2); day = jdat(3)
 !
@@ -671,22 +660,18 @@ contains
        call calendar_ugwp(y4, month, day, ddd_ugwp)
        curdate = y4*1000 + ddd_ugwp
 !
+!                               day-to-day (seasonal) GW sources  from "cires_ugwpv1_module.F90"
+!
        call ngwflux_update(me, master, im, levs, kdt, ddd_ugwp,curdate, &
          tau_amf, xlat_d, sinlat,coslat, rain, tau_ngw)
-
+!
+!                              new solver for the NGW  spectral scheme
+!
        call cires_ugwpv1_ngw_solv2(me, master, im,   levs,  kdt, dtp,   &
                       tau_ngw, tgrs, ugrs,  vgrs,   q1, prsl, prsi,     &
                       zmet, zmeti,prslk,   xlat_d, sinlat, coslat,      &
                       dudt_ngw, dvdt_ngw, dtdt_ngw, kdis_ngw, zngw)
-!
-! =>  con_g, con_cp, con_rd, con_rv, con_omega,  con_pi, con_fvirt
-!
-!       if (me == master .and. kdt <= 2) then
-!         print *
-!         write(6,*)'FV3GFS finished fv3_ugwp_solv2_v1   '
-!         write(6,*) ' non-stationary GWs with GMAO/MERRA GW-forcing '
-!         print *
-!
+		      
 !      print *, ' ugwp_v1 ', kdt
 !      print *, ' ugwp_v1 du/dt ', maxval(dudt_ngw)*86400, minval(dudt_ngw)*86400
 !      print *, ' ugwp_v1 dv/dt ', maxval(dvdt_ngw)*86400, minval(dvdt_ngw)*86400

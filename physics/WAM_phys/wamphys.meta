@@ -61,7 +61,6 @@
   dimensions = (number_of_lines_in_internal_namelist)
   type = character
   kind = len=256
-  active = (number_of_lines_in_internal_namelist > 0)
   intent = in
 [logunit]
   standard_name = iounit_of_log
@@ -162,7 +161,6 @@
   units = index
   dimensions = ()
   type = integer
-  active = (assign in GFS_control_type)
   intent = in        
 [con_pi]
   standard_name = pi
@@ -251,6 +249,7 @@
   dimensions = ()
   type = integer
   intent = out
+
 ########################################################################
 [ccpp-arg-table]
   name = wamphys_finalize
@@ -395,7 +394,6 @@
   units = index
   dimensions = ()
   type = integer
-  active = (assign in GFS_control_type)
   intent = in
 [dx]
   standard_name = characteristic_grid_lengthscale

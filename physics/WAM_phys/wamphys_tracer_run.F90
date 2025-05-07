@@ -500,15 +500,15 @@
 
       if(dkeddy <= 1e-10) then
 
-! Add semiannual variation
+! Add semiannual variation   SKEDDY0 =   140.   SKEDDY_SEMIANN  =   60.0
 !          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))   ! WAM-GSM
 
         do k=1,levs+1
-          x = alog(1e5/prsi(1,k))
+          x = alog(1.e5/prsi(1,k))
 	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
           keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5            
         enddo                    
-	 		    
+	    
       else
          do k=1,levs+1
 ! height in scale heights

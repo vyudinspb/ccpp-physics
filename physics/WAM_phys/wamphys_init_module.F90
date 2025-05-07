@@ -359,16 +359,15 @@ module  wamphys_init_module
       if (.not.allocated(prpa)) allocate(prpa(nlevc_h2o))  
       prpa(1:nlevc_h2o) = pmb(k71:levs)
       
-      !nlevc_h2o=levs-k71+1   
-   
-      allocate(gh2ort(levs), gh2ovb(levs),dg1rt(levs),dg2rt(levs)  )
-      allocate( dg1vb(levs),dg2vb(levs),gdp(levs))
-      allocate( xx(levs),wvmmrc(levs),coeff(levs))
+!nlevc_h2o=levs-k71+1   
+   	   
+      allocate(gh2ort(nlevc_h2o), gh2ovb(nlevc_h2o),dg1rt(nlevc_h2o),dg2rt(nlevc_h2o)  )
+      allocate( dg1vb(nlevc_h2o), dg2vb(nlevc_h2o),   gdp(nlevc_h2o))
+      allocate( xx(nlevc_h2o),    wvmmrc(nlevc_h2o),  coeff(nlevc_h2o))
       
-      call wam_h2ocin(prpa, nlevc_h2o,  me, master,                          &
-           gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71),                    &
-           dg1vb(k71),dg2vb(k71),gdp(k71),xx(k71),wvmmrc(k71),coeff(k71) )
-   	
+      call wam_h2ocin(prpa, nlevc_h2o,  me, master,      &
+           gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff )   
+	   	
    !    if(me == master) then
    !      print*, ' wam_h2ocin dims ', levs, k71, nlevc_h2o
    !      do k=k71, levs  

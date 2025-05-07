@@ -259,9 +259,9 @@ contains
     use wamphys_init_module, only : nlev_h2o,nlev_co2, nlevc_h2o 
     
     use wamphys_init_module, only : co2my
-    use wamphys_init_module, only : gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb
-    use wamphys_init_module, only : gdp,  xx, wvmmrc, coeff   
-    use wamphys_init_module, only :         
+!    use wamphys_init_module, only : gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb
+!    use wamphys_init_module, only : gdp,  xx, wvmmrc, coeff   
+        
     use wamphys_init_module, only : spw_drivers, swin_drivers
     
     use wamphys_init_module, only : f107_fix, f107a_fix, kp_fix, kpa_fix
@@ -471,11 +471,13 @@ contains
                     co2my, grav,cp, qgrs,tgrs, dtco2c,cospass,dtco2h)
                 
     call wamrad_h2o(im,  levs,nlev_h2o,nlevc_h2o,ntrac,nto1, nto2, nto3, ntqv, &
-                    grav,cp, qgrs, tgrs, dth2oh, cospass, dth2oc,              & 
-                    gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
-   
-    call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
-           
+                    grav,cp, qgrs, tgrs, dth2oh, cospass, dth2oc)
+		    
+!		    ,              & 
+!                    gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
+ 
+       call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
+!!      call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_n, rho, cp, zgeo, grav, dto3)          
     ! if ( me == master .and. kdt == 1) print *,  ' after wamrad_o2_o3 '
        	    
     IF(do_wamipe) then 

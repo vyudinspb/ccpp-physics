@@ -121,8 +121,8 @@ subroutine wam_h2ocin(p0,lx, me, master, &
 ! top) for compatibility with Xun's original code and to simplify 
 ! calculations in the cooling-to-space approximation
       
-
-      call wvrefm_w(prev(1:lx),wvmmrc,tref,coeff, lx,lh2oc,ltop1)
+      call wvrefm_w(p0(lx:1:-1),wvmmrc,tref,coeff, lx,lh2oc,ltop1)
+!!!!      call wvrefm_w(prev(1:lx),wvmmrc,tref,coeff, lx,lh2oc,ltop1)
 
       if(lh2oc > lx) then     
         print *, 'wamphys_h2oc.F90 attention lh2oc > lx ',  lh2oc, lx     
@@ -152,14 +152,13 @@ subroutine wam_h2ocin(p0,lx, me, master, &
 
 !p0(l:1:-1)   reverse: prev(i) = p0(l=lx-lh2oc+1,..)
 !
-!     call g1rtxz_w(l,tref(lh2oc:lx),p0(l:1:-1),wvmmrc(lh2oc:lx),  &
-!          lmr,lmt,gamyrt(lh2oc:lx,:,:),me,master)
-      call g1rtxz_w(l,tref(lh2oc:lx),prev(1:l),wvmmrc(lh2oc:lx),  &
+
+      call g1rtxz_w(l,tref(lh2oc:lx),p0(l:1:-1),wvmmrc(lh2oc:lx),  &
                     lmr,lmt,gamyrt(lh2oc:lx,:,:),me,master)	  
-!hmhj$              lmr,lmt,gamyrt(lh2oc:,:,:),dir)
-      call g1vbxz_w(l,tref(lh2oc:lx),prev(1:l),wvmmrc(lh2oc:lx),  &
+
+      call g1vbxz_w(l,tref(lh2oc:lx),p0(l:1:-1),wvmmrc(lh2oc:lx),  &
                     lmr,lmt,gamyvb(lh2oc:lx,:,:),me,master)
-!hmhj$              lmr,lmt,gamyvb(lh2oc:,:,:),dir)
+
       call gtoaxz_w(l,lmr,gamyrt(lh2oc:,:,:),gamyvb(lh2oc:,:,:),  &
            dg1rt(lh2oc:),dg2rt(lh2oc:),dg1vb(lh2oc:),dg2vb(lh2oc:))
 

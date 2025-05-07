@@ -71,7 +71,9 @@ module  cires_ugwpv1_module
     real(kind=kind_phys)                  :: knob_ugwp_taumin = 0.25e-3
     real(kind=kind_phys)                  :: knob_ugwp_tauamp = 7.75e-3    ! range from 30.e-3 to 3.e-3 ( space-borne values)
     real(kind=kind_phys)                  :: knob_ugwp_lhmet  = 200.e3     ! 200 km
-    
+    real(kind=kind_phys)                  :: knob_ugwp_sponge = 200.e3     ! 200 km   GW effects above zsponge =>0 
+    real(kind=kind_phys)                  :: knob_ugwp_merra  =  0.         ! seasonal GW-fluxes Res GWs
+    real(kind=kind_phys)                  :: knob_ugwp_rain  = -1.         ! rain-based modulation of GW fluxes  
     logical               :: knob_ugwp_tlimb  = .true.    
     character(len=8)      :: knob_ugwp_orosolv='pss-1986'  
     
@@ -91,7 +93,7 @@ module  cires_ugwpv1_module
             knob_ugwp_stoch,  knob_ugwp_effac,knob_ugwp_doaxyz,  knob_ugwp_doheat, knob_ugwp_dokdis,     &
             knob_ugwp_ndx4lh, knob_ugwp_version, knob_ugwp_palaunch, knob_ugwp_nslope,  knob_ugwp_lzmax, &
 	    knob_ugwp_lzmin,  knob_ugwp_lzstar,  knob_ugwp_lhmet, knob_ugwp_tauamp, knob_ugwp_taumin,    &
-	    knob_ugwp_tlimb,  knob_ugwp_orosolv  
+	    knob_ugwp_tlimb, knob_ugwp_sponge,  knob_ugwp_orosolv, knob_ugwp_merra, knob_ugwp_rain   
 
 !
 ! allocatable arrays, initilized during "cires_ugwp_init" &
@@ -109,7 +111,7 @@ module  cires_ugwpv1_module
 ! simple modulation of tau_ngw by the total rain/precip  strength
 !   
    real(kind=kind_phys), parameter    :: rain_max=8.e-5, rain_lat=41.0, rain_lim=1.e-5  
-   real(kind=kind_phys), parameter    :: w_merra = 1.0,  w_nomerra = 1.-w_merra, w_rain =1.
+   real(kind=kind_phys)    :: w_merra = 1.0,  w_nomerra = 0., w_rain =-1.
    real(kind=kind_phys), parameter    :: mtau_rain = 1.e-3, ft_min =0.5, ft_max=2 
    real(kind=kind_phys), parameter    :: tau_ngw_max = 20.e-3                          ! 20 mPa 
    real(kind=kind_phys), parameter    :: tau_ngw_min = .20e-3                          ! .2 mPa    
@@ -242,6 +244,9 @@ module  cires_ugwpv1_module
 !
 ! 
     kxw  = pi2/knob_ugwp_lhmet
+    w_merra = knob_ugwp_merra 
+    w_nomerra = 1.-w_merra
+    w_rain = knob_ugwp_rain   
 !
 !
 ! init global background dissipation for ugwp -> 4d-variable for fv3wam linked with pbl-vert_diff

@@ -5,7 +5,75 @@ module cires_ugwpv1_triggers
         use machine,            only: kind_phys
 
 contains
+!> modified for FV3WAM/C96 QBO-experiments
+!! GEOS-5 & MERRA-2 lat-dependent GW-source function  tau(z=Zlaunch)
+      subroutine slat_geos5_2023(im, tau_amp, xlatdeg, tau_gw)
 
+      implicit none
+      integer :: im     
+      real(kind=kind_phys)    :: tau_amp, xlatdeg(im), tau_gw(im)
+      real(kind=kind_phys)    :: latdeg, flat_gw, tem
+      real(kind=kind_phys), parameter    :: fampqbo = 1.2     !    ! 1.5     
+      real(kind=kind_phys), parameter    :: famp60S = 0.5     ! 1.5  famp60S = 0.5
+      real(kind=kind_phys), parameter    :: famp60N = 0.5     !      famp60N = 0.5
+      real(kind=kind_phys), parameter    :: famp30  = 0.1     !Molod famp30  = 0.1 
+        
+      real(kind=kind_phys), parameter    :: swid15  = 8.0     ! Molod swid15 = 8.0
+      real(kind=kind_phys), parameter    :: swid60S  = 70.0   ! Molod swid60S = 70. 
+      real(kind=kind_phys), parameter    :: swid60N  = 70.0   ! Molod swid60N = 70.  
+      
+      real(kind=kind_phys), parameter    :: bgstressmax3 = fampqbo  
+      real(kind=kind_phys), parameter    :: tamp_geos = 6.4e-3               
+      integer :: i
+!
+! GEOS-M2 GW-forcing paramters
+!      FCRIT2 =0.5
+!    KWVB    = 6.28e-5, KWVBEQ = KWVB/7., TAUMIN = 1.e-10, TAUBGND=6.4; effgw = 0.125
+!    do kc = -pgwv,pgwv
+!       c (kc) =  10.0*(4.0/float(pgwv))*kc
+!       cw(kc) =  exp(-(c(kc)/30.)**2)
+!    enddo
+!       f ( ngwv > 0 ) then
+!                effkwvmap = FCRIT2*KWVB*  &
+!                            (0.5*(1.0+tanh( (rlat(i)*180./PI_GWD-20.0)/6.0)) +  &
+!                             0.5*(1.0+tanh(-(rlat(i)*180./PI_GWD+20.0)/6.0)))
+!                if (-15.0 < rlat(i)*180./PI_GWD .and. rlat(i)*180./PI_GWD < 15.0) then
+!                   effkwvmap = FCRIT2*KWVBEQ
+!                end if
+      do i=1, im
+      
+        latdeg = abs(xlatdeg(i))    
+        if (latdeg < 15.3) then
+          tem = (latdeg-3.0) / swid15
+          flat_gw = fampqbo * exp(-tem * tem)
+          if (latdeg <= 3.0) flat_gw = fampqbo
+        elseif (latdeg <  31.0 .and. latdeg >=  15.3) then
+           flat_gw =  famp30
+        elseif (latdeg <  60.0 .and. latdeg >=  31.0) then
+          tem = (latdeg-60.0) / 23.0
+          flat_gw =   famp60N* exp(- tem * tem)
+        elseif (latdeg >=  60.0) then
+          tem = (latdeg-60.0) /swid60N
+          flat_gw =  famp60N * exp(- tem * tem)
+        endif
+
+          if (xlatdeg(i) <= -31.0) then   
+!                 
+            if (latdeg <  60.0 .and. latdeg >=  31.0) then
+              tem = (latdeg-60.0) / 23.0
+              flat_gw =  famp60S * exp(- tem * tem)           
+            endif           
+            if (latdeg >=  60.0) then
+               tem = (latdeg-60.0) /swid60S
+               flat_gw =  famp60S * exp(- tem * tem)
+            endif
+            
+          endif
+        tau_gw(i) = tau_amp*flat_gw 
+!	tau_gw(i) = tamp_geos*flat_gw 
+      enddo
+!      
+      end subroutine slat_geos5_2023  
 !
 !
 !> V1: GEOS-5 & MERRA-2 lat-dependent GW-source function  tau(z=Zlaunch) =rho*<u'w'>      

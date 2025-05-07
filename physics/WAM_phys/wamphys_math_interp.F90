@@ -331,7 +331,7 @@ module wamphys_math_interp
       use machine , only : kind_phys
       implicit none
       real(kind=kind_phys) :: ain(np), zin(np)
-      real(kind=kind_phys) :: aout(np), zout(np)
+      real(kind=kind_phys) :: aout(mp), zout(mp)
       integer              :: np, mp     
        
       real(kind=kind_phys) :: zk,     dz      

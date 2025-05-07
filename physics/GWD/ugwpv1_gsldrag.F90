@@ -38,13 +38,14 @@ module ugwpv1_gsldrag
 
     use machine, only: kind_phys
 
-    use cires_ugwpv1_triggers, only:  slat_geos5_2020, slat_geos5_tamp_v1
+!    use cires_ugwpv1_triggers, only:  slat_geos5_2020, slat_geos5_tamp_v1
+     use cires_ugwpv1_triggers, only:  slat_geos5_2023, slat_geos5_tamp_v1
     use cires_ugwpv1_module,   only:  cires_ugwpv1_init, ngwflux_update, calendar_ugwp
     use cires_ugwpv1_module,   only:  knob_ugwp_version, cires_ugwp_dealloc, tamp_mpa
     use cires_ugwpv1_solv2,    only:  cires_ugwpv1_ngw_solv2
     use cires_ugwpv1_oro,      only:  orogw_v1
 
-    use drag_suite,            only:  drag_suite_run, drag_suite_psl
+    use drag_suite,            only:  drag_suite_run       !, drag_suite_psl
 
     implicit none
 
@@ -538,28 +539,8 @@ contains
 ! dusfcg,  dvsfcg
 !
 !
-     if (do_gwd_opt_psl) then
-       call drag_suite_psl(im, levs, Pdvdt, Pdudt, Pdtdt,            &
-                 ugrs,vgrs,tgrs,q1,                                  &
-                 kpbl,prsi,del,prsl,prslk,phii,phil,dtp,             &
-                 kdt,hprime,oc,oa4,clx,varss,oc1ss,oa4ss,            &
-                 ol4ss,theta,sigma,gamma,elvmax,                     &
-                 dudt_ogw, dvdt_ogw, dudt_obl, dvdt_obl,             &
-                 dudt_oss, dvdt_oss, dudt_ofd, dvdt_ofd,             &
-                 dusfcg,  dvsfcg,                                    &
-                 du_ogwcol, dv_ogwcol, du_oblcol, dv_oblcol,         &
-                 du_osscol, dv_osscol, du_ofdcol, dv_ofdcol,         &
-                 slmsk,br1,hpbl,vtype,con_g,con_cp,con_rd,con_rv,    &
-                 con_fv, con_pi, lonr,                               &
-                 cdmbgwd(1:2),alpha_fd,me,master,                    &
-                 lprnt,ipr,rdxzb,dx,gwd_opt,  &
-                 do_gsl_drag_ls_bl,do_gsl_drag_ss,do_gsl_drag_tofd,  &
-                 psl_gwd_dx_factor,                                  &
-                 dtend, dtidx, index_of_process_orographic_gwd,      &
-                 index_of_temperature, index_of_x_wind,              &
-                 index_of_y_wind, ldiag3d, ldiag_ugwp,               &
-                 ugwp_seq_update, spp_wts_gwd, spp_gwd, errmsg, errflg)
-     else
+
+     
        call drag_suite_run(im, levs, Pdvdt, Pdudt, Pdtdt,            &
                  ugrs,vgrs,tgrs,q1,                                  &
                  kpbl,prsi,del,prsl,prslk,phii,phil,dtp,             &
@@ -579,7 +560,7 @@ contains
                  index_of_temperature, index_of_x_wind,              &
                  index_of_y_wind, ldiag3d, ldiag_ugwp,               &
                  ugwp_seq_update, spp_wts_gwd, spp_gwd, errmsg, errflg)
-     endif
+     
 !
 ! dusfcg = du_ogwcol + du_oblcol + du_osscol + du_ofdcol
 !
@@ -676,8 +657,8 @@ contains
 ! 2020 updates of MERRA/GEOS tau_ngw for the C96-QBO FV3GFS-127L runs
 !==================================================================
 
-       call  slat_geos5_2020(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
-
+!       call  slat_geos5_2020(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
+    call  slat_geos5_2023(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
        y4 = jdat(1); month = jdat(2); day = jdat(3)
 !
 ! hour = jdat(5)
@@ -698,7 +679,8 @@ contains
 !
        call cires_ugwpv1_ngw_solv2(me, master, im,   levs,  kdt, dtp,   &
                       tau_ngw, tgrs, ugrs,  vgrs,   q1, prsl, prsi,     &
-                      zmet, zmeti,prslk,   xlat_d, sinlat, coslat,      &
+!                      zmet, zmeti,prslk,   xlat_d, sinlat, coslat,      &
+                     zmet, zmeti, del, xlat_d, sinlat, coslat,      &	  !from V!	      
                       dudt_ngw, dvdt_ngw, dtdt_ngw, kdis_ngw, zngw)
 		      
 !      print *, ' ugwp_v1 ', kdt
@@ -745,6 +727,12 @@ contains
      dudt  = dudt  + dudt_gw
      dvdt  = dvdt  + dvdt_gw
      dtdt  = dtdt  + dtdt_gw
+!     
+!  dependencies = machine.F,drag_suite.F90 => C96 Lh_oro = 600 km
+!
+!  dependencies = cires_ugwpv1_module.F90,cires_ugwpv1_triggers.F90,cires_ugwpv1_initialize.F90,cires_ugwpv1_solv2.F90
+!
+!  dependencies = cires_ugwpv1_sporo.F90,cires_ugwpv1_oro.F90 
 
     end subroutine ugwpv1_gsldrag_run
 !! @}

@@ -34,11 +34,11 @@ module wamphys_set_merge_rad
    implicit none  
 ! merging scheme for heating rates
 
-      real(kind=kind_phys), parameter     :: xb=7.5, xt=8.5      ! for Hp = 7 km: 52.5 km < Z_logp < 59.5 km 
+      real(kind=kind_phys), parameter     :: xb=7.0+0.6, xt=8.5+1.5      ! for Hp = 7 km: 52.5 km < Z_logp < 59.5 km 
       real(kind=kind_phys), parameter     :: xbl= 0.99*xb        ! xbl < xb
       real(kind=kind_phys), parameter     :: rdx=1./(xt-xb)
       real(kind=kind_phys), parameter     :: xlogps = 11.5129    ! alog(1.e5=Ps_in_Pa)
-      real(kind=kind_phys), parameter     :: prdot02 = 2.00      ! mb because pr = pr_idea in (mb)
+      real(kind=kind_phys), parameter     :: prdot02 = 1.e5*exp(-xbl)      ! mb because pr = pr_idea in (mb)
       integer                             :: npsrad              ! layer where Pressure < 0.02   (2Pa)      
       ! nps-pressure index to start WAM-solar/phot <= 52.5 km 
  end module wamphys_set_merge_rad    

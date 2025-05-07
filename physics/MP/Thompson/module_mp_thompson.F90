@@ -1548,8 +1548,8 @@ MODULE module_mp_thompson
              kmax_qc = k
              qc_max = qc1d(k)
             elseif (qc1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qc ', qc1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qc ', qc1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (qr1d(k) .gt. qr_max) then
              imax_qr = i
@@ -1557,8 +1557,8 @@ MODULE module_mp_thompson
              kmax_qr = k
              qr_max = qr1d(k)
             elseif (qr1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qr ', qr1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qr ', qr1d(k),        &
+!                       ' at i,j,k=', i,j,k
             endif
             if (nr1d(k) .gt. nr_max) then
              imax_nr = i
@@ -1566,8 +1566,8 @@ MODULE module_mp_thompson
              kmax_nr = k
              nr_max = nr1d(k)
             elseif (nr1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative nr ', nr1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative nr ', nr1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (qs1d(k) .gt. qs_max) then
              imax_qs = i
@@ -1575,8 +1575,8 @@ MODULE module_mp_thompson
              kmax_qs = k
              qs_max = qs1d(k)
             elseif (qs1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qs ', qs1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qs ', qs1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (qi1d(k) .gt. qi_max) then
              imax_qi = i
@@ -1584,8 +1584,8 @@ MODULE module_mp_thompson
              kmax_qi = k
              qi_max = qi1d(k)
             elseif (qi1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qi ', qi1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qi ', qi1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (qg1d(k) .gt. qg_max) then
              imax_qg = i
@@ -1593,8 +1593,8 @@ MODULE module_mp_thompson
              kmax_qg = k
              qg_max = qg1d(k)
             elseif (qg1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qg ', qg1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qg ', qg1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (ni1d(k) .gt. ni_max) then
              imax_ni = i
@@ -1602,14 +1602,14 @@ MODULE module_mp_thompson
              kmax_ni = k
              ni_max = ni1d(k)
             elseif (ni1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative ni ', ni1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative ni ', ni1d(k),        &
+!                        ' at i,j,k=', i,j,k
             endif
             if (qv1d(k) .lt. 0.0) then
-             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qv ', qv1d(k),        &
-                        ' at i,j,k=', i,j,k
+!             write(*,'(a,e16.7,a,3i8)') 'WARNING, negative qv ', qv1d(k),        &
+!                        ' at i,j,k=', i,j,k
              if (k.lt.kte-2 .and. k.gt.kts+1) then
-                write(*,*) '   below and above are: ', qv(i,k-1,j), qv(i,k+1,j)
+!                write(*,*) '   below and above are: ', qv(i,k-1,j), qv(i,k+1,j)
                 qv(i,k,j) = MAX(1.E-7, 0.5*(qv(i,k-1,j) + qv(i,k+1,j)))
              else
                 qv(i,k,j) = 1.E-7

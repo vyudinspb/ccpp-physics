@@ -17,6 +17,7 @@
   subroutine wamphys_rad_merge(me, master, im,levs,xmu, prsl, hlw, swh, wtot,    & 
               dtrad, dtco2c,dtco2h,dth2oh,dth2oc,dto3)
  
+     use wamphys_set_merge_rad, only : xb, xt, rdx
      use machine ,              only : kind_phys
      use wamphys_init_module,   only : rpref
      implicit none
@@ -25,7 +26,6 @@
       integer, intent(in) :: me, master  
       integer, intent(in) :: levs             ! number of pressure levels
       
-      real(kind=kind_phys), parameter     :: xb = 7.5, xt = 8.5, rdx=1./(xt-xb)
       
       
       real(kind=kind_phys), intent(in)    :: hlw(im,levs)     ! GFS lw rad (K/s)

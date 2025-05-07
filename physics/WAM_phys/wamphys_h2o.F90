@@ -1,6 +1,8 @@
 subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
-                            grav,cp,adr, adt,dth,cosz,dtc, &
-		gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)			    
+                            grav,cp,adr, adt,dth,cosz,dtc)
+			    			    
+!			    , &
+!		gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)			    
 			    
 !       call wamrad_h2o(im,  levs,nlev_h2o,nlevc_h2o,ntrac,nto1, nto2, nto3, ntqv, &
 !                       grav,cp, qgrs, tgrs, dth2oh, cospass, dth2oc) 
@@ -12,7 +14,8 @@ subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
       use wamphys_const,       only : mmr_min, vmr_nzero
       use wamphys_init_module, only : pmb,prlog, h2ora, k41,k110,k71,k100,k105 
       use wamphys_init_module, only : amo,amo2, amo3, amn2,amh2o 
-
+      use wamphys_init_module, only : gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb
+      use wamphys_init_module, only : gdp,  xx, wvmmrc, coeff   
       implicit none
 ! Argument
       integer, intent(in) :: im  ! number of data points in adt (first dim)
@@ -32,8 +35,8 @@ subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
       real(kind=kind_phys), intent(in)    :: cosz(im)        ! cos zenith angle
       
       
-      real(kind=kind_phys),dimension(levs) ::  gh2ort,gh2ovb,dg1rt,dg2rt    
-      real(kind=kind_phys),dimension(levs) ::  dg1vb,dg2vb,gdp,xx,wvmmrc,coeff 
+!      real(kind=kind_phys),dimension(levs) ::  gh2ort,gh2ovb,dg1rt,dg2rt    
+!      real(kind=kind_phys),dimension(levs) ::  dg1vb,dg2vb,gdp,xx,wvmmrc,coeff 
       
       real(kind=kind_phys), intent(out)   :: dtc(im,levs)    ! cooling rate k/s
       real(kind=kind_phys), intent(out)   :: dth(im,levs)    ! heating rate k/s
@@ -114,8 +117,7 @@ subroutine wamrad_h2o(im, levs, nlev, nlevc,ntrac,nto, nto2, nto3, nth2o, &
           qr(1:nlevc) = 0.
           qv(1:nlevc) = 0.
           call wam_h2occ(temp,pmb(k71:levs),h2ommrc,qr,qv,nlevc,     &
-          gh2ort(k71),gh2ovb(k71),dg1rt(k71),dg2rt(k71), dg1vb(k71),&
-          dg2vb(k71), gdp(k71),xx(k71),wvmmrc(k71),coeff(k71)  )	
+              gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb, gdp,xx,wvmmrc,coeff  )	
           
           do k=k71, k105	 
                 dtc(i,k)= qr(k+1-k71)+qv(k+1-k71) 

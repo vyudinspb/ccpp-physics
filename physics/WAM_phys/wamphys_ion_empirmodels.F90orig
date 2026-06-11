@@ -651,46 +651,42 @@ module wamphys_ion_empirmodels
       ratio_ch = chi/diff
 !     if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
 
-99001 format ('  ch value out of bound in tiros',f10.6)
+99001 format ('  ch value outof bound in tiros',f10.6)
 
 ! loop through ipe height levels or wam-levels
-! proxies for charge from neutrals ????
-
 
       do 2000 i=lev1,levs
 
-      if(z(i)*1.e-3 .gt. 1000.) then   ! do we need this z-wam < 650 km
-        print *, '+++ VAY  WAM_Z > 1000 km in wam_tiros_ionize '
-	print *, '+++ VAY  WAM_Z level Z ', i, z(i)*1.e-3
-	print *, '+++ VAY  WAM_Z pres ', i, pres(i)
-      endif
-      
+      if(z(i)*1.e-3 .gt. 1000.) exit   ! do we need this z-wam < 650 km
+
 ! new z-interpolation   for rr > 0 (apparently)
-! lognpres/-3.425,-4.835,-5.918,-7.066,-7.784,-8.366,-9.314,-10.507/
+
       logpres = log(pres(i))
-      
-      if (logpres.ge.lognpres(2))then
-         rr=ion_recomb(2)
-      else if (logpres.le.lognpres(8))then
-         rr=ion_recomb(8)
-      else if(logpres.gt.lognpres(8) .and. logpres.lt.lognpres(2)) then
-        do jjj=3,7
-         if(logpres.ge.lognpres(jjj))then
-          exit
+      if (logpres.ge.-4.835)then
+         rr=3.20e-13
+         goto 450
+      endif
+      if (logpres.le.-10.507)then
+         rr=2.00e-14
+         goto 450
+      endif
+      do jjj=3,8
+         if(lognpres(jjj).le.logpres)then
+         jj=jjj-1
+         goto 451
          endif
-        enddo
-          jj=jjj-1
+      enddo
+  451 continue
 
 !fix vay oct-2016
 
-        rr = ion_recomb(jjj)-( ion_recomb(jjj)-ion_recomb(jj)     )*     &
-            (lognpres(jjj)-logpres)/(lognpres(jjj)-lognpres(jj))
-!        rr = min(rr, maxval(ion_recomb))
-      endif
+      rr = ion_recomb(jjj)-(lognpres(jjj)-logpres)*     &
+      (ion_recomb(jjj)-ion_recomb(jj))/(lognpres(jjj)-lognpres(jj))
+
+  450 continue
 
 ! loop through all energy bands
       do 10 l=1,15
-      
 !      dl(l)=rno*en(l)*exp(-en(l)/alpha)
         dl_lower = djspectra(l,k)
         dl_upper = djspectra(l,kk)
@@ -698,25 +694,26 @@ module wamphys_ion_empirmodels
         range_en=4.57e-05*en(l)**1.75
         pr=range_en*grav(i)
         ratioz=pres(i)/pr
-	rlamz=0.0
-         
-	if(ratioz.le.1.0) then	 
-         do  m=1,21
-          if(ratioz.gt.ratio(m)) cycle
+        if(ratioz.gt.1.0) goto 20
+        do 12 m=1,21
+          if(ratioz.gt.ratio(m)) goto 12
           rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
                (ratio(m)-ratio(m-1))
-         enddo
-	endif
+        goto 13
+        12 continue
+        13 continue
+        goto 21
+        20 rlamz=0.0
+        21 continue
   ! ...................... again interpolation in ratio,,,ratioz
   ! similar suggestion rlamz(15, levs) -----constant with time
-  
         qmid = den(i)*en(l)*rlamz*width(l)*1.e7/range_en/e0
         qiont_lower= qmid*dl_lower
         qiont_upper= qmid*dl_upper
         qiont(i)=qiont(i)+(ratio_ch*qiont_upper+(1.-ratio_ch)*qiont_lower)    &
            *eflux/(ratio_ch*te11(kk)+(1.-ratio_ch)*te11(k))
-       
-     10 continue     ! loop through all energy bands do 10 l=1,15
+     11 continue
+     10 continue     ! loop through all energy bands
 
 ! add 0 - 300ev as maxwellian with ch, and eflux
 
@@ -733,20 +730,23 @@ module wamphys_ion_empirmodels
         range_en=4.57e-05*en_maxwell(l)**1.75
         pr=range_en*grav(i)
         ratioz=pres(i)/pr
-	rlamz=0.0
-        if(ratioz.le.1.0) then
-         do m=1,21
-           if(ratioz.gt.ratio(m)) cycle
-           rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
+        if(ratioz.gt.1.0) goto 120
+        do 112 m=1,21
+        if(ratioz.gt.ratio(m)) goto 112
+        rlamz=rlam(m-1)+(ratioz-ratio(m-1))*(rlam(m)-rlam(m-1))/     &
              (ratio(m)-ratio(m-1))
-         enddo
-        endif             
-         qion_maxwell(i)=qion_maxwell(i)       &
-          +den(i)*en_maxwell(l)*rlamz*dl(l)*width_maxwell/range_en/e0
+        goto 113
+        112 continue
+        113 continue
+            goto 121
+        120 rlamz=0.0
+        121 continue
+  !......................similar rlamz_jmx(levs, 6)                       
+        qion_maxwell(i)=qion_maxwell(i)       &
+         +den(i)*en_maxwell(l)*rlamz*dl(l)*width_maxwell/range_en/e0
   110 continue   !  loop for300ev as maxwellian with ch, and eflux
 
       qiont(i) = qiont(i) + qion_maxwell(i)
-      
 !  the qiont scaled by dfac with large gw and tiros_activity level
 !  added by zhuxiao
       qiont(i) = qiont(i)*dfac
@@ -766,9 +766,9 @@ module wamphys_ion_empirmodels
       qiont_n2(i)=0.92*n2n(i)*q
       
  2000 continue
- 200  continue ! .......if(abs(thmagd).le.50.) goto 200
-
-
+ 
+  200 continue 
+!
       return
   end subroutine wam_tiros_ionize
 !

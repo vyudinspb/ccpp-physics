@@ -408,35 +408,19 @@ contains
                aerout(j,L,ii) = aerpm(j,levsaer,ii)  !! toa top
               ENDDO
            else
-!	   
-! Valery Yudin May 2025
-! 	   
-	      i1 =1
-	      
              DO  k=1, levsaer-1      !! from sfc to toa
-              IF(prsl(j,L) < aerpres(j,k) .and. prsl(j,L) > aerpres(j,k+1)) then
+              IF(prsl(j,L) <= aerpres(j,k) .and. prsl(j,L)>aerpres(j,k+1)) then
                  i1 = k
-! outside loop                 i2 = min(k+1,levsaer)
+                 i2 = min(k+1,levsaer)
                  exit
               ENDIF
              ENDDO
-	     
-              i2 = min(i1+1,levsaer)
-	      	     
-              if (i1 .ne. i2) then
-	       tem  = 1.0 / (aerpres(j,i1) - aerpres(j,i2))
-               tx1  = (prsl(j,L) - aerpres(j,i2)) * tem
-               tx2  = 1.-tx1
-	     
-               DO ii = 1, ntrcaer
-                aerout(j,L,ii) = aerpm(j,i1,ii)*tx1 + aerpm(j,i2,ii)*tx2
-               ENDDO
-	      else 
-               DO ii = 1, ntrcaer
-                 aerout(j,L,ii) = aerpm(j,i1,ii)
-              ENDDO	       	     
-	     endif 
- 	     
+             tem  = 1.0 / (aerpres(j,i1) - aerpres(j,i2))
+             tx1  = (prsl(j,L) - aerpres(j,i2)) * tem
+             tx2  = (aerpres(j,i1) - prsl(j,L)) * tem
+             DO ii = 1, ntrcaer
+               aerout(j,L,ii) = aerpm(j,i1,ii)*tx1 + aerpm(j,i2,ii)*tx2
+             ENDDO
            endif
         ENDDO   !L-loop
       ENDDO     !J-loop

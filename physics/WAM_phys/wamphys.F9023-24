@@ -322,11 +322,9 @@ contains
 !==========================================================
 ! local variables
 !==========================================================
-    integer, parameter  :: kdtin = 2400    !for 5 day spin up!!!!   ! JAN1 year start DEc26 2022 for 2023 run  
+    integer, parameter  :: kdtin = 2400    !for 5 day spin up!!!!   ! JAN1 year start DEc26 for 2023 run  
 !    integer, parameter  :: kdtin = 14400    !for 30 day spin up!!!!   ! apr1year 2024 
-
-
-!!!!    integer, parameter :: kdtin = 3360      ! 7 days spin start 25 dec 2023 for 2024 year run 
+!    integer, parameter :: kdtin = 3360      ! 7 days spin start 25 dec 2023 for 2024 year run 
     integer, parameter  :: ntrac_i=2                  ! number of 2 WAM chem. tracers (O-O2)
     integer, parameter  :: lowst_ipe_level = 90
     integer, parameter  :: ipr = 10    

@@ -78,13 +78,13 @@ module  wamphys_efield
       logical, parameter :: iutav=.false.      ! .true.  means UT-averaging          
 
       logical, parameter :: debug =.false.
-      integer  ::  emproc, emaster     
+      
       
       
 !========================================================================
       contains      
 
-  subroutine wamget_efield(me, master, swbt, swang, swvel, swbz, swden)
+  subroutine wamget_efield(swbt, swang, swvel, swbz, swden)
 !-----------------------------------------------------------------------
 ! Purpose: calculates the global electric potential field on the
 !          geomagnetic grid (MLT in deg) and derives the electric field 
@@ -93,26 +93,18 @@ module  wamphys_efield
 !
 ! Author: A. Maute Dec 2003  am 12/17/03    
 !-----------------------------------------------------------------------
-      integer, intent(in) :: me, master
       real, intent(in) :: swbt, swang, swvel, swbz, swden
       integer :: idum1, idum2, tod ! time of day [s] 
-!      real    :: kp
-      real :: aswbt, aswang, aswvel, aswbz, aswden
+      real    :: kp
+
       tod=ut*3600.
 !     ut = tod/3600.                   ! UT of day [sec]
-      emproc = me
-      emaster = master
-      
-!      aswbt = 0.468 ; aswang=180. ; aswvel = 460.;700 ; aswbz= -0.46;  aswden 
+
 
       call adj_S_a
 !-----------------------------------------------------------------------
 ! calculate global electric potential    
 !-----------------------------------------------------------------------
-!      print *, ' EFI ',  swbt, swang, swvel
-!      print *, ' EFI2 ', swden, swbz      
-
-
       call GlobalElPotential(swbt, swang, swvel, swbz, swden)
 !     print*,'pot_efield',potent(149,66),potent(149,64)
 
@@ -140,7 +132,6 @@ module  wamphys_efield
 ! Author: A. Maute Dec 2003  am 12/17/03 
 !-----------------------------------------------------------------------
       real, intent(in) :: swbt, swang, swvel, swbz, swden
-     
 !-----------------------------------------------------------------------
 ! local variables
 !-----------------------------------------------------------------------
@@ -153,7 +144,7 @@ module  wamphys_efield
       real :: pot_midlat(0:nmlon,0:nmlat) ! potential from L. Scherliess model
       real :: pot_highlat(0:nmlon,0:nmlat) ! potential from Weimer model
       real :: pot_highlats(0:nmlon,0:nmlat)! smoothed potential from Weimer model
-    
+
 !-----------------------------------------------------------------------
 ! convert to date and day	
 !-----------------------------------------------------------------------
@@ -168,21 +159,13 @@ module  wamphys_efield
 	    pot_midlat(ilon,nmlath-ilat) = pot
         end do
       end do
-!       if(debug) then
-!        if (emproc == emaster) then 
-!        print*, 'prep1,swvel, swbz, swden=',swvel, swbz, swden
-!        end if
-!       end if
+
 !-----------------------------------------------------------------------
 ! hight latitude potential from Weimer model
 ! at the poles Weimer potential is not longitudinal dependent
 !-----------------------------------------------------------------------
       call prep_weimer(swbt, swang, swvel, swbz, swden) ! calculate IMF angle & magnitude, tilt
-       if (debug) then
-        if (emproc == emaster) then 
-        print*, 'prep2,swvel, swbz, swden=',swvel, swbz, swden
-        end if
-       end if
+
 !$omp parallel do private(ilat, ilon, mlat_90, pot)
       do ilat = 0,nmlat_wei  ! Calculate only for one magn. hemisphere
         mlat_90 = 90. - ylatm(ilat)  ! mag. latitude
@@ -197,13 +180,6 @@ module  wamphys_efield
           pot_highlat(ilon,nmlat-ilat)  = pot
           pot_highlats(ilon,ilat)       = pot
           pot_highlats(ilon,nmlat-ilat) = pot
-	  if(debug) then
-              if (emproc == emaster) then
-	      print*,'nmlat_wei=',nmlat_wei
-	      print*,'ilon=',ilon,' ilat=',ilat,' nmlat-ilat=',nmlat-ilat 
-	      print*, 'pot=', pot
-	      endif
-	     endif 
         end do
       end do     
 !     print*,'www2','highlat',ut,by,bz,pot_highlat(0:180,68),nmlat_wei
@@ -469,7 +445,7 @@ module  wamphys_efield
 !------by Zhuxiao-----
        if (trim(SWIN_DRIVERS)/='swin_wam') then
          den = 5.
-  
+
          if( by == 0. .and. bz == 0.) then
            angle = 0.
          else
@@ -484,19 +460,17 @@ module  wamphys_efield
          bt    = swbt
          den   = swden
          v_sw  = swvel
-	 bz = swbz
       end if
- 
       if(debug) then
-       if (emproc == emaster) then      
        write(iulog,"(/,'efield prep_weimer:')")
-       write(iulog,*)  ' Bz =',bz
-       write(iulog,*)  ' By   =',by
-       write(iulog,*)  ' Bt =',bt
+       write(iulog,"(/,'by code:')")
+       write(iulog,*)  '  Bz   =',bz
+       write(iulog,*)  '  By   =',by
+       write(iulog,*)  '  Bt   =',bt
        write(iulog,*)  '  angle=',angle
        write(iulog,*)  '  VSW  =',v_sw
-       write(iulog,*)  '  den =',swden
-       endif 
+       write(iulog,*)  '  tilt =',tilt
+       write(iulog,*)  '  swden =',swden
       end if
 
 !-------------------------------------------------------------------
@@ -507,18 +481,10 @@ module  wamphys_efield
 !    &iday,imo,iday_m,ut
 
       call wam_get_tilt( iyear, imo, iday_m, ut, tilt )
-       if(debug)then
-       if (emproc == emaster) then
-           write(iulog,*) 'pr_weimer: iday,imo,iday_m,ut ',iday,imo,iday_m,ut
-           write(iulog,*)  'pr_weimer: tilt ', tilt
-	   end if
-	end if  
-	   
-       
+
       call SetModel_new(angle,bt,tilt,v_sw,den)
 
       if(debug) then
-         if (emproc == emaster) then 
          write(iulog,"(/,'efield prep_weimer:')")
          write(iulog,"(/,'after SetModel_new:')")
          write(iulog,*)  '  Bz   =',bz
@@ -527,7 +493,6 @@ module  wamphys_efield
          write(iulog,*)  '  angle=',angle
          write(iulog,*)  '  VSW  =',v_sw
          write(iulog,*)  '  tilt =',tilt
-	 end if
       end if
 
   end subroutine prep_weimer
@@ -616,18 +581,7 @@ module  wamphys_efield
       wgt = 1./wgt
 
       do ilat = idlat,nmlath-idlat
-      if(debug) then
-         if (emproc == emaster) then 
-	 print*,'ilat=',ilat,' idlat=',idlat
-	 print*,'pot(1,ilat-idlat:ilat+idlat)=',pot(1,ilat-idlat:ilat+idlat)
-         end if
-      end if	 
          pot_smo(:,ilat) = matmul( pot(:,ilat-idlat:ilat+idlat),w )*wgt
-	 
-	 
-	 
-	 
-	 
       end do
 
       do ilat = idlat,nmlath-idlat
@@ -912,13 +866,17 @@ module  wamphys_efield
 !   [-lam+bnd+trans_width] + Phi_hl(phi,lam)*
 !   [lam-bnd+trans_width]}]
 ! b.  Interpolate between just calculated Potential and the high latitude
-!    potential in a 3 degree zone poleward of the boundary:\
+!    potential in a 3 degree zone poleward of the boundary:
+!    bnd+trans_width < lam <= bnd+trans_width+ 3 deg 
+!   Phi(phi,lam) = 1/3 { [3-(lam-bnd-trans_width)]* Phi*(phi,lam) +
+!   [lam-bnd-trans_width)]* Phi_hl*(phi,lam) }
+!
+! Author: A. Maute Nov 2003  am 11/21/03      
 !------------------------------------------------------------------
 
 !------------------------------------------------------------------
 !	... dummy arguments
 !------------------------------------------------------------------
-      implicit none
       integer, intent(in)  :: ihlat_bnd(0:nmlon)
       integer, intent(in)  :: itrans_width(0:nmlon)
       real, intent(in) :: pot_highlats(0:nmlon,0:nmlat)
@@ -930,17 +888,12 @@ module  wamphys_efield
 !-------------------------------------------------------------------
       real, parameter :: fac = 1./3.
       integer  :: ilon, ilat
-      integer  :: ibnd, tw, hb1, hb2
-      integer  :: min_ilat, max_ilat 
+      integer  :: ibnd, tw, hb1, hb2, lat_ind
+      integer  :: min_ilat 
       integer  :: j1, j2
-      real :: a, b, lat, b1, b2, lat_ind
-      real :: wrk1, wrk2, pot_wrk
-      potent(:,:)=0. !!!!!!!!!!!!!!
-        if(debug) then
-         if (emproc == emaster) then 
-	 print*,'ihlat_bnd=',ihlat_bnd
-	 endif
-	endif 
+      real :: a, b, lat, b1, b2
+      real :: wrk1, wrk2
+
 !$omp parallel do private(ilat,ilon,ibnd,tw)
       do ilon = 0,nmlon
         ibnd = ihlat_bnd(ilon)     ! high latitude boundary index
@@ -974,52 +927,24 @@ module  wamphys_efield
       do ilon = 0,nmlon
         ibnd = ihlat_bnd(ilon)          ! high latitude boundary index
 	  tw   = itrans_width(ilon)       ! width of transition zone (index)
-        if (tw .ne. 0) then 
-	   a    = .5/tw
-	else
-	   a=0.
-	endif    
+        a    = 1./(2.*tw)
         b1   = (nmlath - ibnd + tw)*a
         b2   = (nmlath - ibnd - tw)*a
         hb1  = nmlath - (ibnd + tw)
         j1   = nmlath - hb1
-        if (j1 < 0) j1 = 0  
-        if (j1 > nmlat) j1= nmlat		
         hb2  = nmlath - (ibnd - tw)
         j2   = nmlath - hb2
         if (j2 < 0) j2 = 0              ! Tomoko's fix - j2 >= 0
-        if (j2 > nmlat) j2= nmlat		
         wrk1 = pot_midlat(ilon,j1)
         wrk2 = pot_highlats(ilon,j2)
 !       write(iulog,*) 'pot_all ',ilon,hb1,hb2,nmlath -ibnd,tw
         min_ilat = ibnd-tw
-	max_ilat = ibnd+tw 
-	 if(debug) then
-         if (emproc == emaster) then 
-	 print*,'pot_all ',nmlat,ilon,hb1,hb2,nmlath,ibnd,tw
-	 print*,'min_ilat,max_ilat',min_ilat,max_ilat, 'wrk2=',wrk2
-	 end if
-	 end if
-        if (min_ilat < 0) min_ilat = 0          ! Tomoko's fix 
-        if (max_ilat > nmlat_wei) max_ilat = nmlat_wei  ! VAY's May24-Storm fix	
-!real, intent(in) :: pot_highlats(0:nmlon,0:nmlat)pot_highlat(0:nmlon,0:nmlat)pot_midlat(0:nmlon,0:nmlat)
-       
-      
-        do ilat = min_ilat, max_ilat      ! do ilat = ibnd-tw,ibnd+tw
-	    lat_ind = float(nmlath - ilat)*a 
-	    if(debug) then
-            if (emproc == emaster) then
-	    print*, 'ilon=',ilon,' ilat=',ilat
-	    print*,'lat_ind=',lat_ind
-	     print*,'lat_ind-b2=',lat_ind, b2
-	    print*,'b1-lat_ind=',lat_ind, b1 
-	    print*,'pot_highlats(ilon,ilat)=',pot_highlats(ilon,ilat)
-	    endif
-	    endif
-          pot_wrk = fac*((wrk1 + 2.*pot_midlat(ilon,ilat))*(b1 - lat_ind)  &
-         	  + (wrk2 + 2.*pot_highlats(ilon,ilat))*(lat_ind - b2))
-	  potent(ilon,ilat) 	=   pot_wrk  
-          potent(ilon,nmlat-ilat) = pot_wrk
+        if (min_ilat < 0) min_ilat = 0  ! Tomoko's fix
+        do ilat = min_ilat,ibnd+tw      ! do ilat = ibnd-tw,ibnd+tw
+	    lat_ind = nmlath - ilat
+          potent(ilon,ilat) = fac*((wrk1 + 2.*pot_midlat(ilon,ilat))*(b1 - a*lat_ind)  &
+         	  + (wrk2 + 2.*pot_highlats(ilon,ilat))*(a*lat_ind - b2))
+          potent(ilon,nmlat-ilat) = potent(ilon,ilat)
         end do
 !------------------------------------------------------------------
 ! b.  Interpolate between just calculated Potential and the high latitude
@@ -1028,27 +953,12 @@ module  wamphys_efield
 	  do ilat = hb2+1,nmlath
 	    a = max( 3./dlatm - (ilat - hb2 - 1),0. )
 	    b = 3./dlatm - a
-	   pot_wrk  = (a*potent(ilon,nmlath-ilat) &  
-           + b*pot_highlat(ilon,nmlath-ilat))/3.*dlatm 
-!	   if(debug) then
-!            if (emproc == emaster) then
-!	    print*,'ilon=',ilon,' ilat=',ilat,' pot_wrk=', pot_wrk
-!	    endif
-!	   endif 
-          potent(ilon,nmlath-ilat) = pot_wrk	   
-          potent(ilon,nmlath+ilat) = pot_wrk   !potent(ilon,nmlath-ilat)
+          potent(ilon,nmlath-ilat) = (a*potent(ilon,nmlath-ilat) &  
+           + b*pot_highlat(ilon,nmlath-ilat))/3.*dlatm
+          potent(ilon,nmlath+ilat) = potent(ilon,nmlath-ilat)
         end do
-	do ilat=1,nmlat-1 
-	if (potent(ilon,ilat) == 0.) then
-	potent(ilon,ilat)= potent(ilon,ilat-1)
-	endif
-	end do
       end do      
-!             if(debug) then
-!            if (emproc == emaster) then
-!	    print*,'INTERP',' potent(1,*)=',potent(1,:)
-!	    endif
-!	   endif 
+
   end subroutine interp_poten
 
   subroutine DerivPotential

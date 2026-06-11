@@ -202,10 +202,7 @@
 	    dtdt_qno(i,k) =qno(k)*rcpro
 !net q
 !         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!          dtrad(i,k)=( 0.9*(sh1(k)+sh2(k)) -qno(k) )*rcpro
-          dtrad(i,k)=(sh1(k)+sh2(k) -qno(k) )*rcpro
+          dtrad(i,k)=(sh1(k)+sh2(k)-qno(k))*rcpro
         enddo ! k
 	        
         do k=1, npsrad-1

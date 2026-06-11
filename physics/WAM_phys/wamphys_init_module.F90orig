@@ -59,11 +59,7 @@ module  wamphys_init_module
     character(len=255)     :: W05SC_Epot_file = 'global_idea_coeff_W05scEpot.dat'          
     character(len=255)     :: iondata_file    = 'iondata_tjr.nc'
     character(len=255)     :: tirosdata_file  = 'tiros_tjr.nc' 
-    character(len=255)     :: sol_kpf107_file = 'solar_kpf107_3min.nc'   
-    integer, parameter      :: isw_3min = 1   
-  
-    
-!    character(len=255)     :: sol_kpf107_file = 'fvsolar_1hr_20240328_20240522.nc'     
+     
     character(len=255)     ::  efield_model   = 'epot'              ! or 'bpot'
     character(len=255)     ::  SPW_DRIVERS    = 'swpc_fst'
     character(len=255)     ::  SWIN_DRIVERS   = 'swin_wam'
@@ -76,7 +72,23 @@ module  wamphys_init_module
 !   wam_nems_imf_2012.nc   wasolar_dan_20161019.nc             
 
     real(kind=kind_phys) :: soro_gg = 0.      ! sea level for gravity in upper layers    
-  
+    real(kind=kind_phys) :: wam_JH0 =  1.75
+    real(kind=kind_phys) :: wam_JH_tanh = 0.5 
+    real(kind=kind_phys) :: wam_JH_semiann = 0.5 
+    real(kind=kind_phys) :: wam_JH_ann =  0.0
+    real(kind=kind_phys) :: wam_JH_sto =  25000.
+    real(kind=kind_phys) :: wam_JH_st1 =  5000.
+    real(kind=kind_phys) :: wam_skeddy0 =  140.
+    real(kind=kind_phys) :: wam_skeddy_semiann = 60. 
+    real(kind=kind_phys) :: wam_skeddy_ann = 0. 
+    real(kind=kind_phys) :: wam_tkeddy_ann  =  0.
+    real(kind=kind_phys) :: wam_tkeddy0 =  280.
+    real(kind=kind_phys) :: wam_tkeddy_semiann = 0. 
+    real(kind=kind_phys) :: wam_f107_fix   = 120.
+    real(kind=kind_phys) :: wam_f107a_fix  = 120.
+    real(kind=kind_phys) :: wam_kp_fix     = 3.0   
+    real(kind=kind_phys) :: wam_gW_fix     = 30. 
+    real(kind=kind_phys) :: wam_tiros_activity_fix =7. 
     
     
      real(kind=kind_phys) :: JH0 =  1.75
@@ -110,31 +122,16 @@ module  wamphys_init_module
      real(kind=kind_phys) ::  bswvel =460.1300
      real(kind=kind_phys) ::  bswbz =-0.46482
      real(kind=kind_phys) ::  bswden =5.0       
-! variable spw-drivers   
-
-    integer :: ntimes_solar, ihr1, ihr2
-    real(kind=kind_phys),   allocatable :: Af107(:), Af107a(:), Apind(:), Kpind(:)
-    real(kind=kind_phys),   allocatable :: Apinda(:), Kpinda(:)   
-    real(kind=kind_phys),   allocatable ::  Ashp(:), Ashpi(:),   Anhp(:), Anhpi(:)  
-    real(kind=kind_phys),   allocatable ::  Aswbt(:),  Aswbz(:) 
-    real(kind=kind_phys),   allocatable ::  Aswden(:), Aswvel(:), Aswang(:)     
-    real(kind=kind_phys),   allocatable :: dfhours(:), sol_dayddd(:), sol_datesecs(:)
-    integer,                allocatable :: sol_dates(:), sol_times(:)   
-    integer               :: kdt_swmax
-    real(kind=kind_phys)  :: hrc, w_ndx1, w_ndx2
-    real(kind=kind_phys)  :: sol_f107, sol_f107a, sol_kp, sol_kpa, sol_ap, sol_apa 
-    real(kind=kind_phys)  :: sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang
-    real(kind=kind_phys)  :: sol_bz, sol_bt       
-                
+    
     
     namelist /wamphys_nml/ JH0,      JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1,      &
                            skeddy0, skeddy_semiann, skeddy_ann,                        &
                            tkeddy0, tkeddy_semiann, tkeddy_ann,                        &
                            f107_fix, f107a_fix, kp_fix, kpa_fix,                       &
-			   gw_fix, tiros_activity_fix, tiros_switch,                   &
-	                bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&
-		           spw_drivers, efield_model, swin_drivers,do_init_tides,      &
-		       do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
+			         gw_fix, tiros_activity_fix, tiros_switch,                   &
+			         bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&			    
+			         spw_drivers, efield_model, swin_drivers,do_init_tides,      &
+			         do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
 
 ! SPW_DRIVERS, SWIN_DRIVERS
 ! allocatable arrays, initilized during "cires_ugwp_init" &
@@ -405,7 +402,7 @@ module  wamphys_init_module
       call wam_readno_snoewx(file_no_snoe, me, master)
       
       call wam_solar_radphoto_init(me, master) 
-      call wamphys_solkpf107_init(me, master)      ! read solar f107/kp file and define first sol_f107/sol_kp         
+         
     endif    ! init wam radiation     
        
     if (do_init_wamtracers) call wam_tracer_init(levs, me, master)
@@ -1080,290 +1077,6 @@ end module wamphys_init_module
 !         write(*,*) ' VAYsnoe NO:',  maxval(no_m), minval(no_m)	 
        endif    
   end subroutine wam_readno_snoewx
-!  
-  subroutine wamphys_solkpf107_init( me, master    )  
-  use netcdf        
-  use machine,              only: kind_phys   
-  use wamphys_init_module, only :  sol_kpf107_file, Af107, Af107a, Apind, Kpind,  Apinda, Kpinda
-  use wamphys_init_module, only :   Ashp, Ashpi,   Anhp, Anhpi, Aswden, Aswvel, Aswang, Aswbt, Aswbz    
-
-  use wamphys_init_module, only : sol_dates, sol_times, dfhours, isw_3min, sol_dayddd, sol_datesecs
-  use wamphys_init_module, only : ntimes_solar, iulog
-  use wamphys_init_module, only : ihr1, ihr2, hrc, w_ndx1, w_ndx2, kdt_swmax
-  use wamphys_init_module, only : sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 
-  use wamphys_init_module, only : sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang  
-  implicit none 
-  integer :: me, master	 
-  integer :: istat, ierr, astat
-  integer :: var_id 
-  integer :: ncid, vid, iernc    
-  integer :: irec, yr, mm, dd, ddd, yrc,ddc
-  integer, dimension(nf90_max_var_dims) :: dim_id  
-  integer :: day1_y4m2d2                                           
- 
-  
-!                                          
-      iernc=NF90_OPEN(trim(sol_kpf107_file), nf90_nowrite, ncid)   
-      if (iernc /=0) then 
-       write(iulog,*) ncid, 'ncid wamphys_solkpf107_init ', &
-          iernc, ' iernc ', sol_kpf107_file  
-        stop ' wamphys_solkpf107_init ' 
-      endif
-      
-       iernc=nf90_inq_varid( ncid, 'date', vid ) 
-       ierNC=nf90_inquire_variable(ncid, vid, dimids=dim_id) 
-       iernc = nf90_inquire_dimension(ncid, dim_id(1), len=ntimes_solar)
-       kdt_swmax = ntimes_solar
-       allocate( sol_dates(ntimes_solar),  sol_times(ntimes_solar),stat=astat )  
-       allocate( dfhours(ntimes_solar),stat=astat )  	  
-       allocate(  Af107(ntimes_solar), Af107a(ntimes_solar),stat=astat )
-       allocate(  kpind(ntimes_solar),  Apind(ntimes_solar),stat=astat )
-       allocate(  kpinda(ntimes_solar),  Apinda(ntimes_solar),stat=astat )  
-       allocate(  Aswbt(ntimes_solar),  Aswbz(ntimes_solar),stat=astat )        
-       allocate(  Anhp(ntimes_solar),  Ashp(ntimes_solar),stat=astat ) 
-       allocate(  Anhpi(ntimes_solar),  Ashpi(ntimes_solar),stat=astat )
-       allocate(  Aswden(ntimes_solar), Aswang(ntimes_solar), Aswvel(ntimes_solar), stat=astat )                        
-       allocate(  sol_datesecs(ntimes_solar), sol_dayddd(ntimes_solar))
-            
-        iernc=nf90_inq_varid( ncid, 'date', vid )      
-        iernc= nf90_get_var( ncid, vid, sol_dates)  
-     if (isw_3min == 0 ) then
-        iernc=nf90_inq_varid( ncid, 'datehour', vid )      
-        iernc= nf90_get_var( ncid, vid, sol_times) 
-     endif	     
-      if (isw_3min == 1 ) then     
-        iernc=nf90_inq_varid( ncid, 'dayddd', vid )      
-        iernc= nf90_get_var( ncid, vid, sol_dayddd) 
-        iernc=nf90_inq_varid( ncid, 'datesecs', vid )      
-        iernc= nf90_get_var( ncid, vid, sol_datesecs) 
-        iernc=nf90_inq_varid( ncid, 'day1_y4m2d2', vid )   
-	iernc= nf90_get_var( ncid, vid, day1_y4m2d2) 		      
-      endif 
-        iernc=nf90_inq_varid( ncid, 'f107', vid )      
-        iernc= nf90_get_var( ncid, vid, Af107)
-
-        iernc=nf90_inq_varid( ncid, 'f107a', vid )
-        iernc= nf90_get_var( ncid, vid, Af107a)
-	
-        iernc=nf90_inq_varid( ncid, 'kp', vid )	
-        iernc= nf90_get_var( ncid, vid, kpind)	
-	
-        iernc=nf90_inq_varid( ncid, 'ap', vid )	
-        iernc= nf90_get_var( ncid, vid, apind)	
-	
-        iernc=nf90_inq_varid( ncid, 'kpa', vid )	
-        iernc= nf90_get_var( ncid, vid, kpinda)	
-	
-        iernc=nf90_inq_varid( ncid, 'apa', vid )	
-        iernc= nf90_get_var( ncid, vid, apinda)	
-	
-        iernc=nf90_inq_varid( ncid, 'swbz', vid )	
-        iernc= nf90_get_var( ncid, vid, Aswbz)		
-        iernc=nf90_inq_varid( ncid, 'swbt', vid )	
-        iernc= nf90_get_var( ncid, vid, Aswbt)	
-	
-        iernc=nf90_inq_varid( ncid, 'nhp', vid )	
-        iernc= nf90_get_var( ncid, vid, Anhp)	
-        iernc=nf90_inq_varid( ncid, 'shp', vid )	
-        iernc= nf90_get_var( ncid, vid, Ashp)					
-        iernc=nf90_inq_varid( ncid, 'nhpi', vid )	
-        iernc= nf90_get_var( ncid, vid, Anhpi)	
-        iernc=nf90_inq_varid( ncid, 'shpi', vid )	
-        iernc= nf90_get_var( ncid, vid, Ashpi)			
-        
-	
-        iernc=nf90_inq_varid( ncid, 'swden', vid )	
-        iernc= nf90_get_var( ncid, vid, Aswden)		
-        iernc=nf90_inq_varid( ncid, 'swvel', vid )	
-        iernc= nf90_get_var( ncid, vid, Aswvel)
-        iernc=nf90_inq_varid( ncid, 'swang', vid )	
-        iernc= nf90_get_var( ncid, vid, Aswang)	
-			 
-        iernc=nf90_close(ncid)   
-	      
-           call wamphys_y4m2d2(sol_dates(1), yrc, mm, dd)
-!	  if (me == master) print *, 'yrc=',yrc,' mm=',mm, ' dd=', dd
-        do irec = 1,ntimes_solar
-	   call wamphys_y4m2d2(sol_dates(irec), yr, mm, dd)
-	   call wamphys_day_of_year(yr, mm, dd, ddd)
-! NY +365/366 =ddc
-!            if (me == master) print *, 'yrc=',yrc,' yr=',yr, ' ddc=',ddc, 'ddd=',ddd	
-
-
-
-!!!!!!           ddd=ddd-1 !!!!!!!!!only for 2024 leapyear   	
-	   if (yr .gt. yrc) ddd = ddd +ddc 
-	     yrc = yr  
-	     ddc = ddd 	
-	       
-	  if (isw_3min == 0 ) dfhours(irec) = float(ddd)  + sol_times(irec)/24. 
-	  if (isw_3min == 1 ) dfhours(irec) = float(ddd)  + sol_datesecs(irec)/86400.	  
-
-	   kpind(irec) = kpind(irec)*0.1     ! OMN: Kp x 10
-	   kpinda(irec) = kpinda(irec)*0.1   ! OMN: Kp x 10	   
-        end do    
-	   
-         ihr1 = 1
-	 ihr2 = ihr1+1
-	 w_ndx1 =1.
-	 w_ndx2 =1.-w_ndx1
-	 
-	 hrc = dfhours(ihr2) 
-	 
-	 sol_f107  = w_ndx1*Af107(ihr1) +w_ndx2*Af107(ihr2)
-	 sol_f107a = w_ndx1*Af107a(ihr1) +w_ndx2*Af107a(ihr2)
-	 sol_kp = w_ndx1*kpind(ihr1) +w_ndx2*kpind(ihr2)
-	 sol_kpa = w_ndx1*kpinda(ihr1) +w_ndx2*kpinda(ihr2)
-	 sol_ap = w_ndx1*apind(ihr1) +w_ndx2*apind(ihr2)
-	 sol_apa = w_ndx1*apinda(ihr1) +w_ndx2*apinda(ihr2)	 
-	 sol_bz = w_ndx1*aswbz(ihr1) +w_ndx2*aswbz(ihr2)
-	 sol_bt = w_ndx1*aswbt(ihr1) +w_ndx2*aswbt(ihr2)
-	 sol_nhp = w_ndx1*anhp(ihr1) +w_ndx2*anhp(ihr2)
-	 sol_shp = w_ndx1*ashp(ihr1) +w_ndx2*ashp(ihr2)
-	 sol_nhpi = w_ndx1*anhpi(ihr1) +w_ndx2*anhpi(ihr2)
-	 sol_shpi = w_ndx1*ashpi(ihr1) +w_ndx2*ashpi(ihr2)	 
-	 	 
-	 sol_vel = w_ndx1*aswvel(ihr1) +w_ndx2*aswvel(ihr2)	 
-	 sol_den = w_ndx1*aswden(ihr1) +w_ndx2*aswden(ihr2)
-	 sol_ang = w_ndx1*aswang(ihr1) +w_ndx2*aswang(ihr2)	 	 	 	 
-!	 return
-	 
-	 if (me == master) then 
-!	 print *, 'w_ndx1=',w_ndx1,' w_ndx2=',w_ndx2
-!	 print *,'Af107(ihr1)=',Af107(ihr1),' Af107(ihr2)=',Af107(ihr2)
-	 print *, ' solkpf107_init kp/f107 ', sol_kp, sol_f107
-	 print *,' solkpf107 ' ,sol_dates(1), sol_dates(ntimes_solar), ntimes_solar, kdt_swmax
-	 do irec = 1, 10
-	  write(6,111), kpind(irec), sol_dates(irec), sol_dayddd(irec), dfhours(irec) 
-	 enddo 
-	 
-!	 print *, 'sol1-ang', sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang  
-!	 print *, 'sol1-apa', sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 	 
-	 endif
-111 format( ' solkpf107 ', F8.3, 3x,  I8, 3x, F8.3, 2x, F8.3)	                                     
-  end subroutine wamphys_solkpf107_init
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  
-  subroutine wamphys_kpf107_update( kdt, iy4, iym2, iyd2, iddd, solhr, &
-                                f107, f107a,  kp, kpa, me, master) 
-		        
-  use machine,             only: kind_phys   
-  use wamphys_init_module, only :  Af107, Af107a, Kpind, Kpinda, Apind, Apinda
-  use wamphys_init_module, only :   Ashp, Ashpi,   Anhp, Anhpi, Aswden, Aswvel, Aswang, Aswbt, Aswbz     
-  use wamphys_init_module, only :  sol_dates, sol_times, dfhours, sol_dayddd, sol_datesecs
-  use wamphys_init_module, only :  ntimes_solar, iulog
-  use wamphys_init_module, only :  ihr1, ihr2, hrc, w_ndx1, w_ndx2, isw_3min, kdt_swmax
-  
-  use wamphys_init_module, only : sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 
-  use wamphys_init_module, only : sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang 
-     
-  implicit none   		     
-  integer, intent(in)   :: kdt, iy4, iym2, iyd2, iddd
-  real(kind=kind_phys), intent(in)  :: solhr 	
-  integer, intent(in)   :: me, master 
-  real(kind=kind_phys)  :: f107, f107a,  kp, kpa  
-  real(kind=kind_phys)  :: cur_hr, ddf
-  integer :: irec
-  
-    if (kdt <1 .or. kdt > kdt_swmax) then
-       print *, ' kdt out of range ', kdt,  kdt_swmax
-       stop  ' UPDATE SW-drivers  KDT'  
-    endif
-    
-   if (isw_3min .ne. 1 ) then
-    print *, ' isw_3min =/= 1 ', isw_3min
-    stop ' UPDATE SW-drivers 3MIN '  
-   endif
- 
-  !!!!!!!!dfhours(irec) = float(ddd)  + sol_times(irec)/24. 
-!  if (me == master) print *, 'float(iddd)=',float(iddd),' solhr/24.=',solhr/24. 
-
- if (isw_3min == 0 )  then
- 
-  cur_hr = float(iddd) + solhr/24.
-  if (me == master) print *, ' kpf-update ', cur_hr,  hrc, ihr1, ihr2	
-  if (cur_hr .gt. hrc) then 
-    ihr1 = ihr2
-    ihr2 = ihr1+1
-    if (ihr2.gt.ntimes_solar) ihr2 = ntimes_solar
-    hrc =dfhours(ihr2)
-  endif
-      ddf = hrc-dfhours(ihr1)
-   if (ddf.ne.0.) then
-    w_ndx2 = (cur_hr -dfhours(ihr1))/ddf
-    w_ndx1 = 1.-w_ndx2
-!   if (me == master) print *, 'w1=',w_ndx1, ' w2=',w_ndx2
-!   if (me == master) print *,'kpind(ihr1)=',kpind(ihr1),'kpind(ihr2)=',kpind(ihr2)
-    f107  = w_ndx1*Af107(ihr1) +w_ndx2*Af107(ihr2)
-    f107a = w_ndx1*Af107a(ihr1) +w_ndx2*Af107a(ihr2)
-         kp = w_ndx1*kpind(ihr1) +w_ndx2*kpind(ihr2)
-         kpa = w_ndx1*kpinda(ihr1) +w_ndx2*kpinda(ihr2)
-	 sol_ap = w_ndx1*apind(ihr1) +w_ndx2*apind(ihr2)
-	 sol_apa = w_ndx1*apinda(ihr1) +w_ndx2*apinda(ihr2)
-	 	 	 
-         sol_bz = w_ndx1*aswbz(ihr1) +w_ndx2*aswbz(ihr2)
-	 sol_bt = w_ndx1*aswbt(ihr1) +w_ndx2*aswbt(ihr2)
-	 sol_nhp = w_ndx1*anhp(ihr1) +w_ndx2*anhp(ihr2)
-	 sol_shp = w_ndx1*ashp(ihr1) +w_ndx2*ashp(ihr2)
-	 sol_nhpi = w_ndx1*anhpi(ihr1) +w_ndx2*anhpi(ihr2)
-	 sol_shpi = w_ndx1*ashpi(ihr1) +w_ndx2*ashpi(ihr2)	 
-	 	 
-	 sol_vel = w_ndx1*aswvel(ihr1) +w_ndx2*aswvel(ihr2)	 
-	 sol_den = w_ndx1*aswden(ihr1) +w_ndx2*aswden(ihr2)
-	 sol_ang = w_ndx1*aswang(ihr1) +w_ndx2*aswang(ihr2)
-   else
-    sol_ap = apind(ihr2)
-    sol_apa = apinda(ihr2) 
-    sol_nhpi= anhpi(ihr2) 
-    sol_nhp= anhp(ihr2)  
-    sol_shpi= ashpi(ihr2) 
-    sol_shp= ashp(ihr2)
-    sol_bz = aswbz(ihr2)  
-    sol_bt = aswbt(ihr2)  
-            
-    f107  = Af107(ihr2)
-    f107a  = Af107a(ihr2)  
-    kp =kpind(ihr2)
-    kpa =kpinda(ihr2)    
-   sol_vel = aswvel(ihr2)
-   sol_den = aswden(ihr2)
-   sol_ang =aswang(ihr2)
-!   
-! sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang 
-! sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa  
-!  
-   endif
-   if (me == master) print *, ' kpf-update ',ddf,  f107, kp
-!       kpa = kp   
-   ENDIF
-   
- if (isw_3min == 1 )  then
-    sol_ap = apind(kdt)
-    sol_apa = apinda(kdt) 
-    sol_nhpi= anhpi(kdt) 
-    sol_nhp= anhp(kdt)  
-    sol_shpi= ashpi(kdt) 
-    sol_shp= ashp(kdt)
-    sol_bz = aswbz(kdt)  
-    sol_bt = aswbt(kdt)  
-    sol_vel = aswvel(kdt)
-    sol_den = aswden(kdt)
-    sol_ang =aswang(kdt) 
-               
-    f107  = Af107(kdt)
-    f107a  = Af107a(kdt)  
-    kp = kpind(kdt)
-    kpa =kpinda(kdt) 
- 
- endif 
-!   
-! sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang 
-! sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 
-!	    
-  end subroutine wamphys_kpf107_update
-  
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!              
-  
       
   subroutine wamphys_idate_calendar(idate, fhour, ddd, fddd) 
     
@@ -1410,15 +1123,6 @@ end module wamphys_init_module
       call w3doxdat(jdat,jdow, ddd, jday)
       fddd = float(ddd) + jdat(5) / 24.   
   end  subroutine wamphys_idate_calendar  
-
-  subroutine wamphys_y4m2d2(day8, y4, m2, d2)
-  integer :: day8, y4, m2, d2
-     y4 = day8/10000
-     m2 = (day8-y4*10000)/100
-     d2 = day8-y4*10000 -m2*100
-  end  subroutine wamphys_y4m2d2  
-!            
-
            
   subroutine wamphys_day_of_year(yr, mm, dd, ddd)
 ! computes day of year to get tau_limb forcing written with 1-day precision

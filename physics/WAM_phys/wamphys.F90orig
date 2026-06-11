@@ -259,16 +259,14 @@ contains
     use wamphys_init_module, only : nlev_h2o,nlev_co2, nlevc_h2o 
     
     use wamphys_init_module, only : co2my
- 
+!    use wamphys_init_module, only : gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb
+!    use wamphys_init_module, only : gdp,  xx, wvmmrc, coeff   
         
     use wamphys_init_module, only : spw_drivers, swin_drivers
     
     use wamphys_init_module, only : f107_fix, f107a_fix, kp_fix, kpa_fix
     use wamphys_init_module, only : bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden
     use wamphys_ion,         only : wam_ion_run
-    use wamphys_init_module, only : sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 
-    use wamphys_init_module, only : sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang    
-    use wamphys_init_module, only : kdt_swmax    
 !   use efield_wam, only          :  iday,iyear,iday_m,imo    
     implicit none
     logical,                intent (in) :: do_wamipe    
@@ -322,11 +320,7 @@ contains
 !==========================================================
 ! local variables
 !==========================================================
-    integer, parameter  :: kdtin = 2400    !for 5 day spin up!!!!   ! JAN1 year start DEc26 2022 for 2023 run  
-!    integer, parameter  :: kdtin = 14400    !for 30 day spin up!!!!   ! apr1year 2024 
-
-
-!!!!    integer, parameter :: kdtin = 3360      ! 7 days spin start 25 dec 2023 for 2024 year run 
+    
     integer, parameter  :: ntrac_i=2                  ! number of 2 WAM chem. tracers (O-O2)
     integer, parameter  :: lowst_ipe_level = 90
     integer, parameter  :: ipr = 10    
@@ -358,7 +352,7 @@ contains
                                                               
 ! geo-solar-related vars
     real(kind=kind_phys)  :: utsec,   sda
-    integer               :: ddd_year, kdts       
+    integer               :: ddd_year       
     ! integer               :: nth2o
                     
     real(kind=kind_phys)  :: wn1, wsum                
@@ -376,19 +370,7 @@ contains
     f107  = f107_fix
     f107d = f107a_fix
     kp    = kp_fix
-    kpa   = kpa_fix   
-        kdts = kdt -kdtin
-	
-!	print *, ' kdt-kdtin-kdts ', kdt, kdtin, kdts
-    if (me == master ) then
-    
-      if ((kdts .le. 0)  .and. (kdts .gt. kdt_swmax) ) then
-       print *, ' kdt-kdtin-kdts ', kdt, kdtin, kdts
-       stop ' kdts out of range '
-      endif
-    endif
-    
-    	  
+    kpa   = kpa_fix	  
 !=========================================================================	  
 ! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
 !=========================================================================
@@ -412,35 +394,15 @@ contains
        dvdt_iwamph(:,:) = vgrs
        dtdt_iwamph(:,:) = tgrs   
     endif   
-!--------------------------- 
-!     solhr  imo   iday_m   
-!--------------------------- 
+ 
       
     call wamphys_day_of_year(jdat(1), jdat(2), jdat(3), ddd_year) 
       
 !      iday = ddd_year
 !      iyear = jdat(1)
 !      iday_m = jdat(3)
-!      imo = jdat(2)
-!print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts	
-    call wamphys_kpf107_update(kdts,  jdat(1), jdat(2), jdat(3), ddd_year, solhr, &
-                   sol_f107, sol_f107a, sol_kp, sol_kpa, me, master)  
-!print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts		    		    
-    f107  = sol_f107
-    f107d = sol_f107a
-    kp    = sol_kp
-    kpa   = sol_kpa
-
-    if (me == master ) then
-     if (kdts < 100) print *, 'spw-drivers f-kp ', f107, f107d, kp, kpa
-!     print *, 'spw-drivers f-kp ', f107, f107d, kp, kpa
- 
-     if (kp .gt. 8) then 
-          print *, ' kpf107 >8  ', f107, kp,  kdt
-          print *,  ' bt, bz, sdn, svl', sol_bt, sol_bz, sol_den, sol_vel 
-          print *,  ' nhp, shp, npi, spi', sol_nhp, sol_shp, sol_nhpi, sol_shpi	  	  	   
-     endif
-    endif	     
+!      imo = jdat(3)
+      
     do k=1, levs 
         del(:,k) = prsi(:,k) - prsi(:, k+1)
     enddo 
@@ -515,7 +477,7 @@ contains
 !                    gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
  
        call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
-         
+!!      call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_n, rho, cp, zgeo, grav, dto3)          
     ! if ( me == master .and. kdt == 1) print *,  ' after wamrad_o2_o3 '
        	    
     IF(do_wamipe) then 
@@ -548,11 +510,12 @@ contains
         tgrs = tgrs + wtot * dtp  
         dtdt_wamrad = wtot
     endif
-    call wam_ion_run(im, levs, jdat, prsl, solhr,cospass,zgeo, grav, o_n, o2_n,n2_n,&
+	    
+    call wam_ion_run(im, levs, jdat, prsl, solhr, cospass, zgeo, grav, o_n, o2_n,n2_n,         &
                      cp, ugrs, vgrs, tgrs, dudt_ion, dvdt_ion, dtdt_ion, rho, xlat, xlon,      &
                      ddd_year, utsec, sda, maglon, maglat, btot, dipang, essa, f107, f107d, kp,&
-	        sol_nhp, sol_nhpi, sol_shp, sol_shpi, sol_bt, sol_ang, sol_vel, sol_bz, sol_den)	    
-   
+                     bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden) 
+!	    swin_drivers, spw_drivers)
 
 !       IF(do_wamipe) then 
 !          call idea_merge_ipe_to_wam(GZMT, dudt_ion,&

@@ -537,7 +537,6 @@ module wamphys_ion
       real(kind=kind_phys), intent(out)   :: ee2(im)     ! electric field y direction mv/m
 
       integer ::   i,k,iref,jref
-      integer ::   me,master
 !     real(kind=kind_phys)  :: bz, by
       real(kind=kind_phys)  :: utsec_last
       real(kind=kind_phys)  :: dx,dy,aa,bb,maglond,maglatd               
@@ -570,7 +569,7 @@ module wamphys_ion
         by = 0.
         v_sw = 450.00
 !================================================   call from "module efield"
-        call  wamget_efield(me,master,swbt, swang, swvel, swbz, swden)
+        call  wamget_efield(swbt, swang, swvel, swbz, swden)
 
 !       print*,'www'
 !       print'(8f10.4)',potent(0:180,68)

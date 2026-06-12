@@ -33,8 +33,9 @@ module wamphys_multigases
       integer, parameter   ::  ind_h2o = 1
       integer, parameter   ::  ind_n2  = 0 
              
-      integer              ::  ind_o1, ind_o2, ind_o3   
-          
+      integer              ::  ind_o1, ind_o2, ind_o3, ind_he, ind_no   
+      integer              ::  nwam_heno                  ! flag to add HE (1) HE+NO (2), standard (0) 
+      integer              ::    kdt_swdin                ! 2400 # of skipped records SWD-file from the cold start            
       real(kind=kind_phys), allocatable ::  ri(:),cpi(:)
       integer, allocatable              ::  ind_wamtr(:)
 
@@ -50,13 +51,15 @@ module wamphys_multigases
         integer, intent(in) ::    master,  me, nlunit
         character(len=64), intent (inout) :: fn_nml2
         integer, intent(in) ::   ntrac, nto1, nto2, nto3, ntqv     
-        integer             ::    ntrac_nml, ntrac_wat      
+        integer             ::    ntrac_nml, ntrac_wat
+        integer             ::    nwam_heno  ! flag to add HE (1) HE+NO (2), standard (0)
+        integer             ::    kdt_swdin  ! 2400 # of skipped records SWD-file from the cold start		      
         integer             ::    i
         integer :: ios
         logical :: exists
         !ncnst =ntrac nwat-last-water-based  
     
-        namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml  
+        namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml, nwam_heno, kdt_swdin  
 	 
         inquire (file =trim (fn_nml2) , exist = exists)
         if (.not. exists) then
@@ -92,7 +95,8 @@ module wamphys_multigases
 	      endif
 	
         if ( me == master ) then 
-          write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac_nml/nwat ', ntrac_nml, ntrac_wat 	  
+          write(6,*)  ' wamphys_set_major_tracers dim-n of ntrac_nml/nwat ', ntrac_nml, ntrac_wat 
+          write(6,*)  '	wamphys_set_major_ HE-flag & kdt_swd ',  nwam_heno, kdt_swdin 	  
           do i=0,ntrac_nml 
             write(6,*)  i, ' ri =', ri(i), ' cpi= ', cpi(i)  
           enddo
@@ -103,10 +107,21 @@ module wamphys_multigases
         ind_o3 = ntrac_wat+1
         ind_wamtr(ind_o3) = ind_o3 
         ind_o1 =  ind_wamtr(ind_o3)+1
-        ind_o2 =  ind_o1+1      
+        ind_o2 =  ind_o1+1 
+	
+	if (nwam_heno == 1) ind_he=ind_o2+1
+	if (nwam_heno == 2) ind_no=ind_o2+2
+	     
         ind_wamtr(ind_o1) = ind_o1
         ind_wamtr(ind_o2) = ind_o2
-	      num_wat = ntrac_wat	  
+	
+	if (nwam_heno == 0) then
+	  ind_no =-99
+	  ind_he =-99
+	endif
+	
+	 num_wat = ntrac_wat	  
+	    
       end  subroutine wamphys_set_major_tracers    
 ! --------------------------------------------------------
       subroutine multi_gases_init(ngas, nwat, ri, cpi, is_master)

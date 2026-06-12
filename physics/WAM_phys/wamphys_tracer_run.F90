@@ -4,7 +4,8 @@
 ! Nov    2016    Correction of JO2 and oxygen chemistry
 ! September 2017 Weiyu Yang, add IPE back coipling WAM code.
 ! October 2017   Rashid Akmaev, eddy mixing, corrections and clean-up
-! May 2022       Svetlana Karol and CUA
+! May 2022       Svetlana Karol and Valery Yudin
+! May 31 2026    Valery Yudin
 !-----------------------------------------------------------------------
   subroutine wamphys_tracer_run(me, master, im,levs,ntrac,ntrac_i, nto, nto2, nto3, ntqv,   & 
        dayno, dtp, grav,prsi,prsl, adt, q,   n1, n2, ozn, n3, nair, rho, am, am29,          &
@@ -12,8 +13,10 @@
       
       use machine,  only             : kind_phys 
       use physcons, only             : avgd => con_avgd             
-      use wamphys_init_module, only  : bz,amo,amn2, amo2, amo3, amh2o
-      use wamphys_init_module, only  : rbz, rmo, rmo2, rmn2, rmh2o,rmo3
+      use wamphys_init_module, only  : bz,amo,amn2, amo2, amo3, amh2o, amhe, amno
+      use wamphys_init_module, only  : rbz, rmo, rmo2, rmn2, rmh2o,rmo3, rmhe, rmno    
+      use wamphys_multigases,  only  : nwam_heno, ind_he, ind_no 
+      
 !     The following will be in the future but pay attention that the
 !     lowst_ipe_level was not defined in the ini module
 !      use wamphys_init_module, only  : lowst_ipe_level => lowipe_lev150 
@@ -49,7 +52,7 @@
       real(kind=kind_phys), intent(inout) :: q(im,levs,ntrac)   ! input output tracer
       real(kind=kind_phys), intent(out)   :: n1(im,levs)     ! number density of o (/m3)
       real(kind=kind_phys), intent(out)   :: n2(im,levs)     ! number density of o2 (/m3)
-      real(kind=kind_phys), intent(out)   :: ozn(im,levs)    ! number density of o2 (/m3)
+      real(kind=kind_phys), intent(out)   :: ozn(im,levs)    ! number density of o3 (/m3)
       real(kind=kind_phys), intent(out)   :: n3(im,levs)     ! number density of n2 (/m3)
       real(kind=kind_phys), intent(out)   :: nair(im,levs)   ! total number density (/m3)
       real(kind=kind_phys), intent(out)   :: rho(im,levs)    ! density of  (kg/m3)
@@ -62,7 +65,8 @@
 	      
       real(kind=kind_phys) ::  mh2o,mo3, mo,mo2,mn2        
       real(kind=kind_phys) ::  qin(im,levs,ntrac_i)
-      real(kind=kind_phys) ::  qn2
+      real(kind=kind_phys) ::  qheno(im,levs,ntrac_i)     
+      real(kind=kind_phys) ::  qn2, mu_air
       integer i,k,in, itr, i2
       real(kind=kind_phys), intent(out)  :: Jrates_O2(im, levs)            ! O2 dissociation rate
       
@@ -82,19 +86,29 @@
   !	        qin(i,k,2)=q(i, k, nto2)  
             enddo
           enddo
-        enddo
-  
+        enddo     
+	if (nwam_heno > 0 ) then	     
+	  do i=1,im
+          do k=1,levs
+	   if (nwam_heno .eq. 1 ) qheno(i,k,1) = q(i, k, ind_he)
+	   if (nwam_heno .eq. 2 ) qheno(i,k,1) = q(i, k, ind_no)
+	  enddo
+	  enddo
+         endif
 ! mean mass, mass and number densities
 !     here n,n1,n2 in /m3 , rho in kg/m3
       do i=1,im
         do k=1,levs
 	
            qn2=1.-q(i,k,ntqv)-q(i,k,nto3)-qin(i,k,1)-qin(i,k,2)
-
+           if (nwam_heno .eq. 1 ) qn2= qn2-qin(i,k,ind_he) 
+	   if (nwam_heno .eq. 2 ) qn2= qn2-qin(i,k,ind_he)- qin(i,k,ind_no)  
 ! mean molecular mass of gaseous tracers
-           am(i,k)=1./(qin(i,k,1)*rmo+qin(i,k,2)*rmo2+q(i,k,ntqv)*rmh2o+     &  
-               q(i,k,nto3)*rmo3+qn2*rmn2)
-
+           mu_air=qin(i,k,1)*rmo+qin(i,k,2)*rmo2+q(i,k,ntqv)*rmh2o+     &  
+               q(i,k,nto3)*rmo3+qn2*rmn2
+	    if (nwam_heno .eq. 1 ) mu_air= mu_air + qin(i,k,ind_he)*rmhe
+	    if (nwam_heno .eq. 2 ) mu_air= mu_air + qin(i,k,ind_he)*rmhe + qin(i,k,ind_no)*rmno
+            am(i,k)=1./mu_air
 ! total number density and mass density
            nair(i,k)=rbz*prsl(i,k)/adt(i,k)
            rho(i,k)=am(i,k)*nair(i,k)
@@ -128,8 +142,14 @@
       endif
 ! Eddy mixing
 
+      
       call wam_tracer_eddy(im,levs,ntrac_i,grav,prsi,prsl,rho,dtp,  &
           qin,dayno,dq3)
+      
+      if (nwam_heno > 0) then       
+        call wam_helno_medif(im, levs, 2, grav, prsi,prsl,adt, rho,dtp,  &
+          qheno,dayno,nwam_heno)        
+      endif 	  
 
 ! Mutual molecular diffusion of major thermospheric species O, O2, N2
 
@@ -161,22 +181,45 @@
           do k=1,levs
 !           q(i,k,nto) = q(i,k,nto)+dq1(i,k,1)+dq2(i,k,1)+dq3(i,k,1)
 !	      q(i,k,nto2)= q(i,k,nto2)+dq1(i,k,2)+dq2(i,k,2)+dq3(i,k,2)
-            q(i,k, i2)= q(i,k,i2) +dq1(i,k,in)+dq2(i,k,in)+dq3(i,k,in)
+            q(i,k, i2)= q(i,k,i2) +dq1(i,k,in)+dq2(i,k,in)+dq3(i,k,in)	   
+	   if (nwam_heno .eq. 1 ) qheno(i,k,1) = q(i, k, ind_he)
+	   if (nwam_heno .eq. 2 ) qheno(i,k,2) = q(i, k, ind_no)
           enddo
         enddo
       enddo
-
+     if (nwam_heno > 0) then      
+        do i=1,im
+          do k=1,levs 
+	   if (nwam_heno .eq. 1 ) q(i, k, ind_he)=qheno(i,k,1)
+	   if (nwam_heno .eq. 2 ) q(i, k, ind_no)=qheno(i,k,2)    
+          enddo
+        enddo
+     endif	
 ! Update number densities and rho (nair= p/(kT) is conserved) and mean mass
       do i=1,im
          do k=1,levs
-            qn2=1.-q(i,k,ntqv)-q(i,k,nto3)-q(i,k,nto)-q(i,k,nto2)
-            am(i,k)=1./(q(i,k,nto)*rmo+q(i,k,nto2)*rmo2+q(i,k,ntqv)*rmh2o+      & 
-                q(i,k,nto3)*rmo3+qn2*rmn2)
+            qn2=1.-q(i,k,ntqv)-q(i,k,nto3)-q(i,k,nto)-q(i,k,nto2)           
+	   if (nwam_heno .eq. 1 ) qn2= qn2-qin(i,k,ind_he) 
+	   if (nwam_heno .eq. 2 ) qn2= qn2-qin(i,k,ind_he)- qin(i,k,ind_no)
+	   
+           mu_air=qin(i,k,1)*rmo+qin(i,k,2)*rmo2+q(i,k,ntqv)*rmh2o+     &  
+               q(i,k,nto3)*rmo3+qn2*rmn2	       
+	    if (nwam_heno .eq. 1 ) mu_air= mu_air + qin(i,k,ind_he)*rmhe
+	    if (nwam_heno .eq. 2 ) mu_air= mu_air + qin(i,k,ind_he)*rmhe + qin(i,k,ind_no)*rmno
+            am(i,k)=1./mu_air
+	    	    
+!            am(i,k)=1./(q(i,k,nto)*rmo+q(i,k,nto2)*rmo2+q(i,k,ntqv)*rmh2o+      & 
+!                q(i,k,nto3)*rmo3+qn2*rmn2)
+				
 	      rho(i,k) =am(i,k)*nair(i,k)
             n1(i,k)=max(q(i,k,nto)*rho(i,k)*rmo,0.)
             n2(i,k)=max(q(i,k,nto2)*rho(i,k)*rmo2,0.)
             n3(i,k) =max(qn2*rho(i,k)*rmn2,0.)
             ozn(i,k)= max(q(i,k,nto3)*rho(i,k)*rmo3,0.)
+	    
+!	    if (nwam_heno .eq. 1 ) nhe(i,k)=max(q(i,k,ind_he)*rho(i,k)*rmhe,0.)	 
+!	    if (nwam_heno .eq. 2 ) nno(i,k)=max(q(i,k,ind_no)*rho(i,k)*rmno,0.)
+	    
          enddo
       enddo
       
@@ -457,6 +500,9 @@
 !     (indirectly) N2
 ! October 2017 Rashid Akmaev
 !
+! Generalize algorithm for 3D-eddy diffusion variable in lon-lat
+!    May 2026 Valery Yudin
+!
       use machine,     only: kind_phys
       
       use wamphys_init_module, only : skeddy0, skeddy_semiann, skeddy_ann
@@ -489,8 +535,6 @@
       real(kind=kind_phys), parameter:: pi = 3.141592653
 ! semiannual amp
 
-
-      real(kind=kind_phys), parameter:: dkeddy = 0.
       real(kind=kind_phys), parameter:: dx = 2.    
       real(kind=kind_phys), parameter:: xmax = 15.
       real(kind=kind_phys) :: keddy(levs+1),x, kedmax
@@ -498,7 +542,6 @@
 !     skeddy0=140., skeddy_semiann=60., skeddy_ann=0.,
 !     tkeddy0=280., tkeddy_semiann=0., tkeddy_ann=0., 
 
-      if(dkeddy <= 1e-10) then
 
 ! Add semiannual variation   SKEDDY0 =   140.   SKEDDY_SEMIANN  =   60.0
 !          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))   ! WAM-GSM
@@ -508,14 +551,7 @@
 	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
           keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5            
         enddo                    
-	    
-      else
-         do k=1,levs+1
-! height in scale heights
-            x = alog(1e5/prsi(1,k))
-            keddy(k)= skeddy0*exp(-((x-xmax)/dx)**2) +.5 
-         enddo
-      endif
+	         
 !-----------------------------------------------------------------------
 ! Boundary conditions
       a(1) = 0.
@@ -664,3 +700,153 @@
       return
   end subroutine wamphys_dissociation
 
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc!   
+  subroutine wam_helno_medif(im,levs,ntr2,grav,prsi,prsl, adt,   &
+          rho,dtp, qin, dayno,nwam_heno)
+
+!    (im, levs, grav, prsi,prsl, adt, rho,dtp, qheno, dayno,nwam_heno)
+!
+! May 2026: Molecular & Eddy diffusion for He and NO 
+!
+      use machine,     only: kind_phys
+      
+      use wamphys_init_module, only : skeddy0, skeddy_semiann, skeddy_ann
+      
+					 
+      implicit none
+! Arguments
+      integer, intent(in) :: im         ! number of long data points in fields
+ 
+      integer, intent(in) :: levs       ! number of pressure levels
+      integer, intent(in) :: ntr2       ! number of addtl tracers He+NO
+      integer, intent(in) :: nwam_heno  ! He or He+NO 1-tracer or 2-tracers
+         
+      integer, intent(in) :: dayno ! for semiannual variation
+      real(kind=kind_phys), intent(in) :: dtp      ! time step in second
+      real(kind=kind_phys), intent(in) :: prsi(im,levs+1) ! interface pressure in Pa
+      real(kind=kind_phys), intent(in) :: prsl(im,levs)   ! layer pressure in Pa
+      real(kind=kind_phys), intent(in) :: adt(im,levs)    ! temp-re     
+      real(kind=kind_phys), intent(in) :: grav(im,levs)   ! (m/s**2)
+      real(kind=kind_phys), intent(in) :: rho(im,levs)   ! mass density (kg/m**3)
+      real(kind=kind_phys), intent(inout) :: qin(im,levs,ntr2)   ! input tracers
+
+      
+! Locals      
+      real, parameter:: avgd=6.0221415e23  ! Avogadro constant
+      real, parameter:: bz=1.3806505e-23   ! Boltzmann constant J/K
+       
+      real(kind=kind_phys) :: alpha(levs+1),beta(levs),qout(ntr2)
+      real(kind=kind_phys) :: a(levs),b(levs),c(levs)
+      real(kind=kind_phys) :: e(levs),d(levs,ntr2), temp
+      integer i,k, itr, ndif
+
+!-----------------------------------------------------------------------
+! Calculate Keddy (m**2/s) (move this to init subroutine/module later)
+! Keddy parameters: mean, width in scale heights, height of max
+
+      real(kind=kind_phys), parameter:: pi = 3.141592653
+! semiannual amp
+      real, parameter:: a12=2.78e19        ! He-Air molecular diffusion params Table 15.1 BK-1973
+      real, parameter:: a12heo=3.44e19     ! He-Air molecular diffusion params      
+      real, parameter:: s12=0.729
+      real, parameter:: s12heo=0.749
+      real, parameter:: s12no=0.73      
+      real, parameter:: a12no=7.56e18      ! CO-Air ~ NO-Air  
+          
+      real(kind=kind_phys), parameter:: dx = 2.    
+      real(kind=kind_phys), parameter:: xmax = 15.
+      real(kind=kind_phys) :: keddy(levs+1),x, kedmax
+      real(kind=kind_phys) :: mkeddy(levs+1), dmol  
+      
+      real(kind=kind_phys) :: d12, st12, adt_int        
+         
+!     skeddy0=140., skeddy_semiann=60., skeddy_ann=0.,
+!     tkeddy0=280., tkeddy_semiann=0., tkeddy_ann=0., 
+
+
+! Add semiannual variation   SKEDDY0 =   140.   SKEDDY_SEMIANN  =   60.0
+!          keddy(:) = skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))   ! WAM-GSM
+
+        do k=1,levs+1
+          x = alog(1.e5/prsi(1,k))
+	    kedmax =skeddy0 +  skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.)) 
+          keddy(k)= kedmax*exp(-((x-xmax)/dx)**2) +.5            
+        enddo                    
+	    
+         do i=1,im
+         do k=1,levs+1
+! height in scale heights
+
+	    
+         enddo
+         enddo         
+      
+!-----------------------------------------------------------------------
+! Boundary conditions
+     if (nwam_heno == 0) return 
+     if (nwam_heno == 1) ndif =1
+     if (nwam_heno == 2) ndif =2     
+     
+     do itr = 1, ndif
+       a(1) = 0.
+       c(levs) = 0.
+       
+       if (itr == 1) then 
+        d12 = a12*bz
+	st12 = s12+1.
+       else
+        d12 = a12no*bz
+	st12 = s12no+1.       
+       endif
+       
+      do i = 1,im
+! Auxiliary arrays  at interfaces
+         do k = 2,levs
+	    adt_int =.5*(adt(i, k-1)+adt(i,k))
+	    dmol = d12*(adt_int**s12)/prsi(i,k)
+	    mkeddy(k) = keddy(k) + dmol
+            alpha(k) = mkeddy(k)*(.5*(rho(i,k-1)+rho(i,k)))**2*    &
+             (.5*(grav(i,k-1)+grav(i,k)))/(prsl(i,k-1) - prsl(i,k))
+         enddo
+
+! in layers
+         do k = 1,levs
+            beta(k) = dtp*grav(i,k)/(prsi(i,k) - prsi(i,k+1))
+         enddo
+
+! Coefficients a(k), c(k) and b(k)
+         do k = 2,levs
+            a(k) = beta(k)*alpha(k)
+         enddo
+         do k = 1,levs-1
+            c(k) = beta(k)*alpha(k+1)
+         enddo
+         do k = 1,levs
+            b(k) = 1. + a(k) + c(k)
+         enddo
+
+! Solve tridiagonal problem for each tracer
+! boundary conditions
+         e(levs) = a(levs)/b(levs)
+         d(levs,itr) = qin(i,levs,itr)/b(levs)
+
+! go down, find e(k) and d(k)
+         do k = levs-1,1,-1
+!vay-2022 
+            temp =1./(b(k) - c(k)*e(k+1))	 
+            e(k) = a(k)*temp       !/(b(k) - c(k)*e(k+1))
+            d(k,itr) = (c(k)*d(k+1,itr) + qin(i,k,itr)) *temp
+         enddo
+         
+! go up, find solution
+         qout(itr) = d(1,itr)
+!         dq(i,1,itr) = qout(itr) - qin(i,1,itr)
+         do k = 2,levs
+            qout(itr) = e(k)*qout(itr) + d(k,itr)
+!	    dq(i,k,:) = qout(:) - qin(i,k,:)
+            qin(i,k,itr) =qout(itr) 
+         enddo
+
+      enddo   ! i-loop
+     enddo    ! itracer loop
+  end subroutine wam_helno_medif

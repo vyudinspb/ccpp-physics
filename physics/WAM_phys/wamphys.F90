@@ -268,7 +268,8 @@ contains
     use wamphys_ion,         only : wam_ion_run
     use wamphys_init_module, only : sol_f107, sol_f107a, sol_kp, sol_kpa, sol_bt, sol_bz, sol_ap, sol_apa 
     use wamphys_init_module, only : sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang    
-    use wamphys_init_module, only : kdt_swmax    
+    use wamphys_init_module, only : kdt_swmax   
+    use wamphys_multigases,  only : nwam_heno, kdt_swdin, ind_he, ind_no 
 !   use efield_wam, only          :  iday,iyear,iday_m,imo    
     implicit none
     logical,                intent (in) :: do_wamipe    
@@ -359,16 +360,21 @@ contains
 ! geo-solar-related vars
     real(kind=kind_phys)  :: utsec,   sda
     integer               :: ddd_year, kdts       
-    ! integer               :: nth2o
+
                     
     real(kind=kind_phys)  :: wn1, wsum                
     logical               :: wamNAN
 
     real(kind=kind_phys)  :: heatmax, sdtincw, sdtincr
 
+    
+!    
     errmsg = ''
     errflg = 0
-    ! nth2o  = ntqv          ! standard first index for H2O, ntqv - number of water-based species    
+    
+! nth2o  = ntqv          ! standard first index for H2O, ntqv - number of water-based species
+    
+!        
     heatmax = 0.002        ! 100 K/day
 !---------------------------------------------
 ! two ways to setup from namelist/SW-arrays

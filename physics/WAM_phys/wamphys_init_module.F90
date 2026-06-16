@@ -192,8 +192,8 @@ module  wamphys_init_module
 
    real (kind=kind_phys), allocatable :: wam_oh(:), wam_ho2(:)    ! simplified chemistry
          
-   real (kind=kind_phys)  :: bz, rbz, amo,amn2, amo2, amo3, amh2o, amno
-   real (kind=kind_phys)  :: rmo, rmo2, rmn2, rmh2o,rmo3
+   real (kind=kind_phys)  :: bz, rbz, amo,amn2, amo2, amo3, amh2o, amno, amhe
+   real (kind=kind_phys)  :: rmo, rmo2, rmn2, rmh2o,rmo3, rmno, rmhe
    		      
    real (kind=kind_phys), parameter:: muo =3.9e-7    ! viscosity coefficient
 !                                                          of O (kg/m/s) 
@@ -207,10 +207,17 @@ module  wamphys_init_module
 !                                                      coefficient of O2(W/m/K)
    real (kind=kind_phys), parameter:: lan2=56.e-5    ! thermal conductivity
 !                                                      coefficient of N2(W/m/K)
-   real (kind=kind_phys), parameter:: cpo =2.5       !specific heats of o
-   real (kind=kind_phys), parameter:: cpo2=3.5       !specific heats of o2
-   real (kind=kind_phys), parameter:: cpn2=3.5       !specific heats of n2
-   
+
+   real (kind=kind_phys), parameter:: laHe=299.e-5    ! thermal conductivity He
+   real (kind=kind_phys), parameter:: muHe=3.84e-7    ! viscosity He 
+   real (kind=kind_phys), parameter:: laH1=379.e-5    ! thermal conductivity H1, hydrogen
+   real (kind=kind_phys), parameter:: muH1=1.22e-7    ! viscosity H1   
+      
+   real (kind=kind_phys), parameter:: cpo =2.5       !specific heats of o /mu_o
+   real (kind=kind_phys), parameter:: cpo2=3.5       !specific heats of o2/mu_o2
+   real (kind=kind_phys), parameter:: cpn2=3.5       !specific heats of n2/mu_n2
+   real (kind=kind_phys), parameter:: cphe =2.5      !specific heats of he/mu_he
+   real (kind=kind_phys), parameter:: cph1 =2.5      !specific heats of he/mu_h1     
    real (kind=kind_phys), parameter::  pref = 1.e5, rpref =1./pref  
                 
    contains
@@ -663,7 +670,7 @@ module  wamphys_init_module
       implicit none
       integer, intent(in)                 :: levs                   ! number of model levels
       integer, intent(in)                 :: me, master 
-      real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o
+      real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o, mno, mhe
  
 ! initialize wam_oh(levs) & wam_ho2(levs) from some-global profiles (z65)
       
@@ -681,7 +688,8 @@ module  wamphys_init_module
       amo3  = 3.* amo
       amh2o = 18.0154
       amn2  = 28.013 
-      amno  = 30.0061        
+      amno  = 30.0061
+      amhe = 4.0026     
        
       rkgavgd = 1.e-3/avgd
 
@@ -690,13 +698,16 @@ module  wamphys_init_module
       mn2   = amn2 *rkgavgd
       mh2o  = amh2o *rkgavgd
       mo3   = amo3 *rkgavgd
-
+      mhe    = amhe*rkgavgd
+      mno    = amno*rkgavgd
+      
       rmn2  = 1./mn2
       rmo   = 1./mo
       rmo3  = 1./mo3
       rmo2  = 1./mo2
       rmh2o = 1./mh2o
-    
+      rmno = 1./mno
+      rmhe = 1./mhe
   end subroutine wam_tracer_init
   
 !=============================================  

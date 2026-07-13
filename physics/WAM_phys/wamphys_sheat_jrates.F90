@@ -201,8 +201,10 @@
           dtdt_uvr(i,k)=sh2(k)*rcpro
 	    dtdt_qno(i,k) =qno(k)*rcpro
 !net q
-!         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
-          dtrad(i,k)=(sh1(k)+sh2(k)-qno(k))*rcpro
+
+
+         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
+
         enddo ! k
 	        
         do k=1, npsrad-1
@@ -749,6 +751,8 @@
 
       implicit none
 ! input
+      real, parameter :: no_fac = 3.      ! kpa > 5 storm
+      real, parameter :: kpa5 = 5., kpa9 =9  
       integer, intent(in)  :: levs         !number of pressure level
       integer, intent(in)  :: doy          ! day of year from 1 to 365   
 
@@ -862,8 +866,11 @@
       do k=1,levs
          no(k)=max(no(k), con_nzero)
       enddo
+     if (kpa.ge.kpa5) then
+          no = no * (1. +  (kpa - kpa5) * ( no_fac - 1. ) / (kpa9 - kpa5) )
+        endif
 	
-!	return
+	return
 	
 ! below "empircal" tuning NO-ehnancement for Geo storms
 ! incease [no] by a factor when kpa gt 5.0, same with ctipe, based on champ

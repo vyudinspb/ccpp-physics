@@ -38,30 +38,22 @@ module ugwpv1_gsldrag
 
     use machine, only: kind_phys
 !
-! CIRES-EMC  UGWP-packages (v0, v1) developed by V. Yudin and J. Alpert (2016-2020) NGWs +OGWs
+! CIRES-EMC  UGWP-package developed by V. Yudin and J. Alpert (2016-2020) NGWs +OGWs
 !
-! Valery Yudin 2024/2026 Upgrades for UFSWAM ( as Space Weather Application in UFS)
+! Valery Yudin 2024/2026 Upgrades for UFSWAM ( Space Weather Application in UFS)
 !
 !      knob_ugwp_ufswam  = 1.        ! switch for UGWP-updates for UFSWAM-C96/C192
 !      knob_ugwp_wam_med = 1.        ! switch-off NGW scheme   in  UFSWAM-C384/C768                         
 !
-! sources for NGWs
-!
     use cires_ugwpv1_triggers, only:  slat_geos5_2023, slat_geos5_tamp_v1
     use cires_ugwpv1_module,   only:  cires_ugwpv1_init, ngwflux_update, calendar_ugwp
     use cires_ugwpv1_module,   only:  knob_ugwp_version, cires_ugwp_dealloc, tamp_mpa
-!  
-    use cires_ugwpv1_module,   only: knob_ugwp_ufswam, knob_ugwp_wam_med 
-! solvers    
-!    use cires_ugwpv1_solv2,    only:  cires_ugwpv1_ngw_solv2
+    use cires_ugwpv1_solv2,    only:  cires_ugwpv1_ngw_solv2
     use cires_ugwpv1_oro,      only:  orogw_v1
-    use cua_ugwpv1_ngw_ufswam, only:  ugwpv1_ngw_solv_ufswam
-!    
-! WRF/MPAS OGW physics that work only below ~40-50 km with "weak" effects of stratospheric OGWs
-!              mainly for PBL and SPBL, maybe for tropospheric jets (???)
-! GSL-drag suite for SGS-orography, variants of WRF/MPAS physics introduced by GSL & PSL 
 !
-    use drag_suite,            only:  drag_suite_run       !... drag_suite_psl is switched off
+! GSL-drag suite for SGS-orography, variants of WRF/MPAS physics
+!
+    use drag_suite,            only:  drag_suite_run       !, drag_suite_psl
 
     implicit none
 
@@ -273,7 +265,7 @@ contains
 ! finalize of ugwpv1_gsldrag   (_finalize)
 ! -----------------------------------------------------------------------
 
-!>@brief The subroutine finalizes the CIRES UGWPV1
+!>@brief The subroutine finalizes the CIRES UGWP
 
 !> \section arg_table_ugwpv1_gsldrag_finalize Argument Table
 !! \htmlinclude ugwpv1_gsldrag_finalize.html
@@ -313,7 +305,7 @@ contains
           cdmbgwd, alpha_fd, jdat, nmtvr, hprime, oc, theta, sigma, gamma,              &
           elvmax, clx, oa4, varss,oc1ss,oa4ss,ol4ss, dx,  xlat, xlat_d, sinlat, coslat, &
           area, rain, br1, hpbl,vtype, kpbl, slmsk,                                     &
-          ugrs, vgrs, tgrs, qgrs, q1, prsi, prsl, prslk, phii, phil,  del, tau_amf,           &
+          ugrs, vgrs, tgrs, q1, prsi, prsl, prslk, phii, phil,  del, tau_amf,           &
           dudt_ogw, dvdt_ogw, du_ogwcol, dv_ogwcol,                                     &
           dudt_obl, dvdt_obl, du_oblcol, dv_oblcol,                                     &
           dudt_oss, dvdt_oss, du_osscol, dv_osscol,                                     &
@@ -324,14 +316,7 @@ contains
           dtend, dtidx, index_of_x_wind, index_of_y_wind, index_of_temperature,         &
           index_of_process_orographic_gwd, index_of_process_nonorographic_gwd,          &
           lprnt, ipr, spp_wts_gwd, spp_gwd, errmsg, errflg)
-!===========================================================================================
-! History: 2020-2026
-! Initial Code: Valery Yudin and Mike Toy 2020.
-! Evolution:
-!
-!            OGW-versions: ugwp-v1 (Yudin & Alpert EMC/SWPC/CIRES) ; 
-!                                   WRF-OGWs: gsl_drag (Toy _GSL) ; drag_suite_psl (PSL/EMC)
-!            NGW-versions: ugwp-v1 (Yudin, 2020); ugwpv1_ufswam (Yudin, 2025/26)
+
 !
 ! Valery Yudin 2026: Clean up "old" comments to do that don't fit the UFS-FV3 structure
 !              Updates related to UFSWAM => need to add major tracers [0, O2, N2, He ]
@@ -393,7 +378,6 @@ contains
 ! State vars + PBL/slmsk +rain
 
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: del, ugrs, vgrs, tgrs, prsl, prslk, phil
-    real(kind=kind_phys),    intent(in), dimension(:,:,:) ::  qgrs   
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: prsi, phii
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: q1
     integer,                 intent(in), dimension(:)     :: kpbl
@@ -486,10 +470,9 @@ contains
 !
 ! All GW-schemes operate with Zmet =phil*inv_g, passing Zmet/Zmeti can be more robust
 ! + rho*dz = =delp *  inv_g   can be also pre-comp for all "GW-schemes"
-!      
-! rgrav = 1./9.8105       
-         zmeti  = phii* rgrav
-         zmet   = phil* rgrav
+!
+       zmeti  = phii* rgrav
+       zmet   = phil* rgrav
 
 !===============================================================
 ! ORO-diag
@@ -590,7 +573,7 @@ contains
 
     endif
 !
-! not WRF-"gsldrag" mes-scale oro-scheme for example "do_ugwp_v1_orog_only"
+! not gsldrag large-scale oro-scheme for example "do_ugwp_v1_orog_only"
 !
 
     if ( do_ugwp_v1_orog_only ) then
@@ -599,7 +582,7 @@ contains
 ! only sum of integrated ORO+GW effects (dusfcg and dvsfcg) = sum(ogw + obl + oss*0 + ofd + ngw)
 !
 ! OROGW_V1 introduce "orchestration" between OGW-effects and Mountain Blocking
-!      it examines options for the Scale-Aware (SA)formulation of SSO-effects
+!      it starts to examines options for the Scale-Aware (SA)formulation of SSO-effects
 !      if ( me == master .and. kdt == 1) print *, ' bf orogw_v1 nmtvr=', nmtvr, ' do_tofd=', do_tofd
 
          if (gwd_opt ==1 )sgh30 = 0.15*hprime       ! portion of the mesoscale SSO (~[oro_unfilt -oro_filt)
@@ -651,10 +634,10 @@ contains
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Begin non-stationary GW schemes
-! ugwp_v1    ugwpv1_ngw_solv_ufswam
+! ugwp_v1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (do_ugwp_v1 .and. knob_ugwp_ufswam == 1) then
+    if (do_ugwp_v1) then
 !
 ! VAY-2026 eliminated "old" comments
 !
@@ -675,11 +658,11 @@ contains
        call ngwflux_update(me, master, im, levs, kdt, ddd_ugwp,curdate, &
          tau_amf, xlat_d, sinlat,coslat, rain, tau_ngw)
 !
-!      new solver for the NGW  spectral scheme in UFSWAM
+!                              new solver for the NGW  spectral scheme
 !
-       call ugwpv1_ngw_solv_ufswam(me, master, im,   levs,  ntrac, kdt, dtp,   &
-                     tau_ngw, tgrs, ugrs,  vgrs, qgrs,  q1, prsl, prsi,      &
-                     phil, phii, del, xlat_d, sinlat, coslat,          &	 	      
+       call cires_ugwpv1_ngw_solv2(me, master, im,   levs,  kdt, dtp,   &
+                     tau_ngw, tgrs, ugrs,  vgrs,   q1, prsl, prsi,      &
+                     zmet, zmeti, del, xlat_d, sinlat, coslat,          &	 	      
                      dudt_ngw, dvdt_ngw, dtdt_ngw, kdis_ngw, zngw)
 		      
 !      print *, ' ugwp_v1 ', kdt

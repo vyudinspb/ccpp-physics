@@ -33,10 +33,10 @@ module  cires_ugwpv1_module
     real(kind=kind_phys), parameter    ::  dked_min = 0.01
     real(kind=kind_phys), parameter    ::  dked_max = max_kdis    
 !    
-!Strobel, D.F. Constrains on gravity wave induced diffusion in the middle atmosphere. PAGEOPH, 1989,130, 533-546
-! Pr = Kv/Kt > 1  for upper layers
+!
+! Pr = Kv/Kt < 1  for upper layers; Pr_mol = 1./1.95 check it
 ! 
-    real(kind=kind_phys), parameter    :: Pr_kvkt = 1./1.                             ! Pr = kv/kt = 1./3.    
+    real(kind=kind_phys), parameter    :: Pr_kvkt = 1./1.                             ! kv/kt = 1./3.    
     real(kind=kind_phys), parameter    :: Pr_kdis = Pr_kvkt/(1.+Pr_kvkt)
     
     real(kind=kind_phys), parameter    :: iPr_ktgw =1./3., iPr_spgw=iPr_ktgw 
@@ -45,33 +45,10 @@ module  cires_ugwpv1_module
     real(kind=kind_phys), parameter    :: cd_ulim = 1.0                 ! critical level precision or Lz ~ 0 ~dz of model 
     real(kind=kind_phys), parameter    :: linsat  = 1.00
     real(kind=kind_phys), parameter    :: linsat2 = linsat*linsat
-!    
-! MED constants for  vumol, ktmol  in UFSWAM
-!   
+        
     real(kind=kind_phys), parameter    :: ricrit = 0.25
     real(kind=kind_phys), parameter    :: frcrit = 0.50
-    
-    real(kind=kind_phys), parameter    :: bz=1.380649e-23, invbz = 1./bz   ! Boltzmann constant J/K
-    real(kind=kind_phys), parameter    :: avgd   = 6.02214076e26  ! Avogadro constant   
-    real(kind=kind_phys), parameter    :: avgdbz = avgd*bz/1000.  ! Runiv = 8314.4727 g/mol not kg/mol
-    real(kind=kind_phys), parameter    :: s12=0.774   
-    real(kind=kind_phys), parameter    :: Runiv = 8314.4598
-    
-    real(kind=kind_phys), parameter:: amo=15.9994, amo2=31.9999, amo3=47.9982     !g/mol
-    real(kind=kind_phys), parameter:: amn2=28.013,  amh2o=18.0154                 !g/mol    
-    real(kind=kind_phys), parameter:: amh1 = 1.00784, amhe = 4.002602
-    real(kind=kind_phys), parameter:: muo=3.9e-7, muo2=4.03e-7,  muo3=4.03e-7     !kg/m/s
-    real(kind=kind_phys), parameter::             mun2=3.43e-7,  muh2o=3.43e-7    !kg/m/s
-!
-    real(kind=kind_phys), parameter:: lao=75.9e-5, lao2=56.e-5,  lao3=36.e-5     !kg/m/s
-    real(kind=kind_phys), parameter::              lan2=56.e-5,  lah2o=55.e-5    !kg/m/s
-    
-! cpi    
-    real(kind=kind_phys), parameter:: cpo=1299.185, cpo2=918.0969, cpo3=820.2391
-    real(kind=kind_phys), parameter::               cpn2=1031.108, cph2o=1846.00
-    
-    real(kind=kind_phys), parameter:: cphe = 5193.1631, muhe = 3.84e-7, lahe= 299.e-5  
-    real(kind=kind_phys), parameter:: cphl = 14307.*2,  muh1 =1.22e-7,  lah1 =379.e-5       
+
 
     integer               :: knob_ugwp_version = 1    
     integer               :: knob_ugwp_solver=1              ! 1, 2, 3, 4 - (linsat, ifs_2010, ad_gfdl, dsp_dis)
@@ -102,8 +79,7 @@ module  cires_ugwpv1_module
 !   
     real(kind=kind_phys)                  :: knob_ugwp_ufswam  = 1.        ! switch for UGWP-updates in UFSWAM
     real(kind=kind_phys)                  :: knob_ugwp_wam_med = 1.        ! switch-off NGW scheme  in UFSWAM-C384/C768            
-    integer                               :: knob_ugwp_msp_ind = 7         ! first index of WAM major species in q(ntrac)
-    integer                               :: knob_ugwp_msp_dim = 2         ! O-O2-> N2  derived  3 :O-O2-He  
+    integer                               :: knob_ugwp_msp_ind = 7         ! first index of WAM major species in q(ntrac) 
 !       
     logical                               :: knob_ugwp_tlimb  = .true.     ! physics-based sources of NGWs from C768/C384  
     character(len=8)                      :: knob_ugwp_orosolv='pss-1986'  ! Norman A.McFarlane's 1986/87 Lindzen-type solver
@@ -125,7 +101,7 @@ module  cires_ugwpv1_module
             knob_ugwp_ndx4lh, knob_ugwp_version, knob_ugwp_palaunch, knob_ugwp_nslope,  knob_ugwp_lzmax, &
 	    knob_ugwp_lzmin,  knob_ugwp_lzstar,  knob_ugwp_lhmet, knob_ugwp_tauamp, knob_ugwp_taumin,    &
 	    knob_ugwp_tlimb, knob_ugwp_sponge,  knob_ugwp_orosolv, knob_ugwp_merra, knob_ugwp_rain,      &
-	    knob_ugwp_ufswam, knob_ugwp_wam_med, knob_ugwp_msp_ind,knob_ugwp_msp_dim  
+	    knob_ugwp_ufswam, knob_ugwp_wam_med, knob_ugwp_msp_ind   
 
 !
 ! allocatable arrays, initilized during "cires_ugwp_init" &

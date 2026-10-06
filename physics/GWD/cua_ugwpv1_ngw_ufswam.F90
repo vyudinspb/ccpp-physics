@@ -1,9 +1,23 @@
-!>\file cires_ugwpv1_solv2.F90
+!>\file cua_ugwpv1_ngw_ufswam.F90
 !!
 
-module cires_ugwpv1_solv2
+module cua_ugwpv1_ngw_ufswam
 
-
+      use machine,          only : kind_phys
+      use cires_ugwpv1_module,only : amo, amo2, amn2, amhe, invbz
+      use cires_ugwpv1_module,only : Runiv, avgdbz
+      use cires_ugwpv1_module,only : muo, muo2, mun2, muhe
+      use cires_ugwpv1_module,only : lao, lao2, lan2, lahe       
+      use cires_ugwpv1_module,only : cpo, cpo2, cpn2, cphe  
+            
+      use ugwp_common ,     only : rgrav,  grav,  cpd,    rd,  rv, rcpdl, grav2cpd,    &
+                                   omega2,  rcpd,   rcpd2,  pi,    pi2, fv,            &
+                                   rad_to_deg, deg_to_rad,                             &
+                                   rdi,        gor,    grcp,   gocp,                   &
+                                   bnv2min,  bnv2max,  dw2min, velmin, gr2,            &
+                                   hpscale, rhp, rh4, grav2, rgrav2, mkzmin, mkz2min
+				   
+      use ugwp_common ,     only : arad		
 contains
 
 
@@ -14,10 +28,14 @@ contains
 !  they are "out" of given vertical column
 !  No "lateral" prop-n of GWs
 !
+!  Jan-May 2026, V. Yudin CUA new solver for NGWs adapted for UFSWAM
+!                moderate horizontal resolutions C96/C192
+!
+!   cires_ugwpv1_ngw_solv_ufswam 
 !----------------------------------------------------------------
 
-      subroutine cires_ugwpv1_ngw_solv2(mpi_id, master, im, levs, kdt, dtp, &
-                 tau_ngw, tm , um, vm, qm, prsl, prsi, zmet,  zmeti, delp,  &
+      subroutine ugwpv1_ngw_solv_ufswam(mpi_id, master, im, levs, ntrac, kdt, dtp, &
+                 tau_ngw, tm , um, vm, q3m, qm, prsl, prsi, zmet,  zmeti, delp,  &
                  xlatd, sinlat, coslat,                                     &
                  pdudt, pdvdt, pdtdt, dked, zngw)
 !
@@ -29,26 +47,22 @@ contains
 !      oct 2020  Diagnostics of "tauabs, wrms, trms" is taken out
 !      May 2025 V. Yudin: New 3 knobs for UFSWAM Space Weather Model
 ! --------------------------------------------------------------------------------
-!
-      use machine,          only : kind_phys
-      
+! 
       use cires_ugwpv1_module,only : knob_ugwp_ufswam, knob_ugwp_wam_med, knob_ugwp_msp_ind 
       
       use cires_ugwpv1_module,only :  krad, kvg, kion, ktg, iPr_ktgw, Pr_kdis, Pr_kvkt
 
-      use cires_ugwpv1_module,only :  knob_ugwp_doheat, knob_ugwp_dokdis, idebug_gwrms
-
+      use cires_ugwpv1_module,only : knob_ugwp_doheat, knob_ugwp_dokdis, idebug_gwrms
+      
+      use cires_ugwpv1_module,only : knob_ugwp_ufswam, knob_ugwp_wam_med
+      
+      use cires_ugwpv1_module,only : msp_ind => knob_ugwp_msp_ind, msp_dim  => knob_ugwp_msp_dim     
+      
       use cires_ugwpv1_module,only :  psrc => knob_ugwp_palaunch, zsp_gw => knob_ugwp_sponge
 
       use cires_ugwpv1_module,only : maxdudt, maxdtdt, max_eps, dked_min, dked_max
 
-      use ugwp_common ,     only : rgrav,  grav,  cpd,    rd,  rv, rcpdl, grav2cpd,    &
-                                   omega2,  rcpd,   rcpd2,  pi,    pi2, fv,            &
-                                   rad_to_deg, deg_to_rad,                             &
-                                   rdi,        gor,    grcp,   gocp,                   &
-                                   bnv2min,  bnv2max,  dw2min, velmin, gr2,            &
-                                   hpscale, rhp, rh4, grav2, rgrav2, mkzmin, mkz2min
-!
+
       use ugwp_wmsdis_init, only : v_kxw,  rv_kxw,   v_kxw2, tamp_mpa, tau_min, ucrit, &
                                    gw_eff,                                             &
                                    nslope,  ilaunch, zms,                              &
@@ -66,13 +80,13 @@ contains
       integer,              parameter   :: ener_norm =0
       integer,              parameter   :: ener_lsat=0
       
-      integer,              parameter   :: nstdif = 1         ! 3-point smmoother application 1-onetime
-      logical,              parameter   :: wamphys=.true.    
+      integer,              parameter   :: nstdif = 1          ! 3-point smmoother application 1-onetime  
       logical,              parameter   :: hb93_kt=.false.     ! HB-93 CAM free atm-re eddy diff-n 
       logical,              parameter   :: debug_conv = .false.          
 
       integer, intent(in)  :: levs                            ! vertical level
       integer, intent(in)  :: im                              ! horiz tiles
+      integer, intent(in)  :: ntrac                           ! number of tracers that include O-O2-N2      
       integer, intent(in)  :: mpi_id, master, kdt
 
       real(kind=kind_phys) ,intent(in)   :: dtp               ! model time step
@@ -81,30 +95,33 @@ contains
       real(kind=kind_phys) ,intent(in)   :: vm(im,levs)       ! meridional wind
       real(kind=kind_phys) ,intent(in)   :: um(im,levs)       ! zonal wind
       real(kind=kind_phys) ,intent(in)   :: qm(im,levs)       ! spec. humidity
+      real(kind=kind_phys) ,intent(in)  :: q3m(im,levs,ntrac) ! all tracers    
 !
-! Upgrades for UFSWAM-2025 C96/C192
-!      
-!     real(kind=kind_phys) ,intent(in)   :: qtr(im,levs,ntrac)! need all species to compute molec. dissipation     
+! Upgrades for UFSWAM-2025 C96/C192 need all species to compute molec. dissipation     
+!           
       
       real(kind=kind_phys) ,intent(in)   :: tm(im,levs)       ! kinetic temperature
 
       real(kind=kind_phys) ,intent(in)   :: prsl(im,levs)     ! mid-layer pressure
       real(kind=kind_phys) ,intent(in)   :: delp(im,levs)     ! mid-layer thickness d(prsi)
-      real(kind=kind_phys) ,intent(in)   :: zmet(im,levs)     ! meters now !!!!!       phil =philg/grav
+      real(kind=kind_phys) ,intent(in)   :: zmet(im,levs)     ! meters now !!!!!       phil =phil=grav*Z
       real(kind=kind_phys) ,intent(in)   :: prsi(im,levs+1)   !  interface pressure
       real(kind=kind_phys) ,intent(in)   :: zmeti(im,levs+1)  !  interface geopi/meters
       real(kind=kind_phys) ,intent(in)   :: xlatd(im)         ! xlat_d in degrees
       real(kind=kind_phys) ,intent(in)   :: sinlat(im)
       real(kind=kind_phys) ,intent(in)   :: coslat(im)
 !
-! out-gw effects
+! out-gw effects on u-v-t and for UFSWAM 
+!                   "consider" next diffusion of major species O-O2-N2-He with coupled equations Mdif(i,j)+ Deddy
+!
 !
       real(kind=kind_phys) ,intent(out) :: pdudt(im,levs)     ! zonal momentum tendency
       real(kind=kind_phys) ,intent(out) :: pdvdt(im,levs)     ! meridional momentum tendency
       real(kind=kind_phys) ,intent(out) :: pdtdt(im,levs)     ! gw-heating (u*ax+v*ay)/cp and cooling
       real(kind=kind_phys) ,intent(out) :: dked(im,levs)      ! gw-eddy diffusion
       real(kind=kind_phys) ,intent(out) :: zngw(im)           ! launch height
-!
+      
+!     real(kind=kind_phys) ,intent(out) :: pdqdt(im,levs, ntrac)  only [msp_ind:msp_ind+2]
 !
 !
 ! local ===========================================================================================
@@ -117,6 +134,11 @@ contains
       real(kind=kind_phys)              :: atrms(nazd, levs),awrms(nazd, levs), akzw(nwav,nazd, levs+1)
 !
 ! local ===========================================================================================
+
+      real(kind=kind_phys)              :: no2(levs), no1(levs), nn2(levs), nhe(levs), nair(levs)  
+      real(kind=kind_phys)              :: vumol(levs+1), ktmol(levs+1), grav_vari(levs+1)  
+      real(kind=kind_phys)              :: cp_msp(levs), mu_msp(levs),   grav_var(levs)
+                  
       real(kind=kind_phys)              :: taux(levs+1)         ! EW component of vertical momentum flux (pa)
       real(kind=kind_phys)              :: tauy(levs+1)         ! NS component of vertical momentum flux (pa)
       real(kind=kind_phys)              :: fpu(nazd, levs+1)    ! az-momentum flux
@@ -140,7 +162,7 @@ contains
        real(kind=kind_phys)  :: dfdz_v(nazd, levs), dfdz_heat(nazd, levs)    ! axj = -df*rho/dz  directional Ax
 
        real(kind=kind_phys), dimension(levs)   ::  atm , aum, avm, aqm, aprsl, azmet, dz_met
-       real(kind=kind_phys), dimension(levs+1) ::  aprsi, azmeti, dz_meti
+       real(kind=kind_phys), dimension(levs+1) ::  aprsi, azmeti, dz_meti, arcpd
 
        real(kind=kind_phys), dimension(levs)   :: wrk3
        real(kind=kind_phys), dimension(levs)   :: uold, vold, told, unew, vnew, tnew, ptold, pkold
@@ -177,7 +199,7 @@ contains
        real(kind=kind_phys)  :: pwrms, ptrms
        real(kind=kind_phys)  :: zu, zcin, zcin2, zcin3, zcin4, zcinc
        real(kind=kind_phys)  :: zatmp, fluxs, zdep,  ze1, ze2
-
+       real(kind=kind_phys)  :: rdi_var, rdi_vari, cpint
 !
        real(kind=kind_phys)  :: zdelp, zdelm, taud_min
        real(kind=kind_phys)  :: tvc,  tvm, ptc, ptm
@@ -192,7 +214,7 @@ contains
 !
 ! Kturb-part
 !
-      real(kind=kind_phys)     :: uz, vz, shr2 , ritur, ktur, zlturb
+      real(kind=kind_phys)     :: uz, vz, shr2 , ritur, ktur, zlturb, hpwam
 
       real(kind=kind_phys)     :: kamp, zmetk, zgrow
       real(kind=kind_phys)     :: stab, stab_dt, dtstab
@@ -264,7 +286,7 @@ contains
         enddo
 	
        if (knob_ugwp_wam_med == 1) return ! the Mesosccale configuration of UFSWAM-MED (C384-C768) does not use NGW
-	
+	                                  ! it returns "zero" tendencies and dked
 !-----------------------------------------------------------
 ! column-based j=1,im pjysics with 1D-arrays
 !
@@ -291,7 +313,7 @@ contains
            ilaunch = max(k-1, 3)
            ksrc= max(ilaunch, 3)
 
-           zngw(j) = zmet(j, ksrc)
+           zngw(j) = zmet(j, ksrc)/grav
 
         km2 = ksrc - 2
         km1 = ksrc - 1
@@ -303,12 +325,37 @@ contains
      avm(1:levs)      = vm(jl,1:levs)
      atm(1:levs)      = tm(jl,1:levs)
      aqm(1:levs)      = qm(jl,1:levs)
-     azmet(1:levs)    = zmet(jl,1:levs)
-     aprsi(1:levs+1)  = prsi(jl,1:levs+1) 
+     
+     
+     aprsi(1:levs+1)  = prsi(jl,1:levs+1)
+      
+     azmet(1:levs)    = zmet(jl,1:levs)     
      azmeti(1:levs+1) = zmeti(jl,1:levs+1)
-
+     
+     nair = aprsl/atm*invbz
      rho_src = aprsl(ksrc)*rdi/atm(ksrc)
-          
+     azmeti(levs+1) = azmeti(levs+1)/(grav -azmeti(levs+1)/arad)
+     do k=1, levs
+       azmet(k) = azmet(k)/(grav -azmet(k)/arad)
+       azmeti(k) = azmeti(k)/(grav -azmeti(k)/arad)
+       no1(k) = q3m(j, k, msp_ind)
+       no2(k) = q3m(j, k, msp_ind+1)
+       nn2(k) = 1. - no1(k)-no2(k)
+     
+     if  (msp_dim == 3) then
+       nhe(k) = q3m(j, k, msp_ind+2)
+       nn2(k) = 1. -nhe(k)
+       else
+       nhe(1:levs) = 0. 
+      endif 
+     enddo 
+         
+     call get_ufswam_med(levs, msp_dim, no1, no2, nn2, nhe, nair, &
+	  atm, aprsl, azmet, azmeti, cp_msp, ktmol, vumol, mu_msp, grav_var, grav_vari) 
+!
+! recompute Zmet, Zmeti for variable gravity and Rdgas = Runiv/mu_msp (287 => 500 oxygen-helium)
+!	  
+	 
          taub_ch = max(tau_ngw(jl), tau_min)
          taub_src = taub_ch            
 
@@ -327,19 +374,20 @@ contains
 !       ---------------------------------------------
        do jk= km1,levs
            tvc = atm(jk)          !* (1. +fv*aqm(jk))
-           tvm = atm(jk-1)        !*(1. +fv*aqm(jk-1))
+           tvm = atm(jk-1)        !* (1. +fv*aqm(jk-1))
 	   
-!           ptc =  tvc/ prslk(jl, jk)
-!           ptm =  tvm/prslk(jl,jk-1)
-!
            zthm          = 2.0/(tvc+tvm)
-       rhp_wam = zthm*gor
+	   
 !interface
            uint(jk)   = 0.5*(aum(jk-1)+aum(jk))
            vint(jk)   = 0.5*(avm(jk-1)+avm(jk))
            tint(jk)   = 0.5*(tvc+tvm)
-           rhomid(jk) = aprsl(jk)*rdi/atm(jk)
-           rhoint(jk) = aprsi(jk)*rdi*zthm                  !  rho = p/(RTv)
+	   rdi_var    = Runiv/mu_msp(jk)
+	   rdi_vari   = 2*Runiv/(mu_msp(jk)+mu_msp(jk-1))
+	   rhp_wam = 0.25*zthm/rdi_vari*grav_vari(jk)
+           rhomid(jk) = aprsl(jk)*rdi_var/atm(jk)
+           rhoint(jk) = aprsi(jk)*rdi_vari*zthm             !  rho = p/(RTv)
+	   
            zdelp      = dz_meti(jk)                         !  >0 ...... dz-meters
            v_zmet(jk)  = 2.*zdelp                           ! 2*kzi*[Z_int(k+1)-Z_int(k)]
            zdelm          = 1./dz_met(jk)                   ! 1/dz  ...... 1/meters
@@ -352,11 +400,18 @@ contains
 !cires_ugwpv1_initialize.F90:      parameter :: ulturb=150.,         sc2u = ulturb* ulturb
 !cires_ugwpv1_initialize.F90:      parameter :: lturb = 30. (m),     sc2  = lturb*lturb   
 ! cires_ugwpv1_sporo.F90:          parameter :: lsc2 = lturb*lturb,  usc2 = uturb*uturb
+!
 !	
 !          rcpdl = cpd/grav  grcp   = grav*rcpd grav2cpd = grav*grcp =grav*grav/Cp
-!WAM corrections:    grav(z) and cp_multi(z)
-!
-           bn2(jk)    = grav2cpd*zthm*(1.0+rcpdl*(tvc-tvm)*zdelm)
+!WAM corrections:    grav(z) and cp_multi(z) interface gradients and averaged values
+!cp_msp, ktmol, vumol, mu_msp, grav_var, grav_vari
+
+! UFS          bn2(jk)    = grav2cpd*zthm*(1.0+rcpdl*(tvc-tvm)*zdelm)
+
+! UFSWAM
+           cpint = .5*(cp_msp(jk)+cp_msp(jk-1))
+	   bn2(jk)    = grav_vari(jk)*zthm*(grav_vari(jk)/cpint+ (tvc-tvm)*zdelm)
+	   
            uz = aum(jk) - aum(jk-1)
            vz = avm(jk) - avm(jk-1)
            shr2 = (max(uz*uz+vz*vz, dw2min)) * zdelm *zdelm
@@ -371,7 +426,7 @@ contains
            bn2(jk)    = max(min(bn2(jk), bnv2max), bnv2min)
            bn(jk)     = sqrt(bn2(jk))
 	   ritur = bn2(jk)/shr2	   
-           zmetk  =  azmet(jk)* rh4                     ! mid-layer height k_int => k_int+1
+           zmetk  =  azmet(jk)* rhp_wam                     ! rh4-ufs mid-layer height k_int => k_int+1
            zgrow = exp(zmetk)	   
 	   zlturb = min(lturb*zmetk, zdelp*.5)
            kamp = sqrt(shr2)* zlturb*zlturb
@@ -388,7 +443,8 @@ contains
 !	   
              ktur= min(max(kamp * w1, dked_min), dked_max)
              zmetk =  azmet(jk)* rhp
-             vueff(jk)  = ktur*fg_ktur + kvg(jk)       !kvg see "cires_ugwpv1_initialize.F90"
+	     
+             vueff(jk)  = vumol(jk) + ktur*fg_ktur + kvg(jk)       !kvg-MLT see "cires_ugwpv1_initialize.F90"
 
              akt(jk) = gipr/tvc
           enddo
@@ -403,9 +459,10 @@ contains
 !
 ! extrapolating values for ktop = levs+1 (lev-interface for prsi(levs+1) =/= 0)
 !
-         jk = levs
+           jk = levs
 
-           rhoint(ktop) = 0.5*aprsi(levs)*rdi/atm(jk)
+	   rdi_vari   = 2*Runiv/(mu_msp(k)+mu_msp(k-1))
+           rhoint(ktop) = 0.5*aprsi(levs)*rdi_vari/atm(jk)
            tint(ktop)  = atm(jk)       !*(1. +fv*aqm(jk))
 	   
            uint(ktop)  = aum(jk)
@@ -414,14 +471,15 @@ contains
            v_zmet(ktop) =  v_zmet(jk)
            vueff(ktop)  = vueff(jk)
            bn2(ktop)    = bn2(jk)
-        bn(ktop)    = bn(jk)
+           bn(ktop)    = bn(jk)
 !
 ! akt_mid *KT = -g*(1/H + 1/T*dT/dz)*KT     ... grav/tvc     for eddy heat conductivity
 !  GW-eddy cooling:  [m2/s3] 
-!  gor=grav/rd
+!  gor =grav / rd=rdi_vari
 
      do jk=km1, levs
-           akt(jk) = -akt(jk)*(gor + (tint(jk+1)-tint(jk))/dz_meti(jk) )
+           rdi_vari   = .5*grav_vari(jk)*(mu_msp(jk)+mu_msp(jk-1))/Runiv
+           akt(jk) = -akt(jk)*(rdi_vari + (tint(jk+1)-tint(jk))/dz_meti(jk) )
      enddo
 
 
@@ -624,7 +682,7 @@ contains
 !krad, kvg, kion, ktg
                 v_cdp  = sqrt( cdf2 )
                 v_wdp  = v_kxw *  v_cdp
-        v_wdi = kzw2*vueff(jk) + kion(jk)                  ! FV3WAM -ION drag coeff-nt is needed
+        v_wdi = kzw2*vueff(jk) + kion(jk)                  ! UFSWAM -Ion drag coeff-nt is needed
         v_wdpc = sqrt(v_wdp*v_wdp +v_wdi*v_wdi)
         v_kzi  = v_kzw*v_wdi/v_wdpc
 
@@ -912,10 +970,11 @@ contains
 ! Thermal budget qmid = qheat + qcool
 !
        do jk=ksrc+1,levs
-           ze2  = qmid(jk) + (dktur(jk)*Akt(jk) + grav*(ktint(jk+1)-ktint(jk))/dz_meti(jk))*fg_cool
+           ze2  = qmid(jk) + (dktur(jk)*Akt(jk) + grav_vari(jk)*(ktint(jk+1)-ktint(jk))/dz_meti(jk))*fg_cool
            qmid(jk) = ze2
          if (abs(ze2) >= max_eps ) qmid(jk) = sign(max_eps, ze2)
-           pdtdt(jl,jk) = qmid(jk)*rcpd
+	   arcpd(jk) = 2./(cp_msp(jk)+cp_msp(jk-1))
+           pdtdt(jl,jk) = qmid(jk) * arcpd(jk)
            dked(jl, jk) = dktur(jk)
          enddo
 !
@@ -947,8 +1006,11 @@ contains
             zthm          = 2.0 / (tvc+tvm)
             shr2 = (max(uz*uz+vz*vz, dw2min)) * zdelm *zdelm
 
-            bn2(jk)    = grav2cpd*zthm  * (1.0+rcpdl*(tvc-tvm)*zdelm)
-	    
+!UFS            bn2(jk)    = grav2cpd*zthm  * (1.0+rcpdl*(tvc-tvm)*zdelm)
+
+             cpint = .5*(cp_msp(jk)+cp_msp(jk-1))
+	     bn2(jk)    = grav_vari(jk)*zthm*(grav_vari(jk)/cpint+ (tvc-tvm)*zdelm)
+	     	    
 	     if (bn2(jk) < 0. ) then 
 	       if (debug_conv) then	     
 	         print *, 'GWPV1-OUT CINSTAB', tvc, tvm, nint(azmet(jk)*1.e-3)
@@ -959,8 +1021,9 @@ contains
 	    
             bn2(jk)    = max(min(bn2(jk), bnv2max), bnv2min)
 	    
-
-           zmetk  =  azmet(jk)* rh4                     ! mid-layer height k_int => k_int+1
+           rdi_vari   = 2*Runiv/(mu_msp(jk)+mu_msp(jk-1))
+	   rhp_wam = 0.25*zthm/rdi_vari*grav_vari(jk)
+           zmetk  =  azmet(jk)* rhp_wam                     ! mid-layer height k_int => k_int+1
            zgrow = exp(zmetk)
            ritur = bn2(jk)/shr2
 	   zlturb = min(lturb*zmetk, zdelp*.5)
@@ -1075,7 +1138,8 @@ contains
                uz = uold(k+1) - uold(k-1)
                vz = vold(k+1) - vold(k-1)
            ze2 = 1./(dz_met(k+1)+dz_met(k) )
-           mf_diss_heat = rcpd*kvint(k)*(uz*uz +vz*vz)*ze2*ze2  ! vert grad local heat
+	   
+           mf_diss_heat = arcpd(k)*kvint(k)*(uz*uz +vz*vz)*ze2*ze2  ! vert grad local heat GW-deddy
 	   
           ze1= rdtp*( told(k) - atm(k) )		    
           ze2= ze1 + mf_diss_heat              ! extra heat due to eddy viscosity
@@ -1115,7 +1179,7 @@ contains
        endif
 !=================================
        return       
-     end subroutine cires_ugwpv1_ngw_solv2
+     end subroutine ugwpv1_ngw_solv_ufswam
 !     
      subroutine cires_dry_adjust(levs, t, kappa, prsl, prsi, delp)
 !     
@@ -1203,5 +1267,83 @@ contains
 	     
      return
      end subroutine cires_dry_adjust
+     
+     subroutine get_ufswam_med(levs, msp_dim, no1, no2, nn2, nhe, nair, tkin, pmid,  &
+	                      zm, zmi, cp_msp, ktmol, vumol, mu_msp, grav_var, grav_vari)
+			      
+! Banks & Kockarts, 1973: ktmol, vumol	
 
-end module cires_ugwpv1_solv2
+     implicit none	 
+      integer, intent(in):: levs, msp_dim
+      real(kind=kind_phys), intent(in)      :: tkin(levs), pmid(levs), zm(levs) , zmi(levs+1)      
+      real(kind=kind_phys), intent(in)      :: no2(levs), no1(levs), nn2(levs), nhe(levs), nair(levs)  
+      
+      real(kind=kind_phys), intent(out)     :: vumol(levs+1), ktmol(levs+1), grav_vari(levs+1)  
+      real(kind=kind_phys), intent(out)     :: cp_msp(levs), mu_msp(levs),   grav_var(levs)
+!
+!  local
+!    
+     integer :: k, kk      
+     real(kind=kind_phys) :: amu, muk, lak, rhok, t69k, o_n, o2_n, n2_n, he_n      
+     real(kind=kind_phys) :: rarad
+!
+! bottom layer in physics k=1    avgdbz= avgd * bz
+!  
+     kk = 1
+     k =  1
+     rarad  = 1./arad  
+     
+       grav_vari(kk) = grav/(1.+zmi(kk)*rarad)/(1.+zmi(kk)*rarad) 
+       cp_msp(k) = cpo*no1(k) + cpo2*no2(k) + cpn2*nn2(k)+ cphe*nhe(k)
+       amu = no1(k)/amo + no2(k)/amo2 + nn2(k)/amn2 + nhe(k)/amhe
+       mu_msp(k) = 1./amu
+       
+       o_n = no1(k)*mu_msp(k)/amo
+       o2_n= no2(k)*mu_msp(k)/amo2
+       n2_n= nn2(k)*mu_msp(k)/amn2
+       he_n= nhe(k)*mu_msp(k)/amhe
+       
+        muk = o_n*muo + o2_n*muo2 + n2_n*mun2
+	lak = (o_n*lao + o2_n*lao2 + n2_n*lan2)/cp_msp(k)
+	t69k = tkin(k) ** 1.69
+	
+	rhok =avgdbz/pmid(k)*amu  ! surface value
+	  
+        vumol(kk) = muk*t69k*rhok
+        ktmol(kk) = lak*t69k*rhok
+	
+		  
+     do k=2, levs
+        cp_msp(k) = cpo*no1(k) + cpo2*no2(k) + cpn2*nn2(k)+ cphe*nhe(k)
+	amu = no1(k)/amo + no2(k)/amo2 + nn2(k)/amn2 + nhe(k)/amhe
+	mu_msp(k) = 1./amu
+!vmr from mmr	
+
+       o_n = no1(k)*mu_msp(k)/amo
+       o2_n= no2(k)*mu_msp(k)/amo2
+       n2_n= nn2(k)*mu_msp(k)/amn2
+       he_n= nhe(k)*mu_msp(k)/amhe
+       
+        muk = o_n*muo + o2_n*muo2 + n2_n*mun2
+	lak = (o_n*lao + o2_n*lao2 + n2_n*lan2)/cp_msp(k)
+	t69k = tkin(k) ** 1.69
+	
+	rhok =avgdbz/pmid(k)*amu
+	  
+        vumol(k) = .5*(vumol(k-1)+muk*t69k*rhok)
+        ktmol(k) = .5*(ktmol(k-1)+lak*t69k*rhok)
+	
+	grav_var(k)  = grav/(1.+zm(k)*rarad)/(1.+zm(k)*rarad)
+	grav_vari(k) = grav/(1.+zmi(k)*rarad)/(1.+zmi(k)*rarad)
+     enddo 
+     
+       k= levs+1
+       grav_vari(k) = grav/(1.+zmi(k)*rarad)/(1.+zmi(k)*rarad) 
+       vumol(k) = vumol(k-1)
+       ktmol(k) = ktmol(k-1)
+           	 
+     end subroutine get_ufswam_med
+     
+     
+     	 
+end module cua_ugwpv1_ngw_ufswam

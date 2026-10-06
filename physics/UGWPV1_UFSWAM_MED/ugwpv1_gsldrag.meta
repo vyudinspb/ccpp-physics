@@ -3,7 +3,7 @@
   type = scheme
   dependencies = ../hooks/machine.F,drag_suite.F90
   dependencies = cires_ugwpv1_module.F90,cires_ugwpv1_triggers.F90,cires_ugwpv1_initialize.F90,cires_ugwpv1_solv2.F90
-  dependencies = cires_ugwpv1_sporo.F90,cires_ugwpv1_oro.F90,cua_ugwpv1_ngw_ufswam.F90
+  dependencies = cires_ugwpv1_sporo.F90,cires_ugwpv1_oro.F90 
 ########################################################################
 [ccpp-arg-table]
   name = ugwpv1_gsldrag_init
@@ -711,14 +711,6 @@
   long_name = model layer mean temperature
   units = K
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
-  type = real
-  kind = kind_phys
-  intent = in
-[qgrs]
-  standard_name = tracer_concentration
-  long_name = model layer mean tracer concentration
-  units = kg kg-1
-  dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_tracers)
   type = real
   kind = kind_phys
   intent = in

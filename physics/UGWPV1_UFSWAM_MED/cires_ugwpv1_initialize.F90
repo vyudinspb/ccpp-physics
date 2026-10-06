@@ -104,7 +104,7 @@
 !				      
      use machine ,      only : kind_phys 
      use ugwp_common,   only : pih, pi  
-     use cires_ugwpv1_module,   only: knob_ugwp_ufswam     
+     
      implicit none
      integer , intent(in)                 :: me, master
      integer , intent(in)                 :: levs
@@ -151,13 +151,7 @@
 
       kvg(k)   = vumol + keddy
       ktg(k)   = mumol + keddy*inv_pra
-      if (knob_ugwp_ufswam == 1) then
-         kvg(k)   = keddy
-	 ktg(k)   = keddy*inv_pra
-      else
-        kvg(k)   = kvg(k) + vumol 
-	ktg(k)   = ktg(k) + mumol 
-      endif
+
       krad(k)  = alpha
 !
       ion_drag = kdrag

@@ -101,7 +101,7 @@ module  cires_ugwpv1_module
 ! new namelist parameters for UFSWAM, high top lid Ztop > 400 km
 !   
     integer                               :: knob_ugwp_ufswam  = 1         ! switch for UGWP-updates in UFSWAM
-    integer                               :: knob_ugwp_wam_med = 1.        ! switch-off NGW scheme  in C384/C768            
+    integer                               :: knob_ugwp_wam_med = 1         ! switch-off NGW scheme  in C384/C768            
     integer                               :: knob_ugwp_msp_ind = 7         ! first index of WAM major species in q(ntrac)
     integer                               :: knob_ugwp_msp_dim = 2         ! O-O2-> N2  derived  3 :O-O2-He  
 !       

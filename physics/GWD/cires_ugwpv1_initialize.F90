@@ -100,13 +100,14 @@
 !Part-1 init =>   wave dissipation + RFriction
 !
 !===================================================
-     subroutine init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion, me, master)
+     subroutine init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion, me, master, knob_ugwp_ufswam)
 !				      
      use machine ,      only : kind_phys 
      use ugwp_common,   only : pih, pi  
-     use cires_ugwpv1_module,   only: knob_ugwp_ufswam     
+!     use cires_ugwpv1_module,   only: knob_ugwp_ufswam    
+      
      implicit none
-     integer , intent(in)                 :: me, master
+     integer , intent(in)                 :: me, master, knob_ugwp_ufswam
      integer , intent(in)                 :: levs
      real(kind=kind_phys), intent(in)                     :: zkm(levs), pmb(levs)    ! in km-Pa
      real(kind=kind_phys), intent(out), dimension(levs+1) :: kvg, ktg, krad, kion

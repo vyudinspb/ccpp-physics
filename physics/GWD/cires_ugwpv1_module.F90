@@ -100,8 +100,8 @@ module  cires_ugwpv1_module
 !    
 ! new namelist parameters for UFSWAM, high top lid Ztop > 400 km
 !   
-    real(kind=kind_phys)                  :: knob_ugwp_ufswam  = 1.        ! switch for UGWP-updates in UFSWAM
-    real(kind=kind_phys)                  :: knob_ugwp_wam_med = 1.        ! switch-off NGW scheme  in UFSWAM-C384/C768            
+    integer                               :: knob_ugwp_ufswam  = 1         ! switch for UGWP-updates in UFSWAM
+    integer                               :: knob_ugwp_wam_med = 1.        ! switch-off NGW scheme  in C384/C768            
     integer                               :: knob_ugwp_msp_ind = 7         ! first index of WAM major species in q(ntrac)
     integer                               :: knob_ugwp_msp_dim = 2         ! O-O2-> N2  derived  3 :O-O2-He  
 !       
@@ -319,7 +319,7 @@ module  cires_ugwpv1_module
 !
 ! Part-1 :init_global_gwdis               again "damn"-con_pi
 !
-    call init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion,  me,  master)
+    call init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion,  me,  master, knob_ugwp_ufswam)
 			       
 !
 ! Part-2 :init_SOURCES_gws

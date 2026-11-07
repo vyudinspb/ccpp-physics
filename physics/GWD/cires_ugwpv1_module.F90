@@ -33,10 +33,10 @@ module  cires_ugwpv1_module
     real(kind=kind_phys), parameter    ::  dked_min = 0.01
     real(kind=kind_phys), parameter    ::  dked_max = max_kdis    
 !    
-!
-! Pr = Kv/Kt < 1  for upper layers; Pr_mol = 1./1.95 check it
+!Strobel, D.F. Constrains on gravity wave induced diffusion in the middle atmosphere. PAGEOPH, 1989,130, 533-546
+! Pr = Kv/Kt > 1  for upper layers
 ! 
-    real(kind=kind_phys), parameter    :: Pr_kvkt = 1./1.                             ! kv/kt = 1./3.    
+    real(kind=kind_phys), parameter    :: Pr_kvkt = 1./1.                             ! Pr = kv/kt = 1./3.    
     real(kind=kind_phys), parameter    :: Pr_kdis = Pr_kvkt/(1.+Pr_kvkt)
     
     real(kind=kind_phys), parameter    :: iPr_ktgw =1./3., iPr_spgw=iPr_ktgw 
@@ -45,10 +45,33 @@ module  cires_ugwpv1_module
     real(kind=kind_phys), parameter    :: cd_ulim = 1.0                 ! critical level precision or Lz ~ 0 ~dz of model 
     real(kind=kind_phys), parameter    :: linsat  = 1.00
     real(kind=kind_phys), parameter    :: linsat2 = linsat*linsat
-        
+!    
+! MED constants for  vumol, ktmol  in UFSWAM
+!   
     real(kind=kind_phys), parameter    :: ricrit = 0.25
     real(kind=kind_phys), parameter    :: frcrit = 0.50
-
+    
+    real(kind=kind_phys), parameter    :: bz=1.380649e-23, invbz = 1./bz   ! Boltzmann constant J/K
+    real(kind=kind_phys), parameter    :: avgd   = 6.02214076e26  ! Avogadro constant   
+    real(kind=kind_phys), parameter    :: avgdbz = avgd*bz/1000.  ! Runiv = 8314.4727 g/mol not kg/mol
+    real(kind=kind_phys), parameter    :: s12=0.774   
+    real(kind=kind_phys), parameter    :: Runiv = 8314.4598
+    
+    real(kind=kind_phys), parameter:: amo=15.9994, amo2=31.9999, amo3=47.9982     !g/mol
+    real(kind=kind_phys), parameter:: amn2=28.013,  amh2o=18.0154                 !g/mol    
+    real(kind=kind_phys), parameter:: amh1 = 1.00784, amhe = 4.002602
+    real(kind=kind_phys), parameter:: muo=3.9e-7, muo2=4.03e-7,  muo3=4.03e-7     !kg/m/s
+    real(kind=kind_phys), parameter::             mun2=3.43e-7,  muh2o=3.43e-7    !kg/m/s
+!
+    real(kind=kind_phys), parameter:: lao=75.9e-5, lao2=56.e-5,  lao3=36.e-5     !kg/m/s
+    real(kind=kind_phys), parameter::              lan2=56.e-5,  lah2o=55.e-5    !kg/m/s
+    
+! cpi    
+    real(kind=kind_phys), parameter:: cpo=1299.185, cpo2=918.0969, cpo3=820.2391
+    real(kind=kind_phys), parameter::               cpn2=1031.108, cph2o=1846.00
+    
+    real(kind=kind_phys), parameter:: cphe = 5193.1631, muhe = 3.84e-7, lahe= 299.e-5  
+    real(kind=kind_phys), parameter:: cphl = 14307.*2,  muh1 =1.22e-7,  lah1 =379.e-5       
 
     integer               :: knob_ugwp_version = 1    
     integer               :: knob_ugwp_solver=1              ! 1, 2, 3, 4 - (linsat, ifs_2010, ad_gfdl, dsp_dis)
@@ -72,10 +95,18 @@ module  cires_ugwpv1_module
     real(kind=kind_phys)                  :: knob_ugwp_tauamp = 7.75e-3    ! range from 30.e-3 to 3.e-3 ( space-borne values)
     real(kind=kind_phys)                  :: knob_ugwp_lhmet  = 200.e3     ! 200 km
     real(kind=kind_phys)                  :: knob_ugwp_sponge = 200.e3     ! 200 km   GW effects above zsponge =>0 
-    real(kind=kind_phys)                  :: knob_ugwp_merra  =  0.         ! seasonal GW-fluxes Res GWs
-    real(kind=kind_phys)                  :: knob_ugwp_rain  = -1.         ! rain-based modulation of GW fluxes  
-    logical               :: knob_ugwp_tlimb  = .true.    
-    character(len=8)      :: knob_ugwp_orosolv='pss-1986'  
+    real(kind=kind_phys)                  :: knob_ugwp_merra  =  0.        ! seasonal GW-fluxes Res GWs
+    real(kind=kind_phys)                  :: knob_ugwp_rain  = -1.         ! rain-based modulation of GW fluxes
+!    
+! new namelist parameters for UFSWAM, high top lid Ztop > 400 km
+!   
+    integer                               :: knob_ugwp_ufswam  = 1         ! switch for UGWP-updates in UFSWAM
+    integer                               :: knob_ugwp_wam_med = 1         ! switch-off NGW scheme  in C384/C768            
+    integer                               :: knob_ugwp_msp_ind = 7         ! first index of WAM major species in q(ntrac)
+    integer                               :: knob_ugwp_msp_dim = 2         ! O-O2-> N2  derived  3 :O-O2-He  
+!       
+    logical                               :: knob_ugwp_tlimb  = .true.     ! physics-based sources of NGWs from C768/C384  
+    character(len=8)                      :: knob_ugwp_orosolv='pss-1986'  ! Norman A.McFarlane's 1986/87 Lindzen-type solver
     
     real(kind=kind_phys)  :: kxw = 6.28/200.e3              ! single horizontal wavenumber of ugwp schemes
 !
@@ -93,7 +124,8 @@ module  cires_ugwpv1_module
             knob_ugwp_stoch,  knob_ugwp_effac,knob_ugwp_doaxyz,  knob_ugwp_doheat, knob_ugwp_dokdis,     &
             knob_ugwp_ndx4lh, knob_ugwp_version, knob_ugwp_palaunch, knob_ugwp_nslope,  knob_ugwp_lzmax, &
 	    knob_ugwp_lzmin,  knob_ugwp_lzstar,  knob_ugwp_lhmet, knob_ugwp_tauamp, knob_ugwp_taumin,    &
-	    knob_ugwp_tlimb, knob_ugwp_sponge,  knob_ugwp_orosolv, knob_ugwp_merra, knob_ugwp_rain   
+	    knob_ugwp_tlimb, knob_ugwp_sponge,  knob_ugwp_orosolv, knob_ugwp_merra, knob_ugwp_rain,      &
+	    knob_ugwp_ufswam, knob_ugwp_wam_med, knob_ugwp_msp_ind,knob_ugwp_msp_dim  
 
 !
 ! allocatable arrays, initilized during "cires_ugwp_init" &
@@ -285,9 +317,9 @@ module  cires_ugwpv1_module
       print *, 'cires_ugwpv1 klev_ngw =', launch_level, nint(pmb(launch_level))
    endif   
 !
-! Part-1 :init_global_gwdis               again "damn"-con_p
+! Part-1 :init_global_gwdis               again "damn"-con_pi
 !
-    call init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion,  me,  master)
+    call init_global_gwdis(levs, zkm, pmb, kvg, ktg, krad, kion,  me,  master, knob_ugwp_ufswam)
 			       
 !
 ! Part-2 :init_SOURCES_gws
@@ -380,11 +412,11 @@ module  cires_ugwpv1_module
 !-----------------------------------------------------------------------
 !   FV3-dycore and CCPP-physics has limited options to
 !   add "horizontal" gradients of winds and temp-re to
-! compute GW-triggers:    reserved option if  it will be funded ......
+!   compute GW-triggers:    reserved option if  it will be funded ......
 !
-! the day-to-day variable sources/spectra and diagnostics for stochastic "triggers"
+!    the day-to-day variable sources/spectra and diagnostics for stochastic "triggers"
 !     
-! diagnose GW-source functions * FGF + OKWP + SGO/CONV from IAU-fields
+!    diagnose GW-source functions * FGF + OKWP + SGO/CONV from IAU-fields
 !     and use for stochastic GWP-sources "memory"
 !
 !   this option is not active  due to "weak" flexibility
@@ -397,8 +429,10 @@ module  cires_ugwpv1_module
 ! update GW sources and dissipation
 !  a) physics-based GW triggers eliminated from cires_ugwpv1_triggers.F90
 !  b) stochastic-based spectra and amplitudes is not considered 
-!  c) use "memory" on GW-spectra from previous time-step is not considered 
-!  d) update "background" dissipation of GWs as needed (option for FV3WAM)
+!  c) use "memory" on GW-spectra from previous time-step is not considered
+! 
+! Valery Yudin May 2025;     knob_ugwp_ufswam  = 1.
+!  d) update "background" dissipation of GWs as needed (option for UFSWAM)
 !
      end subroutine cires_ugwp_advance
  

@@ -2,7 +2,7 @@
 !! This introduces two gravity wave drag schemes ugwpv1/CIRES and GSL/drag_suite.F90 under "ugwpv1_gsldrag" suite:
 !!      1) The "V1 CIRES UGWP" scheme as tested in the FV3GFSv16-127L atmosphere model and workflow, which includes:
 !!            a) the orograhic gravity wave drag, flow blocking scheme and TOFD (Beljaars et al, 2004).
-!!            b) the v1 CIRE ugwp non-stationary GW scheme, new revision that generate realistic climate of FV3GFS-127L
+!!            b) the v1 CIRES ugwp non-stationary GW scheme, new revision that generate realistic climate of FV3GFS-127L
 !!               in the strato-mesosphere in the multi-year simulations (Annual cycles, SAO and QBO in th tropical dynamics).
 !!      2) The GSL orographic drag suite (drag_suite.F90), as implmeneted in the RAP/HRRR, which includes:
 !!            a) large-scale gravity wave drag and low-level flow blocking -- active at horizontal scales
@@ -37,15 +37,31 @@
 module ugwpv1_gsldrag
 
     use machine, only: kind_phys
-
-!    use cires_ugwpv1_triggers, only:  slat_geos5_2020, slat_geos5_tamp_v1
-     use cires_ugwpv1_triggers, only:  slat_geos5_2023, slat_geos5_tamp_v1
+!
+! CIRES-EMC  UGWP-packages (v0, v1) developed by V. Yudin and J. Alpert (2016-2020) NGWs +OGWs
+!
+! Valery Yudin 2024/2026 Upgrades for UFSWAM ( as Space Weather Application in UFS)
+!
+!      knob_ugwp_ufswam  = 1.        ! switch for UGWP-updates for UFSWAM-C96/C192
+!      knob_ugwp_wam_med = 1.        ! switch-off NGW scheme   in  UFSWAM-C384/C768                         
+!
+! sources for NGWs
+!
+    use cires_ugwpv1_triggers, only:  slat_geos5_2023, slat_geos5_tamp_v1
     use cires_ugwpv1_module,   only:  cires_ugwpv1_init, ngwflux_update, calendar_ugwp
     use cires_ugwpv1_module,   only:  knob_ugwp_version, cires_ugwp_dealloc, tamp_mpa
-    use cires_ugwpv1_solv2,    only:  cires_ugwpv1_ngw_solv2
+!  
+    use cires_ugwpv1_module,   only: knob_ugwp_ufswam, knob_ugwp_wam_med 
+! solvers    
+!    use cires_ugwpv1_solv2,    only:  cires_ugwpv1_ngw_solv2
     use cires_ugwpv1_oro,      only:  orogw_v1
-
-    use drag_suite,            only:  drag_suite_run       !, drag_suite_psl
+    use cua_ugwpv1_ngw_ufswam, only:  ugwpv1_ngw_solv_ufswam
+!    
+! WRF/MPAS OGW physics that work only below ~40-50 km with "weak" effects of stratospheric OGWs
+!              mainly for PBL and SPBL, maybe for tropospheric jets (???)
+! GSL-drag suite for SGS-orography, variants of WRF/MPAS physics introduced by GSL & PSL 
+!
+    use drag_suite,            only:  drag_suite_run       !... drag_suite_psl is switched off
 
     implicit none
 
@@ -257,7 +273,7 @@ contains
 ! finalize of ugwpv1_gsldrag   (_finalize)
 ! -----------------------------------------------------------------------
 
-!>@brief The subroutine finalizes the CIRES UGWP
+!>@brief The subroutine finalizes the CIRES UGWPV1
 
 !> \section arg_table_ugwpv1_gsldrag_finalize Argument Table
 !! \htmlinclude ugwpv1_gsldrag_finalize.html
@@ -280,22 +296,8 @@ contains
     is_initialized = .false.
 
     end subroutine ugwpv1_gsldrag_finalize
-
-
-! -----------------------------------------------------------------------
-!    originally from ugwp_driver_v0.f
-!    driver of cires_ugwp   (_driver)
-! -----------------------------------------------------------------------
-!   driver is called after pbl & before chem-parameterizations
-! -----------------------------------------------------------------------
-!  order = dry-adj=>conv=mp-aero=>radiation -sfc/land- chem -> vertdiff-> [rf-gws]=> ion-re
-! -----------------------------------------------------------------------
-!>@brief These subroutines and modules execute the CIRES UGWP Version 0
-!>\defgroup ugwpv1_gsldrag_run Unified Gravity Wave Physics General Algorithm
-!> @{
-!! The physics of NGWs in the UGWP framework (Yudin et al. 2018 \cite yudin_et_al_2018) is represented by four GW-solvers, which is introduced in Lindzen (1981) \cite lindzen_1981, Hines (1997) \cite hines_1997, Alexander and Dunkerton (1999) \cite alexander_and_dunkerton_1999, and Scinocca (2003) \cite scinocca_2003. The major modification of these GW solvers is represented by the addition of the background dissipation of temperature and winds to the saturation criteria for wave breaking. This feature is important in the mesosphere and thermosphere for WAM applications and it considers appropriate scale-dependent dissipation of waves near the model top lid providing the momentum and energy conservation in the vertical column physics (Shaw and Shepherd 2009 \cite shaw_and_shepherd_2009). In the UGWP-v0, the modification of Scinocca (2003) \cite scinocca_2003 scheme for NGWs with non-hydrostatic and rotational effects for GW propagations and background dissipation is represented by the subroutine \ref fv3_ugwp_solv2_v0. In the next release of UGWP, additional GW-solvers will be implemented along with physics-based triggering of waves and stochastic approaches for selection of GW modes characterized by horizontal phase velocities, azimuthal directions and magnitude of the vertical momentum flux (VMF).
-!!
-!! In UGWP-v0, the specification for the VMF function is adopted from the GEOS-5 global atmosphere model of GMAO NASA/GSFC, as described in Molod et al. (2015) \cite molod_et_al_2015 and employed in the MERRRA-2 reanalysis (Gelaro et al., 2017 \cite gelaro_et_al_2017). The Fortran subroutine \ref slat_geos5_tamp describes the latitudinal shape of VMF-function as displayed in Figure 3 of Molod et al. (2015) \cite molod_et_al_2015. It shows that the enhanced values of VMF in the equatorial region gives opportunity to simulate the QBO-like oscillations in the equatorial zonal winds and lead to more realistic simulations of the equatorial dynamics in GEOS-5 operational and MERRA-2 reanalysis products. For the first vertically extended version of FV3GFS in the stratosphere and mesosphere, this simplified function of VMF allows us to tune the model climate and to evaluate multi-year simulations of FV3GFS with the MERRA-2 and ERA-5 reanalysis products, along with temperature, ozone, and water vapor observations of current satellite missions. After delivery of the UGWP-code, the EMC group developed and tested approach to modulate the zonal mean NGW forcing by 3D-distributions of the total precipitation as a proxy for the excitation of NGWs by convection and the vertically-integrated  (surface - tropopause) Turbulent Kinetic Energy (TKE). The verification scores with updated NGW forcing, as reported elsewhere by EMC researchers, display noticeable improvements in the forecast scores produced by FV3GFS configuration extended into the mesosphere.
+!
+! Valery Yudin 2026: UGWP-v0 (2018) description was eliminated
 !!
 !> \section arg_table_ugwpv1_gsldrag_run Argument Table
 !! \htmlinclude ugwpv1_gsldrag_run.html
@@ -311,7 +313,7 @@ contains
           cdmbgwd, alpha_fd, jdat, nmtvr, hprime, oc, theta, sigma, gamma,              &
           elvmax, clx, oa4, varss,oc1ss,oa4ss,ol4ss, dx,  xlat, xlat_d, sinlat, coslat, &
           area, rain, br1, hpbl,vtype, kpbl, slmsk,                                     &
-          ugrs, vgrs, tgrs, q1, prsi, prsl, prslk, phii, phil,  del, tau_amf,           &
+          ugrs, vgrs, tgrs, qgrs, q1, prsi, prsl, prslk, phii, phil,  del, tau_amf,           &
           dudt_ogw, dvdt_ogw, du_ogwcol, dv_ogwcol,                                     &
           dudt_obl, dvdt_obl, du_oblcol, dv_oblcol,                                     &
           dudt_oss, dvdt_oss, du_osscol, dv_osscol,                                     &
@@ -322,18 +324,19 @@ contains
           dtend, dtidx, index_of_x_wind, index_of_y_wind, index_of_temperature,         &
           index_of_process_orographic_gwd, index_of_process_nonorographic_gwd,          &
           lprnt, ipr, spp_wts_gwd, spp_gwd, errmsg, errflg)
-
+!===========================================================================================
+! History: 2020-2026
+! Initial Code: Valery Yudin and Mike Toy 2020.
+! Evolution:
 !
-!########################################################################
-!  Attention New Arrays and Names must be ADDED inside
+!            OGW-versions: ugwp-v1 (Yudin & Alpert EMC/SWPC/CIRES) ; 
+!                                   WRF-OGWs: gsl_drag (Toy _GSL) ; drag_suite_psl (PSL/EMC)
+!            NGW-versions: ugwp-v1 (Yudin, 2020); ugwpv1_ufswam (Yudin, 2025/26)
 !
-! a) /FV3/gfsphysics/GFS_layer/GFS_typedefs.meta
-! b) /FV3/gfsphysics/GFS_layer/GFS_typedefs.F90
-! c) /FV3/gfsphysics/GFS_layer/GFS_diagnostics.F90 "diag-cs is not tested"
-!########################################################################
-
-!
-
+! Valery Yudin 2026: Clean up "old" comments to do that don't fit the UFS-FV3 structure
+!              Updates related to UFSWAM => need to add major tracers [0, O2, N2, He ]
+!              to compute molecular viscosity and heat conductivity to dissipate GWs 
+!              in the upper atmosphere
     use ugwp_common, only : con_pi => pi, con_g => grav,  con_rd   => rd,   &
                             con_rv => rv, con_cp => cpd,  con_fv   => fv,   &
                             con_rerth => arad, con_omega => omega1, rgrav
@@ -382,7 +385,7 @@ contains
     real(kind=kind_phys),    intent(in), dimension(:,:)     :: clx, oa4
 
     real(kind=kind_phys),    intent(in), dimension(:)       :: dx
-    real(kind=kind_phys),    intent(in), dimension(:), optional       :: varss,oc1ss
+    real(kind=kind_phys),    intent(in), dimension(:),   optional     :: varss,oc1ss
     real(kind=kind_phys),    intent(in), dimension(:,:), optional     :: oa4ss,ol4ss
 
     real(kind=kind_phys),    intent(in), dimension(:)     :: xlat, xlat_d, sinlat, coslat, area
@@ -390,6 +393,7 @@ contains
 ! State vars + PBL/slmsk +rain
 
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: del, ugrs, vgrs, tgrs, prsl, prslk, phil
+    real(kind=kind_phys),    intent(in), dimension(:,:,:) ::  qgrs   
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: prsi, phii
     real(kind=kind_phys),    intent(in), dimension(:,:)   :: q1
     integer,                 intent(in), dimension(:)     :: kpbl
@@ -482,9 +486,10 @@ contains
 !
 ! All GW-schemes operate with Zmet =phil*inv_g, passing Zmet/Zmeti can be more robust
 ! + rho*dz = =delp *  inv_g   can be also pre-comp for all "GW-schemes"
-!
-       zmeti  = phii* rgrav
-       zmet   = phil* rgrav
+!      
+! rgrav = 1./9.8105       
+         zmeti  = phii* rgrav
+         zmet   = phil* rgrav
 
 !===============================================================
 ! ORO-diag
@@ -585,7 +590,7 @@ contains
 
     endif
 !
-! not gsldrag large-scale oro-scheme for example "do_ugwp_v1_orog_only"
+! not WRF-"gsldrag" mes-scale oro-scheme for example "do_ugwp_v1_orog_only"
 !
 
     if ( do_ugwp_v1_orog_only ) then
@@ -594,7 +599,7 @@ contains
 ! only sum of integrated ORO+GW effects (dusfcg and dvsfcg) = sum(ogw + obl + oss*0 + ofd + ngw)
 !
 ! OROGW_V1 introduce "orchestration" between OGW-effects and Mountain Blocking
-!      it starts to examines options for the Scale-Aware (SA)formulation of SSO-effects
+!      it examines options for the Scale-Aware (SA)formulation of SSO-effects
 !      if ( me == master .and. kdt == 1) print *, ' bf orogw_v1 nmtvr=', nmtvr, ' do_tofd=', do_tofd
 
          if (gwd_opt ==1 )sgh30 = 0.15*hprime       ! portion of the mesoscale SSO (~[oro_unfilt -oro_filt)
@@ -646,18 +651,13 @@ contains
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Begin non-stationary GW schemes
-! ugwp_v1
+! ugwp_v1    ugwpv1_ngw_solv_ufswam
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (do_ugwp_v1) then
-
-!==================================================================
-!       call slat_geos5_tamp_v1(im, tamp_mpa, xlat_d, tau_ngw)
+    if (do_ugwp_v1 .and. knob_ugwp_ufswam == 1) then
 !
-! 2020 updates of MERRA/GEOS tau_ngw for the C96-QBO FV3GFS-127L runs
-!==================================================================
-
-!       call  slat_geos5_2020(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
+! VAY-2026 eliminated "old" comments
+!
     call  slat_geos5_2023(im, tamp_mpa, xlat_d, tau_ngw)    !from fixed-GW sources "cires_ugwpv1_triggers.F90"
        y4 = jdat(1); month = jdat(2); day = jdat(3)
 !
@@ -675,13 +675,12 @@ contains
        call ngwflux_update(me, master, im, levs, kdt, ddd_ugwp,curdate, &
          tau_amf, xlat_d, sinlat,coslat, rain, tau_ngw)
 !
-!                              new solver for the NGW  spectral scheme
+!      new solver for the NGW  spectral scheme in UFSWAM
 !
-       call cires_ugwpv1_ngw_solv2(me, master, im,   levs,  kdt, dtp,   &
-                      tau_ngw, tgrs, ugrs,  vgrs,   q1, prsl, prsi,     &
-!                      zmet, zmeti,prslk,   xlat_d, sinlat, coslat,      &
-                     zmet, zmeti, del, xlat_d, sinlat, coslat,      &	  !from V!	      
-                      dudt_ngw, dvdt_ngw, dtdt_ngw, kdis_ngw, zngw)
+       call ugwpv1_ngw_solv_ufswam(me, master, im,   levs,  ntrac, kdt, dtp,   &
+                     tau_ngw, tgrs, ugrs,  vgrs, qgrs,  q1, prsl, prsi,      &
+                     phil, phii, del, xlat_d, sinlat, coslat,          &	 	      
+                     dudt_ngw, dvdt_ngw, dtdt_ngw, kdis_ngw, zngw)
 		      
 !      print *, ' ugwp_v1 ', kdt
 !      print *, ' ugwp_v1 du/dt ', maxval(dudt_ngw)*86400, minval(dudt_ngw)*86400

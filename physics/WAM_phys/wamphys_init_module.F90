@@ -25,14 +25,30 @@ module  wamphys_init_module
 !    integer, parameter   :: lowipe_lev150 = 90
     
     character(len=255)   :: wamphys_nml2 ='wamphys_nml'
-    character(len=255)   :: wamphys_swio='swio_waminput.nc'   
-    
+    character(len=255)   :: wamphys_swio='swio_waminput.nc'  
+!     do_med1d=.true.,
+!     do_wamion=.true.,
+!     do_mspdif=.true.,
+!     do_eddif=.true., 
+!     do_chemv=2,
+!     do_swoper_mdt=.true.,
+!     do_omni_hdt=.false.,   
+  
+    logical            :: do_med1d = .true.
+    logical            :: do_wamion = .true.
+    logical            :: do_mspdif = .true.
+    logical            :: do_eddif = .true.
+    integer            :: do_chemv = 2                     ! O-O2, 3: O-O2-O3
+    logical            :: do_swoper_mdt     = .true.       ! flag for swpc operational SW drivere (3 min)  
+    logical            :: do_omni_hdt       = .false.      ! flag for OMNI/GSFC SW drivere (1-hour) + Calendar         
+    integer            :: kdtin = 0                        ! number of steps to spin-up under constant SWD 
+                                                           ! for cold-start 2400; warm-restart = 0
     logical            :: do_init_tides = .false.          ! initialize tidal diag (24-12 and 8-hr tides)
     logical            :: do_init_swio  = .true.           ! initialize read swio-input
     logical            :: do_init_wamtracers  = .true.     ! initialize read of fixed/input constiuents
     logical            :: do_init_wamion      = .true.     ! initialize read of the ionosphere input
     logical            :: do_init_wamrad      = .true.     ! initialize read of the wam-radiationinput  
-    
+ 
     character(len=255)     :: wamrad  
 ! co2-para [vmrs .....150-720 ppmv]
 ! co2hc.f   :        open(30,file='global_idea_coeff_lte.150',status = 'OLD')subroutine co2cin
@@ -59,14 +75,18 @@ module  wamphys_init_module
     character(len=255)     :: W05SC_Epot_file = 'global_idea_coeff_W05scEpot.dat'          
     character(len=255)     :: iondata_file    = 'iondata_tjr.nc'
     character(len=255)     :: tirosdata_file  = 'tiros_tjr.nc' 
+!
+! common name for SWPC SW-drivers (B-fields, Solar-wind, & Kp/Kpa, F107/F107a)'solar_kpf107_3min.nc'
+! needs to be copied or linked to RUNDIR
+!   
     character(len=255)     :: sol_kpf107_file = 'solar_kpf107_3min.nc'   
-    integer, parameter      :: isw_3min = 1   
+    integer, parameter     :: isw_3min = 1   
   
     
 !    character(len=255)     :: sol_kpf107_file = 'fvsolar_1hr_20240328_20240522.nc'     
-    character(len=255)     ::  efield_model   = 'epot'              ! or 'bpot'
-    character(len=255)     ::  SPW_DRIVERS    = 'swpc_fst'
-    character(len=255)     ::  SWIN_DRIVERS   = 'swin_wam'
+    character(len=255)     ::  efield_model   = 'epot'         ! or 'bpot'     in wamphys_efield.F90
+    character(len=255)     ::  SPW_DRIVERS    = 'swpc_fst'     ! is not active in wamphys_efield.F90
+    character(len=255)     ::  SWIN_DRIVERS   = 'swin_wam'     ! used in subroutine prep_weimer of efield.F90
 
 !   tracers and NO-model
 
@@ -75,7 +95,7 @@ module  wamphys_init_module
 ! solar-annual
 !   wam_nems_imf_2012.nc   wasolar_dan_20161019.nc             
 
-    real(kind=kind_phys) :: soro_gg = 0.      ! sea level for gravity in upper layers    
+    real(kind=kind_phys) :: soro_gg = 0.           ! sea level for gravity in upper layers    
   
     
     
@@ -125,13 +145,15 @@ module  wamphys_init_module
     real(kind=kind_phys)  :: sol_f107, sol_f107a, sol_kp, sol_kpa, sol_ap, sol_apa 
     real(kind=kind_phys)  :: sol_nhp, sol_shp, sol_nhpi, sol_shpi, sol_den, sol_vel, sol_ang
     real(kind=kind_phys)  :: sol_bz, sol_bt       
-                
     
-    namelist /wamphys_nml/ JH0,      JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1,      &
-                           skeddy0, skeddy_semiann, skeddy_ann,                        &
-                           tkeddy0, tkeddy_semiann, tkeddy_ann,                        &
-                           f107_fix, f107a_fix, kp_fix, kpa_fix,                       &
-			   gw_fix, tiros_activity_fix, tiros_switch,                   &
+                    
+    namelist /wamphys_nml/ do_med1d, do_wamion, do_mspdif, do_eddif, do_chemv,  &
+                           do_swoper_mdt, do_omni_hdt, kdtin,                   &
+                           JH0,  JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1,   &
+                           skeddy0, skeddy_semiann, skeddy_ann,                 &
+                           tkeddy0, tkeddy_semiann, tkeddy_ann,                 &
+                           f107_fix, f107a_fix, kp_fix, kpa_fix,                &
+			   gw_fix, tiros_activity_fix, tiros_switch,            &
 	                bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden,&
 		           spw_drivers, efield_model, swin_drivers,do_init_tides,      &
 		       do_init_swio, do_init_wamtracers, do_init_wamion, do_init_wamrad
@@ -405,6 +427,7 @@ module  wamphys_init_module
       call wam_readno_snoewx(file_no_snoe, me, master)
       
       call wam_solar_radphoto_init(me, master) 
+      
       call wamphys_solkpf107_init(me, master)      ! read solar f107/kp file and define first sol_f107/sol_kp         
     endif    ! init wam radiation     
        

@@ -260,8 +260,9 @@ contains
     
     use wamphys_init_module, only : co2my
  
-        
-    use wamphys_init_module, only : spw_drivers, swin_drivers
+    use wamphys_init_module, only : kdtin, do_wamion, do_chemv, do_mspdif, do_eddif, do_med1d
+          
+    use wamphys_init_module, only : do_swoper_mdt, do_omni_hdt, spw_drivers, swin_drivers
     
     use wamphys_init_module, only : f107_fix, f107a_fix, kp_fix, kpa_fix
     use wamphys_init_module, only : bnhp, bnhpi, bshp, bshpi, bswbt, bswang, bswvel, bswbz, bswden
@@ -322,9 +323,8 @@ contains
 !==========================================================
 ! local variables
 !==========================================================
-    integer, parameter  :: kdtin = 0    !cold start!!!!   ! JAN1 for 2023 run  
 
-    integer, parameter  :: ntrac_i=2                  ! number of 2 WAM chem. tracers (O-O2)
+    integer, parameter  :: ntrac_i=2            ! number of 2 WAM chem. tracers (O-O2)
     integer, parameter  :: lowst_ipe_level = 90
     integer, parameter  :: ipr = 10    
     real(kind=kind_phys), parameter  :: sdf = 86400. 
@@ -368,23 +368,25 @@ contains
     ! nth2o  = ntqv          ! standard first index for H2O, ntqv - number of water-based species    
     heatmax = 0.002        ! 100 K/day
 !---------------------------------------------
-! two ways to setup from namelist/SW-arrays
+!  two ways to setup from namelist/SW-arrays
 ! ---------------------------------------------   
     f107  = f107_fix
     f107d = f107a_fix
     kp    = kp_fix
-    kpa   = kpa_fix   
+    kpa   = kpa_fix  
+    if (do_swoper_mdt) then  
         kdts = kdt -kdtin
 	
 !	print *, ' kdt-kdtin-kdts ', kdt, kdtin, kdts
-    if (me == master ) then
+      if (me == master ) then
     
       if ((kdts .le. 0)  .and. (kdts .gt. kdt_swmax) ) then
        print *, ' kdt-kdtin-kdts ', kdt, kdtin, kdts
+       print *,  ' do_swoper_mdt = ', do_swoper_mdt
        stop ' kdts out of range '
       endif
+      endif
     endif
-    
     	  
 !=========================================================================	  
 ! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
@@ -420,6 +422,8 @@ contains
 !      iday_m = jdat(3)
 !      imo = jdat(2)
 !print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts	
+
+  if (do_swoper_mdt) then  
     call wamphys_kpf107_update(kdts,  jdat(1), jdat(2), jdat(3), ddd_year, solhr, &
                    sol_f107, sol_f107a, sol_kp, sol_kpa, me, master)  
 !print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts		    		    
@@ -427,10 +431,11 @@ contains
     f107d = sol_f107a
     kp    = sol_kp
     kpa   = sol_kpa
-
+  endif
+  
     if (me == master ) then
-     if (kdts < 100) print *, 'spw-drivers f-kp ', f107, f107d, kp, kpa
-!     print *, 'spw-drivers f-kp ', f107, f107d, kp, kpa
+!     if (kdts < 100) print *, 'spw-drivers f-kp ', f107, f107d, kp, kpa
+!     print *, 'LES-spw-drivers f-kp ', f107, f107d, kp, kpa
  
      if (kp .gt. 8) then 
           print *, ' kpf107 >8  ', f107, kp,  kdt
@@ -478,7 +483,7 @@ contains
         xpk_high(i) =    prsl(i,phigh(i))
     enddo
         
-    
+    if (do_chemv > 0 .or. do_mspdif) &    
     call wamphys_tracer_run(me, master,im, levs,ntrac,ntrac_i,nto1, nto2, nto3,   &
                             ntqv, ddd_year, dtp, grav,prsi,prsl, tgrs, qgrs,      &
                             o_n,o2_n, o3_n, n2_n,nair,rho,am, amu2d, cospass,     &
@@ -490,8 +495,9 @@ contains
 !	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
 !	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
 !     endif 		   
-    call wam_get_cp(im, levs,  ntrac, qgrs,  cp)     
- 
+    call wam_get_cp(im, levs,  ntrac, qgrs,  cp) 
+        
+    if (do_med1d) &
     call wamphys_molec_dissipation(me, master, im, levs,grav,prsi,prsl,  &
                    ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho,dudt_wammd,dvdt_wammd,dtdt_wammd)	 ! add more tend diag vars wchen
      	   
@@ -545,6 +551,8 @@ contains
         tgrs = tgrs + wtot * dtp  
         dtdt_wamrad = wtot
     endif
+    
+    if (do_wamion) &
     call wam_ion_run(im, levs, jdat, prsl, solhr,cospass,zgeo, grav, o_n, o2_n,n2_n,&
                      cp, ugrs, vgrs, tgrs, dudt_ion, dvdt_ion, dtdt_ion, rho, xlat, xlon,      &
                      ddd_year, utsec, sda, maglon, maglat, btot, dipang, essa, f107, f107d, kp,&

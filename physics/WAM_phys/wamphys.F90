@@ -49,20 +49,19 @@ contains
 !!
 ! -----------------------------------------------------------------------
 !
-    subroutine wamphys_init(do_wamipe, do_wamgfs_rad, do_wamphys_diag,         &
-                me, master, nlunit, input_nml_file, logunit,                   &
-                fn_nml2, jdat, lonr, latr, levs, ak, bk, dtp,                  &
-		ntrac, nto1, nto2, nto3, ntqv,                                 &
-                con_pi, con_rerth, con_p0,                                     &
-                con_g, con_omega,  con_cp, con_rd, con_rv,con_fvirt,           &  
-		errmsg, errflg)
+    subroutine wamphys_init(do_wamipe, do_wamgfs_rad, do_wamphys_diag,   &
+                me, master, nlunit, input_nml_file, logunit,             &
+                fn_nml2, jdat, lonr, latr, levs, ak, bk, dtp,            &             
+		ntrac, nto1, nto2, nto3, ntqv,                           &
+                con_pi, con_rerth, con_p0,                               &
+                con_g, con_omega,  con_cp, con_rd, con_rv,con_fvirt,     &  
+                errmsg, errflg)
 !		
-!cd /scratch1/NCEPDEV/swpc/Svetlana.Karol/save/BASE_SVN/WAM_STANDALONE/WAMPHYS_STD
 !
     use wamphys_common
     use wamphys_init_module,     only: wamphys_init_all
     use wamphys_multigases,      only: wamphys_set_major_tracers
-!----  initialization of unified_ugwp
+!
     implicit none
     logical,              intent (in) :: do_wamphys_diag, do_wamgfs_rad,  do_wamipe
     integer,              intent (in) :: me

@@ -131,6 +131,7 @@
       real(kind=kind_phys) :: t(levs),n2(levs), o(levs),o2(levs),o3(levs)
       real(kind=kind_phys) :: ho(levs), ho2(levs),hn2(levs)
       real(kind=kind_phys) :: sheat(levs),qno(levs),no_new(levs)
+      real(kind=kind_phys) :: qo3p(levs)
       real(kind=kind_phys) :: amm(levs),prr(levs),alt(levs),nn(levs),sh1(levs),sh2(levs)
       real(kind=kind_phys), dimension(levs) :: shsrc,shsrb,shlya
       real(kind=kind_phys) :: ht(levs)
@@ -179,6 +180,7 @@
 !        no_diag(i,:) = no_new(:)  
 
         call wamphys_coolno1d(levs, npsrad, t, o, o2, no_new, qno) 
+	call wamphys_coolo3p(levs, npsrad, alt, t, o, qo3p) 
 !--------------------  no-cooling  
   
 !-------------------- get UV-EUV heating
@@ -199,12 +201,12 @@
 ! new diag-arrays	  
           dtdt_euv(i,k)=sh1(k)*rcpro
           dtdt_uvr(i,k)=sh2(k)*rcpro
-	    dtdt_qno(i,k) =qno(k)*rcpro
+	    dtdt_qno(i,k) =(qno(k)+qo3p(k))*rcpro
 !net q
-
-
-         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
-
+!         dtrad(i,k)=dtdt_euv(i,k)+dtdt_uvr(i,k)-dtdt_qno(i,k)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!  dtrad(i,k)=( 0.9*(sh1(k)+sh2(k)) -qno(k) -qo3p(k) )*rcpro
+          dtrad(i,k)=(sh1(k)+sh2(k) -qno(k) -qo3p(k) )*rcpro
         enddo ! k
 	        
         do k=1, npsrad-1
@@ -751,7 +753,7 @@
 
       implicit none
 ! input
-      real, parameter :: no_fac = 3.      ! kpa > 5 storm
+      real, parameter :: no_fac = 3.       ! kpa > 5 storm
       real, parameter :: kpa5 = 5., kpa9 =9  
       integer, intent(in)  :: levs         !number of pressure level
       integer, intent(in)  :: doy          ! day of year from 1 to 365   
@@ -872,8 +874,8 @@
 	
 	return
 	
-! below "empircal" tuning NO-ehnancement for Geo storms
-! incease [no] by a factor when kpa gt 5.0, same with ctipe, based on champ
+! below OLD "empircal" tuning for NO-ehnancement for Geo-storms
+! increase [no] by a factor when kpa gt 5.0, same as in  ctipe, based on champ-density
 ! neutral density obervations ????? WAM-empirical tuning of NO-profiles kpa ????
 !                                   inconsistent with SNOE-model  
       do k=1,levs
@@ -893,12 +895,54 @@
 !        print *, 'kup getno, iref', kup, iref, con_nzero
       return
   end subroutine wam_getno1d    
-           
-  subroutine wamphys_coolno1d(np,nps,t,o_n, o2_n, no_n, qno)       
+!  
+!  Adapted from TIE-GCM 
+! Original equation is from Bates [1951]
+! Updates from Kockarts and Peetermans [1970]
+! At lower overlying altitudes, a significant fraction of these emitted far-IR photons 
+!can be reabsorbed by the overlying column rather than freely !radiating to space. 
+!Kockarts and Peetermans (1970) proposed and calculated a simple height-dependent scaling Masking coefficient 
+!to parameterize the net effects, which they referred to as a reduction 
+! M(z) = 0.8/(1.+exp(-0.13*[zkm-122.5])
+! Eckermann, S. D. (2023). Augmented non-LTE parameterization of NO infrared radiative cooling rates. JGR/SP 128
+! e2022JA030956. https://doi.org/10.1029/2022JA030956 
+!
+  subroutine wamphys_coolo3p(np, nps, zkm, t, o_n,  o3pcool ) 
+      use machine,           only : kind_phys 
+      implicit none
+
+      real(kind_phys),parameter :: an1=0.835E-18, an2=0.6, an3=0.2
+      real(kind_phys),parameter :: bn1=228., bn2=228, bn3=325	  
+      
+      integer, intent(in):: np                          ! numer of pressure levels
+      integer, intent(in):: nps                         ! pressure index to start  
+      real(kind_phys), intent(in)   :: o_n(np)          ! number density/m3    O (in mmr)
+      real(kind_phys), intent(in)   :: zkm(np)          ! height in km    
+      real(kind_phys), intent(in)   :: t(np)            ! temp (k)  
+      real(kind_phys), intent(out)   :: o3pcool(np)      !  O(3p)-cooling (K/S)
+!local
+      integer :: i, k
+      real(kind_phys) :: werg_g, w1, w2, tinv, mask_fact
+      o3pcool(1:np) =0.
+
+      do k=nps,np   
+        tinv = 1./t(k)
+	mask_fact = 0.8/(1.+ exp(-0.13*(zkm(k)-122.5)))
+        w1 = o_n(k)*(an1*exp(-bn1*tinv) + 4.66e-21*exp(-326.6*tinv))
+	w2 = 1. + an2*exp(-bn2*tinv) + an3*exp(-bn3*tinv)
+	werg_g= w1/w2 *mask_fact	
+        o3pcool(k) = max(werg_g*1.0e-7, 0.0)  ! 1e-4 => convert units from erg/g/s to J/kg/s
+      enddo                    
+  end subroutine wamphys_coolo3p
+          
+  subroutine wamphys_coolno1d(np, nps, t, o_n, o2_n, no_n, qno)       
 !sik may    2022 ccpp-version 
 !vay oct 1  2015 clean-up
 !    oct 28 2016 for new trunk
-!      use   physcons, only : bz =>  con_boltz             
+!      use   physcons, only : bz =>  con_boltz
+!
+! vay-cua  july 2026:  new option to modulate k10_o(T) NO-cooling, based on Eckermann 2022  
+!        
 !-------------------------------------------------------------------------
 ! calculate no cooling   Kockarts, G. (1980). Nitric oxide cooling
 !-------------------------------------------------------------------------
@@ -926,27 +970,42 @@
       real(kind_phys) :: a10ghv, hvbz, a23   
       real(kind_phys) :: bz
       real(kind_phys) ::  no_deact, o1_rate, o2_rate,phot_e    
+!
+! NO-cooling constants based on Eckermann 2022
+! 
+      real(kind_phys) :: A21_v21, k10_o3p, k10_o2, troom, tpower
+      real(kind_phys) :: k10_o3pt    
       integer i, k
+      
+      tpower = -0.35
+      troom =298.
+      k10_o3p =4.2e-17
+      k10_o2 = 2.4e-20
+      A21_v21 = 25.1        ! trans_prob s-1 v2=>v1 (HB)
 
 !vay-2015/16
 !                           ! hv=phot_e  = 3.726e-13_r8   at 5.3 mkm (erg)
 !
       o1_rate = 2.7e-11*1.e-6      !3.3-3.6(-12)
-      o2_rate = 2.4e-14*1.e-6
-      phot_e  = 3.726e-13
+      o2_rate = 2.4e-14*1.e-6      ! o2_rate*O2 << o1_rate*O except night ???
+      phot_e  = 3.726e-13*1.e-7    !Joule
       
       a10=13.3             ! trans_prob = 13.3_r8       
       bz=1.38e-23          ! boltzman
-      k10=2.7e-17          ! k10*[o3p] vs 2.7 in waccm  k10=3.6e-17 
+!
+! k10_o k10_o2
+! k10_o(T) =   
+!    
+      k10=2.7e-17          ! k10*[o3p] k10wam=2.7e-17 in waccm  k10=3.6e-17 or 4.2e-17 Hwang (2003)
                            ! decreased because cm3/s = 10(-11)
                            !                   m3/s    10(-17)                                       
       hv=3.726e-20         ! in joules   1 erg is equal to 1.0e-7 joule.
-      hvbz = hv/bz                                                                                                    
+      hvbz = hv/bz         ! 2700.                                                                                                   
       g=1.0                                                             
                                                      
       a2=5.4e-6*(1./(exp(hvbz/5800.)-1.))    
       a3=0.5*exp(-hvbz/247.5)
-      a23 = a2+a3
+      a23 = a2+a3                          !1.8254324e-05
       a10=13.3     
       a10ghv = a10*g*hv
 !-------------------------------------------------
@@ -954,9 +1013,17 @@
 !=================================================
       qno(1:nps-1) =0.
       
-      do i=nps,np                                                   
-        om1=k10*o_n(i)          
+      do i=nps,np   
+!
+! new option to modulate k10_o(T)     k10_o3p=4.2e-17 
+!        k10_o3pt = k10_o3p*(t(i)/troom)**tpower   
+!        om1=k10_o3pt*o_n(i)   
+
+! k10 = const= 2.7e-17                                   
+        om1=k10*o_n(i)  
+	        
         om=om1/(om1+a10)
+	
         a1=exp(-hvbz/t(i)) 
         qno(i)=a10ghv*no_n(i)*om*(a1-a23)      ! should be in "j/kg/s" ~"j/s*[1/m3-no]"
 	if (qno(i) < 0) qno(i) = 0.
@@ -991,6 +1058,6 @@
   end  subroutine wamphys_coolno1d
 !=======================================      
 !
-! EUV/UV: sheat,sh1, sh2, jo2_rate, jo3_rate
+! EUV/UV: sh1, sh2, jo2_rate, jo3_rate
 !
 !========================================

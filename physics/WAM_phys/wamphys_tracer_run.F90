@@ -46,7 +46,7 @@
       
       real(kind=kind_phys), intent(in), dimension(im)    :: xpk_low, xpk_high    
       integer,              intent(in), dimension(im)    :: plow, phigh    
-!      real(kind=kind_phys), intent(in)    :: go2dr(im, lowst_ipe_level:levs)
+
       real(kind=kind_phys), intent(in)    :: go2dr(im,levs)
             
       real(kind=kind_phys), intent(inout) :: q(im,levs,ntrac)   ! input output tracer
@@ -171,10 +171,10 @@
       call wamphys_dissociation(im, levs, adt, cospass, n1, n2,  ozn,  n3,  &
                dayno, zg, grav,  f107,  f107d, Jrates_O2, Jrates_O3)
 
-! Merge the  IPE back coupling WAM variable arrays into WAM.  ????   GO2DR => jrates_O2
+! Merge the  IPE-JO2 for coupling with WAM variable arrays into WAM.  ????   GO2DR => jrates_O2
 !
 !      IF (ipe_to_wam_coupling) THEN
-!        call wamphys_merge_ipe2wam(go2dr, jrates_O2,         &
+!        call wamphys_merge_ipe2wam(go2dr, jrates_O2,    &
 !         im, levs, lowst_ipe_level, prsl, plow, phigh,  &
 !         xpk_low, xpk_high)
 !      END IF

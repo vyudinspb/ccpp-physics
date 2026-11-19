@@ -2,11 +2,8 @@
 !>\defgroup wamphys_run WAM Physics General Algorithm
 
 module wamphys
-
-!!!   wamphys_swdef.F90   wamphys_swdef.meta  wamphys_setdata.F90
-!!!   wamphys_init.F90 inside of  wamphys.F90
 !
-!Model%do_wamphys_diag, Model%do_wamphys  Model%do_wamgfs_rad Model%do_wamipe
+!
 !wamphys_init_module.F90
 !wamphys_co2.F90
 !wamphys_co2hc.F90
@@ -27,11 +24,6 @@ module wamphys
 !wamphys_sheat_jrates.F90
 !wamphys_tracer_run.F90
 !wamphys_weimer2005.F90
-! ccpp cannot handle global-scalar time-dep input
-!!!wamphys_swdef.F90
-!!!wamphys_swio_data.F90
-!
-! wamphys_tides.F90: online diagnostics for daily-mean state and diurnal/subdiurnal modes
 !
 !==========================
 
@@ -238,18 +230,18 @@ contains
           dx, xlon, xlat, xlon_d,xlat_d, sinlat, coslat, area,                 & 
           oro, solhr,slag,sdec,cdec, coszen, htrsw, htrlw,                     &
           f107, f107d, kp, kpa,                                                &
-	      nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden,               &	 
+	  nhp, nhpi, shp, shpi, swbt, swang, swvel, swbz, swden,               &	 
           ugrsin, vgrsin, tgrsin, qgrsin, prsi, prsl, prslk, phii, phil,       &
           dudt, dvdt, dtdt, dqdt, dudt_iwamph, dvdt_iwamph, dtdt_iwamph,       &
-	      do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	 
-          dudt_wammd,dvdt_wammd,dtdt_wammd,                                    &   !Add more diag vars wchen
+	  do1dt_iwamph,  do2dt_iwamph,  dqdt_iwamph,                           &	 
+          dudt_wammd,dvdt_wammd,dtdt_wammd,                                    &   
           dudt_wamion,dvdt_wamion,dtdt_wamion,                                 &
           dtdt_wamrad,                                                         &	 
           gzmt, gmmt, gjhr, gshr, go2dr, errmsg, errflg)
 	  
 !########################################################################
 !  Attention New Arrays and Names must be ADDED inside
-! new location: and rearrange of types May 2022 from the "core-ccpp" team YYYX
+! new location: and rearrange of types May 2022
 ! a) ccpp/data/GFS_typedefs.meta
 ! b) ccpp/data/GFS_typedefs.F90
 ! c) ccpp/data/CCPP_typedefs.F90/meta "diag-cs is not tested"
@@ -294,7 +286,11 @@ contains
     
     real(kind=kind_phys),intent(inout), dimension(im, levs)        :: ugrsin,vgrsin, tgrsin   	
     real(kind=kind_phys),intent(inout), dimension(im, levs, ntrac) :: qgrsin    
-          
+!
+! IPE-arrays for 2-way coupled simulations  "gjhr, gshr" - Joule and Solar heating rates
+!                                           "gzmt, gmmt" dudt_ion/dvdt_ion 
+!                                           "gshr, go2dr" --- ???? SHR & JO2
+
     real(kind=kind_phys), intent(inout), dimension(im, levs) ::	gzmt, gmmt, gjhr, gshr, go2dr	 
     	 
     real(kind=kind_phys), intent(inout), dimension(im, levs)         ::	dudt, dvdt, dtdt
@@ -305,7 +301,7 @@ contains
     real(kind=kind_phys), intent(out), dimension(im, levs) :: do1dt_iwamph, do2dt_iwamph, dqdt_iwamph
 ! Add more diag var
     real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_wammd, dvdt_wammd,   dtdt_wammd
-    real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_wamion, dvdt_wamion,   dtdt_wamion	 
+    real(kind=kind_phys), intent(out),dimension(im, levs) :: dudt_wamion, dvdt_wamion, dtdt_wamion	 
     real(kind=kind_phys), intent(out),dimension(im, levs) :: dtdt_wamrad	 
  
 ! Initialize CCPP error handling variables
@@ -313,7 +309,7 @@ contains
     integer,                 intent(out) :: errflg
     	
 !=========================================================   
-!  Standalone diagnostics     
+!  Standalone diagnostics  and Locals   
 !  real(kind=kind_phys), dimension(im, levs) ::   Deddy
 !  real(kind=kind_phys), dimension(im, levs) ::	ion_jh, ion_drx, ion_dry
 !  real(kind=kind_phys), dimension(im, levs) ::	no_snoe2d,el2d, sped2d, shal2d  
@@ -324,8 +320,8 @@ contains
 ! local variables
 !==========================================================
 
-    integer, parameter  :: ntrac_i=2            ! number of 2 WAM chem. tracers (O-O2)
-    integer, parameter  :: lowst_ipe_level = 90
+    integer, parameter  :: ntrac_i=2               ! number of 2 WAM chem. tracers (O-O2)
+    integer, parameter  :: lowst_ipe_level = 90    ! for GSMWAM-150L need to be defined by Pressure
     integer, parameter  :: ipr = 10    
     real(kind=kind_phys), parameter  :: sdf = 86400. 
 
@@ -365,7 +361,7 @@ contains
 
     errmsg = ''
     errflg = 0
-    ! nth2o  = ntqv          ! standard first index for H2O, ntqv - number of water-based species    
+    
     heatmax = 0.002        ! 100 K/day
 !---------------------------------------------
 !  two ways to setup from namelist/SW-arrays
@@ -377,7 +373,6 @@ contains
     if (do_swoper_mdt) then  
         kdts = kdt -kdtin
 	
-!	print *, ' kdt-kdtin-kdts ', kdt, kdtin, kdts
       if (me == master ) then
     
       if ((kdts .le. 0)  .and. (kdts .gt. kdt_swmax) ) then
@@ -397,8 +392,10 @@ contains
 	dvdt = 0.
     dtdt = 0.
     dqdt(:,:,:) =0.
-	
-    tgrs = tgrsin
+    
+!copy state-phys	
+
+        tgrs = tgrsin
 	ugrs = ugrsin
 	vgrs = vgrsin
 	qgrs = qgrsin
@@ -421,7 +418,6 @@ contains
 !      iyear = jdat(1)
 !      iday_m = jdat(3)
 !      imo = jdat(2)
-!print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts	
 
   if (do_swoper_mdt) then  
     call wamphys_kpf107_update(kdts,  jdat(1), jdat(2), jdat(3), ddd_year, solhr, &
@@ -438,17 +434,17 @@ contains
 !     print *, 'LES-spw-drivers f-kp ', f107, f107d, kp, kpa
  
      if (kp .gt. 8) then 
-          print *, ' kpf107 >8  ', f107, kp,  kdt
+          print *, ' kp > 8  ', kp, f107, kdt, ' step '
           print *,  ' bt, bz, sdn, svl', sol_bt, sol_bz, sol_den, sol_vel 
           print *,  ' nhp, shp, npi, spi', sol_nhp, sol_shp, sol_nhpi, sol_shpi	  	  	   
      endif
-    endif	     
+    endif
+    	     
     do k=1, levs 
         del(:,k) = prsi(:,k) - prsi(:, k+1)
     enddo 
 !      
 ! wamphys_get_pzgeo.F90: wam_get_rdmulti(im, levs,ntrac,q,xr)     
-! call wam_get_cpr(im,levs,ntrac,qhrs, cp, rdmulti)   >>cv = cp -rdmulti <<
 !      
     call wamphys_zgrav(im, levs, ntrac, tgrs, qgrs,                   &
                         prsl,  prsi, phii, phil, del, oro,             & 
@@ -464,18 +460,18 @@ contains
 !	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
 !    endif   
 
-!       IF(do_wamipe) call get_vertical_parameters_for_merge      &
-!           gzmt, prsl, im, lowst_ipe_level, levs, plow, phigh, xpk_low, xpk_high)	
-	 
-! define arrays	 
-!  go2dr, plow, phigh, xpk_low, xpk_high	
+! ????      IF(do_wamipe) call get_vertical_parameters_for_merge      &
+!           (gzmt, prsl, im, lowst_ipe_level, levs, plow, phigh, xpk_low, xpk_high)	
+!	 
+! assigh IPE arrays	 
+!                    go2dr, plow, phigh, xpk_low, xpk_high	
 !    
     go2dr(:,:)=0.
     gzmt(:,:) =0.
     gmmt(:,:) =0. 
     gjhr(:,:) =0. 
     gshr(:,:) =0.
-!       
+!--------------------------- levels 110 & 112 for 150-layer model not for UFSWAM-196L      
     do i=1, im
         plow(i)  = 110
         phigh(i) = 110+2
@@ -499,8 +495,9 @@ contains
         
     if (do_med1d) &
     call wamphys_molec_dissipation(me, master, im, levs,grav,prsi,prsl,  &
-                   ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho,dudt_wammd,dvdt_wammd,dtdt_wammd)	 ! add more tend diag vars wchen
-     	   
+                   ugrs, vgrs, tgrs,o_n,o2_n,n2_n,dtp,cp, rho,           &
+		   dudt_wammd,dvdt_wammd,dtdt_wammd)	 
+		   
     call wamrad_o3prof(im, levs,ntrac, nto3,  qgrs ,am, nair, o3_ng)
        
     call wamphys_heat_uveuv(im, levs, tgrs, cospass,o_n,o2_n,o3_n,n2_n, rho, cp, &
@@ -514,12 +511,9 @@ contains
     call wamrad_h2o(im,  levs,nlev_h2o,nlevc_h2o,ntrac,nto1, nto2, nto3, ntqv, &
                     grav,cp, qgrs, tgrs, dth2oh, cospass, dth2oc)
 		    
-!		    ,              & 
-!                    gh2ort,gh2ovb,dg1rt,dg2rt, dg1vb,dg2vb,gdp,xx,wvmmrc,coeff)
- 
-       call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
+    call wamrad_o2_o3(im,levs,cospass, tgrs ,o2_n, o3_ng, rho, cp, zgeo, grav, dto3) 
          
-    ! if ( me == master .and. kdt == 1) print *,  ' after wamrad_o2_o3 '
+!   if ( me == master .and. kdt == 1) print *,  ' after wamrad_o2_o3 '
        	    
     IF(do_wamipe) then 
         do k = lowst_ipe_level, levs
@@ -528,6 +522,9 @@ contains
             gshr(i, k) = gshr(i, k) / cp(i, k)	  
         enddo
         enddo
+!
+! 2-way coupling IPE=>UFSWAM	we need only gjhr - Joule heating & Ion drag from IPE
+!	GSHR =>  dtrad in the thermosphere ????
 !	call idea_merge_ipe_to_wam(GSHR, dtrad, im,, levs, lowst_ipe_level, prsl, &
 !	                           plow, phigh, xpk_low, xpk_high)
     endif	
@@ -568,32 +565,31 @@ contains
 !              im, levs, lowst_ipe_level, prsl, plow, phigh, xpk_low, xpk_high)
 !       endif	
 
-    ugrs = ugrs +dtp*dudt_ion
+        ugrs = ugrs +dtp*dudt_ion
 	vgrs = vgrs +dtp*dvdt_ion
 	tgrs = tgrs +dtp*dtdt_ion
 
-    dudt_wamion = dudt_ion
-    dvdt_wamion = dvdt_ion
-    dtdt_wamion = dtdt_ion
-!	call wamphys_dadj(prsi, tgrs, im, levs, me, master)
-!	call wamphys_dadj_or(prsi, tgrs, im, levs+1, me, master)	
- 345    continue 
- 
-    rdtp = 1./dtp	
-    
+        dudt_wamion = dudt_ion
+        dvdt_wamion = dvdt_ion
+        dtdt_wamion = dtdt_ion
+	
+!
+! CCPP operates by tendencies 
+! 
+    rdtp = 1./dtp	    
     dudt = dudt + (ugrs -ugrsin)*rdtp
     dvdt = dvdt + (vgrs -vgrsin)*rdtp  
     dtdt = dtdt + (tgrs -tgrsin)*rdtp 
     dqdt = dqdt + (qgrs -qgrsin)*rdtp 
-                           
-	if (do_wamphys_diag) then
+                          
+  if (do_wamphys_diag) then   
        do1dt_iwamph(:,:) = (qgrs(:,:, nto1)  -do1dt_iwamph(:,:))*rdtp
        do2dt_iwamph(:,:) = (qgrs(:,:, nto2) -do2dt_iwamph(:,:))*rdtp
        dqdt_iwamph (:,:) = (qgrs(:,:, nto3) -dqdt_iwamph(:,:))*rdtp
        dudt_iwamph(:,:) = (ugrs(:,:) - dudt_iwamph(:,:))*rdtp
        dvdt_iwamph(:,:) = (vgrs(:,:) - dvdt_iwamph(:,:))*rdtp
        dtdt_iwamph(:,:) = (tgrs(:,:) - dtdt_iwamph(:,:))*rdtp 	
-	endif 
+  endif 
 	return
 	
 !!! tests: rt.sh -l wamphys_rt.conf -wk 

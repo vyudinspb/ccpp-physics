@@ -489,7 +489,9 @@ module wamphys_ion_empirmodels
       else
          eden_aurora1d(i)=0.
       endif
-!
+      
+!! proxies for charge from neutrals ????
+
       q=qiont(i)/(0.92*n2n(i)+1.5*o2n(i)+0.56*on(i))
       qiont_o(i)=(0.5*o2n(i)+0.56*on(i))*q
       qiont_o2(i)=o2n(i)*q
@@ -497,7 +499,7 @@ module wamphys_ion_empirmodels
       endif
  2000 continue
 
-  200 continue
+  200 continue  ! .......if(abs(thmagd).le.50.) goto 200 => abs(lat) < 50  e_aurora=0.
 
     
 !
@@ -658,12 +660,13 @@ module wamphys_ion_empirmodels
 
 
       do 2000 i=lev1,levs
-
-      if(z(i)*1.e-3 .gt. 1000.) then   ! do we need this z-wam < 650 km
-        print *, '+++ VAY  WAM_Z > 1000 km in wam_tiros_ionize '
-	print *, '+++ VAY  WAM_Z level Z ', i, z(i)*1.e-3
-	print *, '+++ VAY  WAM_Z pres ', i, pres(i)
-      endif
+!
+! During storm Z > 1700 km, no needs to "diagnose and print" 
+!      if(z(i)*1.e-3 .gt. 1000.) then   ! do we need this z-wam < 650 km
+!        print *, '+++ VAY  WAM_Z > 1000 km in wam_tiros_ionize '
+!	 print *, '+++ VAY  WAM_Z level Z ', i, z(i)*1.e-3
+!	 print *, '+++ VAY  WAM_Z pres ', i, pres(i)
+!      endif
       
 ! new z-interpolation   for rr > 0 (apparently)
 ! lognpres/-3.425,-4.835,-5.918,-7.066,-7.784,-8.366,-9.314,-10.507/

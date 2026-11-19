@@ -15,6 +15,9 @@
 ! mar 2022      svetlana karol ccpp-version of idea_ion.f
 !                wamphys_ion.f90 (without mpi-statemments and kind_phys precision)
 !                separates "idea_ion_init" from "idea_ion" and ion_empir_models
+!
+! july 2026: valery yudin updates/accel of loops for global scaling of ion-drag/joule-heating
+!
 !===================
 module wamphys_ion
       
@@ -103,8 +106,15 @@ module wamphys_ion
 
 ! get vbz swvel*swbz
 
-      vbz = swvel*swbz
+      vbz = abs(swvel*swbz)
+! vbz adjustment  jh_st1=5000.
 
+        if (vbz.le.jh_st1) then
+           st_fac = 1.
+        else
+           st_fac = (jh_st0+jh_st1)/(jh_st0+ vbz)
+!       st_fac = 30000.0/(25000.+ vbz) for vbz > 5000.	   
+        endif
 ! get sza in rad
       sza=acos(cospass)
       rlt =(solhr +rlon*fac_lst)*pi_24hr  
@@ -127,23 +137,14 @@ module wamphys_ion
 !   joule heating factor to consider the seasonal variation and
 !   semiannual variation, zhuxiao.li
 
-!  jh0_5
-!           jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*pi2_365d)    &
-!                       +0.5*(cos(2.*pi2_365d*(dayno-80.)))
+!  jh0_5    JH0=1.75, JH_tanh=0.5, JH_semiann=0.5, JH_ann=0.
+!  
 
         jh_fac = jh0+jh_tanh*tanh(2.*rlat(i))*cos((dayno+9.)*pi2_365d)     &
                    +jh_semiann*cos(2.*pi2_365d*(dayno-80.))
 
-! vbz adjustment
-
-        if (abs(vbz).le.jh_st1) then
-           st_fac = 1.
-        else
-           st_fac = (jh_st0+jh_st1)/(jh_st0+ abs(vbz))
-        endif
+	jh_fac=jh_fac*st_fac
 	  
-!       st_fac = 1.
-	  jh_fac=jh_fac*st_fac
         do k=1,levs
 	     rrho = 1./rho(i,k)
            dudt(i,k) = rrho*dudt(i,k)
@@ -319,7 +320,7 @@ module wamphys_ion
 ! output eden_aurora units number/m3   ion density from aurora
   
 !
-! netcdf input files
+! netcdf input files default
 !
          if(tiros_switch == 0) then	     
            do k=1, levs
@@ -380,19 +381,19 @@ module wamphys_ion
           cosdif  =cos(dif)
           sindif  =sin(dif)
 
-          elz(i)  =-1.*ee2(i)*cdip
+          elz(i)  = -ee2(i)*cdip
           if(sdip.ge.0.) then
             elx(i)  =elecx*cosdif-elecy*sindif
             ely(i)  =elecx*sindif+elecy*cosdif
           else
             elx(i)  =elecx*cosdif+elecy*sindif
-            ely(i)  =-1.*elecx*sindif+elecy*cosdif
+            ely(i)  =-elecx*sindif+elecy*cosdif
           endif
 
-          btheta  =-1.*btot(i)*cdip*cosdif               ! new
-          bphi    =-1.*btot(i)*cdip*sindif               ! new
-          bth     = btot(i)                              ! in teslas, so no *1.e-9
-          brad    = -1.*bth*sdip
+          btheta  =-btot(i)*cdip*cosdif               ! new
+          bphi    =-btot(i)*cdip*sindif               ! new
+          bth     = btot(i)                           ! in teslas, so no *1.e-9
+          brad    = -bth*sdip
 !====================================== vertical dep-nt loops
           do k = lev1,levs
             nden(k)=o_n(i,k)+o2_n(i,k)+n2_n(i,k)
@@ -423,6 +424,8 @@ module wamphys_ion
           r       = (ramin(k)*rvin(k))/(elch*bth)
           sigped  = (eden(i,k)*elch*r)/(bth*(1.0+r**2))
           sighal  = sigped*r
+	  
+!diagnostic
 	  
           sped_diag(i,k) = sigped
           shal_diag(i,k) = sighal
@@ -461,7 +464,9 @@ module wamphys_ion
   end subroutine wgetionparams
 
   subroutine wam_ionneut(p1,p2,p3, pion1,pion2,pion3, t, vin, a_min, nmax, n0)
-         
+!
+! compute collision frequencies for (O+O2+N2)
+!             wam_ionneut(on,o2n,n2n,pion1,pion2,pion3, teff,rvin,ramin,levs,lev1=k91)        
       implicit none 
       
       integer, intent(in)                 :: nmax, n0   !levs-150, levs1-90

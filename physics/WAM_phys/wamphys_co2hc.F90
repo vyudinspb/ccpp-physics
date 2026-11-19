@@ -717,11 +717,13 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
 ! Internal workspace
 ! Fixed parameters
 ! -collisional deactivation rate by O [1/(cm**3 s)]
-!
+!     real,parameter:: zco2o=6.e-12
 !     real,parameter:: zco2o=1.5e-12
 ! RAA: increase collisional deactivation rate
+
        real(kind=kind_phys),parameter:: zco2o=3.e-12
-!      real,parameter:: zco2o=6.e-12
+       
+       logical,parameter     :: tdep_co2o =.false.
 !
 ! -composition on Victor grid needed for x above 12.5 (index=1-itm50),
 !       stored here in case it can be reused
@@ -732,6 +734,10 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
 !
       integer:: i,iwork,j,l
       real(kind=kind_phys):: d1,d2,work1,work2,zn2,zo2,ztotal
+      
+! 2026-vay: temperature dependence of collisional rate CO2-O       
+      real(kind=kind_phys):: zco2o_temp, vic_tkin, zco2o_v     
+       
       real(kind=kind_phys):: vict(im,ivict),vich(im,ivict-8),vics(im,ivict),   &         
           vlamb(im,itm50),htilda(im),flux(im)
 
@@ -855,6 +861,10 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
       do i=1,itm50
 !
 ! No temperature dependence of collisional rate CO2-O
+!! Castle 2012
+! Tem-re dependent zco2o_temp = 1.e-12*(3.+9.51e-3*T +9.32e-6*T*T)
+!
+! T=[100K => 600K] zco2o_temp = [3 => 1.5]x1.e-12
 !
          do j=1,im
             work1=vict(j,i+50)**(-1./3.)
@@ -863,8 +873,15 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
 !
 ! Total collisional deactivation rate (factor in second line converts 
 !     pressure to total number density)
-!
-            ztotal=pvic(i+50)*(vico1(j,i)*zco2o+vicn2(j,i)*zn2+    &     
+!tdep_co2o
+            if (tdep_co2o) then 
+	     vic_tkin = vict(j,i+50)
+	     zco2o_temp = 1.e-12*(3.+9.51e-3*vic_tkin +9.32e-6*vic_tkin*vic_tkin)
+	     zco2o_v = zco2o_temp
+	    else 
+	     zco2o_v = zco2o
+	    endif
+            ztotal=pvic(i+50)*(vico1(j,i)*zco2o_v+vicn2(j,i)*zn2+    &     
                 vico2(j,i)*zo2)/(bol106*vict(j,i+50))
 !
 ! Probability of photon survival
@@ -916,6 +933,7 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
       do l=lraint,lhr
 !
 ! No temperature dependence of collisional rate CO2-O
+! 
 !
          do j=1,im
             work1=temp(j,l+iwork)**(-1./3.)
@@ -926,7 +944,13 @@ subroutine wam_co2cc(im, xtemp,temp,ltemp,xhr,hrate,lhr,mu,ro1,   &
 ! pressure to total number density).  Pressure is recalculated here
 ! from input log-pressure (xhr).
 !
-            ztotal=1e5*exp(-xhr(l))*(zco2o*ro1(j,l)+rn2(j,l)*zn2+     &  
+            if (tdep_co2o) then 
+	     vic_tkin =temp(j,l+iwork)
+	     zco2o_v = 1.e-12*(3.+9.51e-3*vic_tkin +9.32e-6*vic_tkin*vic_tkin)
+	    else 
+	     zco2o_v = zco2o
+	    endif
+            ztotal=1e5*exp(-xhr(l))*(zco2o_v*ro1(j,l)+rn2(j,l)*zn2+     &  
                 ro2(j,l)*zo2)/(bol106*temp(j,l+iwork))
 !
 ! Heating rate

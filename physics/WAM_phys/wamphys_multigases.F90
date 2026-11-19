@@ -33,7 +33,8 @@ module wamphys_multigases
       integer, parameter   ::  ind_h2o = 1
       integer, parameter   ::  ind_n2  = 0 
              
-      integer              ::  ind_o1, ind_o2, ind_o3   
+      integer              ::  ind_o1, ind_o2, ind_o3, ind_he, ind_no 
+      integer              ::  nwam_heno       !namelist-flag to add: HE (1) HE+NO (2), standard (0)          
           
       real(kind=kind_phys), allocatable ::  ri(:),cpi(:)
       integer, allocatable              ::  ind_wamtr(:)
@@ -56,7 +57,11 @@ module wamphys_multigases
         logical :: exists
         !ncnst =ntrac nwat-last-water-based  
     
-        namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml  
+        namelist /wamphys_tracer_cpi/ ri,cpi, ntrac_wat, ntrac_nml, nwam_heno
+	
+        ntrac_wat=6              ! GFS water-based specied #
+        ntrac_nml=13             ! dim of (ri)
+	nwam_heno = 0            ! 0 => std UFSWAM MSP: O-O2-N2; 1=> + He ;  2 => + [He & NO]
 	 
         inquire (file =trim (fn_nml2) , exist = exists)
         if (.not. exists) then
@@ -106,6 +111,14 @@ module wamphys_multigases
         ind_o2 =  ind_o1+1      
         ind_wamtr(ind_o1) = ind_o1
         ind_wamtr(ind_o2) = ind_o2
+	
+	if (nwam_heno == 0) then
+	  ind_no =-99
+	  ind_he =-99
+	else 
+	  if (nwam_heno == 1) ind_he=ind_o2+1
+	  if (nwam_heno == 2) ind_no=ind_o2+2	  
+	endif	
 	      num_wat = ntrac_wat	  
       end  subroutine wamphys_set_major_tracers    
 ! --------------------------------------------------------

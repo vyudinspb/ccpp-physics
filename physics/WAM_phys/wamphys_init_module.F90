@@ -214,8 +214,8 @@ module  wamphys_init_module
 
    real (kind=kind_phys), allocatable :: wam_oh(:), wam_ho2(:)    ! simplified chemistry
          
-   real (kind=kind_phys)  :: bz, rbz, amo,amn2, amo2, amo3, amh2o, amno
-   real (kind=kind_phys)  :: rmo, rmo2, rmn2, rmh2o,rmo3
+   real (kind=kind_phys)  :: bz, rbz, amo,amn2, amo2, amo3, amh2o, amno, amhe
+   real (kind=kind_phys)  :: rmo, rmo2, rmn2, rmh2o,rmo3, rmno, rmhe
    		      
    real (kind=kind_phys), parameter:: muo =3.9e-7    ! viscosity coefficient
 !                                                          of O (kg/m/s) 
@@ -229,10 +229,35 @@ module  wamphys_init_module
 !                                                      coefficient of O2(W/m/K)
    real (kind=kind_phys), parameter:: lan2=56.e-5    ! thermal conductivity
 !                                                      coefficient of N2(W/m/K)
+!-------------------------------------------------------------------------------
+! Oct 2026 VAY-SWO:  He and H coefficients of viscosity and conductivity
+!
+   real (kind=kind_phys), parameter:: laHe=299.e-5    ! thermal conductivity He
+   real (kind=kind_phys), parameter:: muHe=3.84e-7    ! viscosity He 
+   real (kind=kind_phys), parameter:: laH1=379.e-5    ! thermal conductivity H1, hydrogen
+   real (kind=kind_phys), parameter:: muH1=1.22e-7    ! viscosity H1   
+
+
    real (kind=kind_phys), parameter:: cpo =2.5       !specific heats of o
    real (kind=kind_phys), parameter:: cpo2=3.5       !specific heats of o2
    real (kind=kind_phys), parameter:: cpn2=3.5       !specific heats of n2
+   real (kind=kind_phys), parameter:: cphe =2.5      !specific heats of he
+   real (kind=kind_phys), parameter:: cph1 =2.5      !specific heats of H1
+!
+! Binary diffusion coef O-O2-He-N2  D(i,j) = b(i,j)/Nair =bd_ij * T ^(sij) m2/sec
+!
+   real (kind=kind_phys), parameter:: bd_o1o2 = 9.69e18, sd_o1o2=0.774 
+   real (kind=kind_phys), parameter:: bd_o1n2 = 9.69e18, sd_o1n2=0.774  
+   real (kind=kind_phys), parameter:: bd_o2n2 = 8.30e18, sd_o2n2=0.724     
+   real (kind=kind_phys), parameter:: bd_hen2 = 2.11e19, sd_hen2=0.708  
+   real (kind=kind_phys), parameter:: bd_heo2 = 2.18e19, sd_heo2=0.708 
+   real (kind=kind_phys), parameter:: bd_heo1 = 3.26e19, sd_heo1=0.728
    
+   real (kind=kind_phys), parameter:: bd_heh1 = 1.10e20, sd_heh1=0.728         
+   real (kind=kind_phys), parameter:: bd_o1h1 = 7.25e19, sd_o1h1=0.710
+   real (kind=kind_phys), parameter:: bd_o2h1 = 4.87e19, sd_o2h1=0.698 
+   real (kind=kind_phys), parameter:: bd_n2h1 = 4.87e19, sd_n2h1=0.698 
+                                 
    real (kind=kind_phys), parameter::  pref = 1.e5, rpref =1./pref  
                 
    contains
@@ -686,7 +711,7 @@ module  wamphys_init_module
       implicit none
       integer, intent(in)                 :: levs                   ! number of model levels
       integer, intent(in)                 :: me, master 
-      real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o
+      real(kind=kind_phys)    ::   rkgavgd, mo, mo2, mo3, mn2, mh2o, mno, mhe
  
 ! initialize wam_oh(levs) & wam_ho2(levs) from some-global profiles (z65)
       
@@ -705,7 +730,7 @@ module  wamphys_init_module
       amh2o = 18.0154
       amn2  = 28.013 
       amno  = 30.0061        
-       
+      amhe = 4.0026          
       rkgavgd = 1.e-3/avgd
 
       mo    = amo *rkgavgd
@@ -719,7 +744,12 @@ module  wamphys_init_module
       rmo3  = 1./mo3
       rmo2  = 1./mo2
       rmh2o = 1./mh2o
-    
+      
+      mhe    = amhe*rkgavgd
+      mno    = amno*rkgavgd  
+      rmno = 1./mno
+      rmhe = 1./mhe 
+             
   end subroutine wam_tracer_init
   
 !=============================================  

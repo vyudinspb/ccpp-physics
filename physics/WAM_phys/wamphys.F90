@@ -47,12 +47,12 @@ contains
 !> \section arg_table_wamphys_init Argument Table
 !! \htmlinclude wamphys_init.html
 !!
-! -----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
     subroutine wamphys_init(do_wamipe, do_wamgfs_rad, do_wamphys_diag,   &
                 me, master, nlunit, input_nml_file, logunit,             &
-                fn_nml2, jdat, lonr, latr, levs, ak, bk, dtp,            &             
-		ntrac, nto1, nto2, nto3, ntqv,                           &
+                fn_nml2, jdat, lonr, latr, levs, ak, bk, dtp,            &
+		ntrac, nto1, nto2, nto3, ntqv,                           &             
                 con_pi, con_rerth, con_p0,                               &
                 con_g, con_omega,  con_cp, con_rd, con_rv,con_fvirt,     &  
                 errmsg, errflg)
@@ -351,17 +351,14 @@ contains
 ! geo-solar-related vars
     real(kind=kind_phys)  :: utsec,   sda
     integer               :: ddd_year, kdts       
-    ! integer               :: nth2o
-                    
+                  
     real(kind=kind_phys)  :: wn1, wsum                
     logical               :: wamNAN
-
-    real(kind=kind_phys)  :: heatmax, sdtincw, sdtincr
+    real(kind=kind_phys)  :: sdtincw, sdtincr
 
     errmsg = ''
     errflg = 0
     
-    heatmax = 0.002        ! 100 K/day
 !---------------------------------------------
 !  two ways to setup from namelist/SW-arrays
 ! ---------------------------------------------   
@@ -381,16 +378,16 @@ contains
       endif
       endif
     endif
-    	  
-!=========================================================================	  
-! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
-!=========================================================================
+
+
+! do_wamphys_diag =.F. => return ... without wam_physics
+
    if (.not.do_wamphys_diag) return 
    
 	dudt = 0.
 	dvdt = 0.
-    dtdt = 0.
-    dqdt(:,:,:) =0.
+        dtdt = 0.
+      dqdt(:,:,:) =0.
     
 !copy state-phys	
 
@@ -416,12 +413,12 @@ contains
 !      iday = ddd_year
 !      iyear = jdat(1)
 !      iday_m = jdat(3)
-!      imo = jdat(2)
+!      imo    = jdat(2)
 
   if (do_swoper_mdt) then  
     call wamphys_kpf107_update(kdts,  jdat(1), jdat(2), jdat(3), ddd_year, solhr, &
                    sol_f107, sol_f107a, sol_kp, sol_kpa, me, master)  
-!print *, '3 kdt-kdtin-kdts ', kdt, kdtin, kdts		    		    
+!	    		    
     f107  = sol_f107
     f107d = sol_f107a
     kp    = sol_kp
@@ -442,7 +439,10 @@ contains
     do k=1, levs 
         del(:,k) = prsi(:,k) - prsi(:, k+1)
     enddo 
-!      
+    
+!=========================================================================	  
+! compute    zg, grav, exner, exner_i, kappa_i cp =>   :prsik, prslk
+!=========================================================================     
 ! wamphys_get_pzgeo.F90: wam_get_rdmulti(im, levs,ntrac,q,xr)     
 !      
     call wamphys_zgrav(im, levs, ntrac, tgrs, qgrs,                   &
@@ -489,7 +489,8 @@ contains
 !	   print *,  ' nto1 ', nto1, maxval(qgrs(:,:, nto1)), minval(qgrs(:,:, nto1))
 !	   print *,  ' nto2 ', nto2, maxval(qgrs(:,:, nto2)), minval(qgrs(:,:, nto2))
 !	   print *,  ' nto3 ', nto3, maxval(qgrs(:,:, nto3)), minval(qgrs(:,:, nto3))
-!     endif 		   
+!     endif 
+		   
     call wam_get_cp(im, levs,  ntrac, qgrs,  cp) 
         
     if (do_med1d) &
@@ -589,10 +590,8 @@ contains
        dvdt_iwamph(:,:) = (vgrs(:,:) - dvdt_iwamph(:,:))*rdtp
        dtdt_iwamph(:,:) = (tgrs(:,:) - dtdt_iwamph(:,:))*rdtp 	
   endif 
-	return
-	
-!!! tests: rt.sh -l wamphys_rt.conf -wk 
-
-    end subroutine wamphys_run
+   
+   return
+  end subroutine wamphys_run
 !! @}
 end module wamphys
